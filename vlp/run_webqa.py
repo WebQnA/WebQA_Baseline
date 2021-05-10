@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import os
 import sys
+sys.path.append("/home/yingshac/CYS/WebQnA/VLP")
 import logging
 import glob
 import math
@@ -15,19 +16,23 @@ from tqdm import tqdm, trange
 from pathlib import Path
 import numpy as np
 import torch
+import torch.multiprocessing as mp
+mp.set_start_method('spawn', force=True)
 from torch.utils.data import DataLoader, RandomSampler
 from torch.utils.data.distributed import DistributedSampler
 import random
 import copy
 
 from pytorch_pretrained_bert.tokenization import BertTokenizer, WhitespaceTokenizer
-from pytorch_pretrained_bert.modeling import BertForPreTrainingLossMask, BertForSeq2SeqDecoder
+from pytorch_pretrained_bert.modeling import BertForWebqa, BertForPreTrainingLossMask, BertForSeq2SeqDecoder
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 
 from vlp.loader_utils import batch_list_to_batch_tensors
-import vlp.seq2seq_loader as seq2seq_loader
+import vlp.webqa_loader as webqa_loader
 from vlp.scst_utils import *
 from misc.data_parallel import DataParallelImbalance
+
+
 
 
 def _get_max_epoch_model(output_dir):
@@ -60,7 +65,7 @@ def main():
                         type=str,
                         help="The output directory where the log will be written.")
     parser.add_argument("--model_recover_path",
-                        default=None,
+                        default="/home/yingshac/CYS/WebQnA/cpts/cc_g8_lr1e-4_batch512_s0.75_b0.25/model.30.bin",
                         type=str,
                         help="The file of fine-tuned pretraining model.")
     parser.add_argument("--do_train",
@@ -110,7 +115,7 @@ def main():
                         help="random seed for initialization")
     parser.add_argument('--gradient_accumulation_steps',
                         type=int,
-                        default=1,
+                        default=4,
                         help="Number of updates steps to accumulate before performing a backward/update pass.")
     parser.add_argument('--fp16', action='store_true',
                         help="Whether to use 16-bit float precision instead of 32-bit")
@@ -130,7 +135,9 @@ def main():
                         help="Whether the input is tokenized.")
     parser.add_argument('--len_vis_input', type=int, default=100,
                         help="The length of visual token input")
-    parser.add_argument('--max_len_b', type=int, default=20,
+    parser.add_argument('--max_len_b', type=int, default=109,
+                        help="Truncate_config: maximum length of segment B.")
+    parser.add_argument('--max_len_a', type=int, default=400,
                         help="Truncate_config: maximum length of segment B.")
     parser.add_argument('--trunc_seg', default='b',
                         help="Truncate_config: first truncate segment A/B (option: a, b).")
@@ -145,6 +152,13 @@ def main():
     parser.add_argument('--max_position_embeddings', type=int, default=None,
                         help="max position embeddings")
 
+    # webqa dataset
+    parser.add_argument('--dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0501-Copy1.json")
+    parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
+    parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
+    parser.add_argument('--use_num_samples', type=int, default=-1,
+                        help="how many samples should be loaded into memory")
+    
     # Others for VLP
     parser.add_argument("--src_file", default=['/mnt/dat/COCO/annotations/dataset_coco.json'],
                         type=str, nargs='+',
@@ -189,30 +203,14 @@ def main():
     args = parser.parse_args()
 
     print('global_rank: {}, local rank: {}'.format(args.global_rank, args.local_rank))
-
-    args.max_seq_length = args.max_len_b + args.len_vis_input + 3 # +3 for 2x[SEP] and [CLS]
-    args.mask_image_regions = (args.vis_mask_prob > 0) # whether to mask out image regions
+    args.max_seq_length = args.max_len_b + args.max_len_a + 3 # +3 for 2x[SEP] and [CLS]
     args.dist_url = args.dist_url.replace('[PT_OUTPUT_DIR]', args.output_dir)
-
-    # arguments inspection
-    assert(args.tasks in ('img2txt', 'vqa2'))
-    assert args.enable_butd == True, 'only support region attn! featmap attn deprecated'
-    assert (not args.scst) or args.dataset == 'coco', 'scst support on coco only!'
-    if args.scst:
-        assert args.dataset == 'coco', 'scst support on coco only!'
-        assert args.max_pred == 0 and args.mask_prob == 0, 'no mask for scst!'
-        rl_crit = RewardCriterion()
-
-    if args.enable_butd:
-        assert(args.len_vis_input == 100)
-        args.region_bbox_file = os.path.join(args.image_root, args.region_bbox_file)
-        args.region_det_file_prefix = os.path.join(args.image_root, args.region_det_file_prefix) if args.dataset in ('cc', 'coco') and args.region_det_file_prefix != '' else ''
-
+    assert args.len_vis_input == 100, "run main: only support 100 region features per image"
     # output config
     os.makedirs(args.output_dir, exist_ok=True)
     json.dump(args.__dict__, open(os.path.join(
         args.output_dir, 'opt.json'), 'w'), sort_keys=True, indent=2)
-
+    
     logging.basicConfig(
         filename=os.path.join(args.output_dir, args.log_file),
         filemode='w',
@@ -239,10 +237,7 @@ def main():
         raise ValueError("Invalid gradient_accumulation_steps parameter: {}, should be >= 1".format(
             args.gradient_accumulation_steps))
 
-    # Initial args.train_batch_size: the actual batch_size you want
-    args.train_batch_size = int(
-        args.train_batch_size / args.gradient_accumulation_steps)
-        # now: train_batch_size is the batch_size you implement in code
+    args.train_batch_size = int(args.train_batch_size / args.gradient_accumulation_steps)
 
     # fix random seed
     random.seed(args.seed)
@@ -262,46 +257,30 @@ def main():
         cache_dir=args.output_dir+'/.pretrained_model_{}'.format(args.global_rank))
     if args.max_position_embeddings:
         tokenizer.max_len = args.max_position_embeddings
-    data_tokenizer = WhitespaceTokenizer() if args.tokenized_input else tokenizer
+    # doesn't support WhitespaceTokenizer
 
-    if args.do_train:
-        bi_uni_pipeline = [seq2seq_loader.Preprocess4Seq2seq(args.max_pred, args.mask_prob,
-            list(tokenizer.vocab.keys()), tokenizer.convert_tokens_to_ids, args.max_seq_length,
-            new_segment_ids=args.new_segment_ids, truncate_config={
-            'max_len_b': args.max_len_b, 'trunc_seg': args.trunc_seg, 'always_truncate_tail':
-            args.always_truncate_tail}, mask_image_regions=args.mask_image_regions,
-            mode="s2s", len_vis_input=args.len_vis_input,
-            vis_mask_prob=args.vis_mask_prob, enable_butd=args.enable_butd,
-            region_bbox_file=args.region_bbox_file, region_det_file_prefix=args.region_det_file_prefix,
-            local_rank=args.local_rank, load_vqa_ann=(args.tasks=='vqa2'))]
-        bi_uni_pipeline.append(seq2seq_loader.Preprocess4Seq2seq(args.max_pred, args.mask_prob,
-            list(tokenizer.vocab.keys()), tokenizer.convert_tokens_to_ids, args.max_seq_length,
-            new_segment_ids=args.new_segment_ids, truncate_config={
-            'max_len_b': args.max_len_b, 'trunc_seg': args.trunc_seg, 'always_truncate_tail':
-            args.always_truncate_tail}, mask_image_regions=args.mask_image_regions,
-            mode="bi", len_vis_input=args.len_vis_input,
-            vis_mask_prob=args.vis_mask_prob, enable_butd=args.enable_butd,
-            region_bbox_file=args.region_bbox_file, region_det_file_prefix=args.region_det_file_prefix,
-            local_rank=args.local_rank, load_vqa_ann=(args.tasks=='vqa2')))
+    processor = webqa_loader.Preprocess4webqa(args.max_pred, args.mask_prob, \
+            list(tokenizer.vocab.keys()), tokenizer.convert_tokens_to_ids, max_len=args.max_seq_length, \
+            len_vis_input=args.len_vis_input, max_len_a=args.max_len_a, max_len_b=args.max_len_b, \
+            new_segment_ids=args.new_segment_ids, \
+            truncate_config={'trunc_seg': args.trunc_seg, 'always_truncate_tail': args.always_truncate_tail}, \
+            local_rank=args.local_rank)
+    
+    train_dataset = webqa_loader.webqaDataset(dataset_json_path=args.dataset_json_path, split=args.split, \
+            batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
+            distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
+            processor=processor, device=device)
 
-        train_dataset = seq2seq_loader.Img2txtDataset(
-            args.src_file, args.image_root, args.split, args.train_batch_size,
-            data_tokenizer, args.max_seq_length, file_valid_jpgs=args.file_valid_jpgs,
-            bi_uni_pipeline=bi_uni_pipeline, use_num_imgs=args.use_num_imgs,
-            s2s_prob=args.s2s_prob, bi_prob=args.bi_prob,
-            enable_butd=args.enable_butd, tasks=args.tasks)
-
-        if args.world_size == 1:
+    if args.world_size == 1:
             train_sampler = RandomSampler(train_dataset, replacement=False)
-        else:
-            train_sampler = DistributedSampler(train_dataset)
-        train_dataloader = torch.utils.data.DataLoader(train_dataset,
-            batch_size=args.train_batch_size, sampler=train_sampler, num_workers=args.num_workers,
-            collate_fn=batch_list_to_batch_tensors, pin_memory=True)
+    else:
+        train_sampler = DistributedSampler(train_dataset)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset,
+        batch_size=args.train_batch_size, sampler=train_sampler, num_workers=args.num_workers,
+        collate_fn=batch_list_to_batch_tensors, pin_memory=True)
 
-    # note: args.train_batch_size has been changed to (/= args.gradient_accumulation_steps)
-    t_total = int(len(train_dataloader) * args.num_train_epochs * 1. /
-                  args.gradient_accumulation_steps) # The actual number of params updates
+    # The actual number of params updates
+    t_total = int(len(train_dataloader) * args.num_train_epochs * 1. / args.gradient_accumulation_steps)
 
     amp_handle = None
     if args.fp16 and args.amp:
@@ -314,24 +293,23 @@ def main():
     cls_num_labels = 2
     type_vocab_size = 6 if args.new_segment_ids else 2
     relax_projection = 4 if args.relax_projection else 0
-    task_idx_proj = 3 if args.tasks == 'img2txt' else 0
+    task_idx_proj = 3 # harded to be 3 # if args.tasks == 'img2txt' else 0
     mask_word_id, eos_word_ids, pad_word_ids = tokenizer.convert_tokens_to_ids(
         ["[MASK]", "[SEP]", "[PAD]"]) # index in BERT vocab: 103, 102, 0
 
+    # Recover model
     if (recover_step is None) and (args.model_recover_path is None):
         # if _state_dict == {}, the parameters are randomly initialized
         # if _state_dict == None, the parameters are initialized with bert-init
         assert args.scst == False, 'must init from maximum likelihood training'
-        _state_dict = {} if args.from_scratch else None 
-        # it seems that by setting _state_dict = None it will load pretrained BERT by default?
-        model = BertForPreTrainingLossMask.from_pretrained(
+        _state_dict = {} if args.from_scratch else None
+        model = BertForWebqa.from_pretrained(
             args.bert_model, state_dict=_state_dict, num_labels=cls_num_labels,
             type_vocab_size=type_vocab_size, relax_projection=relax_projection,
             config_path=args.config_path, task_idx=task_idx_proj,
             max_position_embeddings=args.max_position_embeddings, label_smoothing=args.label_smoothing,
             fp32_embedding=args.fp32_embedding, cache_dir=args.output_dir+'/.pretrained_model_{}'.format(args.global_rank),
-            drop_prob=args.drop_prob, enable_butd=args.enable_butd,
-            len_vis_input=args.len_vis_input, tasks=args.tasks)
+            drop_prob=args.drop_prob, max_len_a=args.max_len_a)
         global_step = 0
     else:
         if recover_step:
@@ -339,7 +317,7 @@ def main():
             model_recover = torch.load(os.path.join(
                 args.output_dir, "model.{0}.bin".format(recover_step)))
             # recover_step == number of epochs
-            global_step = math.floor( # already finish <recover_step>/<t_total> number of params updates
+            global_step = math.floor(
                 recover_step * t_total * 1. / args.num_train_epochs)
         elif args.model_recover_path:
             logger.info("***** Recover model: %s *****",
@@ -347,14 +325,13 @@ def main():
             model_recover = torch.load(args.model_recover_path)
             global_step = 0
         if not args.scst:
-            model = BertForPreTrainingLossMask.from_pretrained(
+            model = BertForWebqa.from_pretrained(
                 args.bert_model, state_dict=model_recover, num_labels=cls_num_labels,
                 type_vocab_size=type_vocab_size, relax_projection=relax_projection,
                 config_path=args.config_path, task_idx=task_idx_proj,
                 max_position_embeddings=args.max_position_embeddings, label_smoothing=args.label_smoothing,
                 fp32_embedding=args.fp32_embedding, cache_dir=args.output_dir+'/.pretrained_model_{}'.format(args.global_rank),
-                drop_prob=args.drop_prob, enable_butd=args.enable_butd,
-                len_vis_input=args.len_vis_input, tasks=args.tasks)
+                drop_prob=args.drop_prob, max_len_a=args.max_len_a)
         else:
             model = BertForSeq2SeqDecoder.from_pretrained(args.bert_model,
                 max_position_embeddings=args.max_position_embeddings, config_path=args.config_path,
@@ -366,19 +343,13 @@ def main():
         del model_recover
         torch.cuda.empty_cache()
 
-    # deprecated
-    # from vlp.resnet import resnet
-    # cnn = resnet(args.resnet_model, _num_layers=101, _fixed_block=4, pretrained=True) # no finetuning
-
     if args.fp16:
         model.half()
-        # cnn.half()
         if args.fp32_embedding:
             model.bert.embeddings.word_embeddings.float()
             model.bert.embeddings.position_embeddings.float()
             model.bert.embeddings.token_type_embeddings.float()
     model.to(device)
-    # cnn.to(device)
     if args.local_rank != -1:
         try:
             # from apex.parallel import DistributedDataParallel as DDP
@@ -387,11 +358,9 @@ def main():
             raise ImportError(
                 "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
         model = DDP(model, device_ids = [args.local_rank], output_device = args.local_rank, find_unused_parameters=True)
-        # cnn = DDP(cnn)
     elif n_gpu > 1:
         # model = torch.nn.DataParallel(model)
         model = DataParallelImbalance(model)
-        # cnn = DataParallelImbalance(cnn)
 
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())
@@ -428,7 +397,7 @@ def main():
                              schedule=args.sche_mode,
                              t_total=t_total)
 
-    if recover_step: # recover optimizer
+    if recover_step:
         logger.info("***** Recover optimizer: %d *****", recover_step)
         optim_recover = torch.load(os.path.join(
             args.output_dir, "optim.{0}.bin".format(recover_step)))
@@ -444,7 +413,6 @@ def main():
 
     if args.do_train:
         logger.info("***** Running training *****")
-        # train_batch_size has been updated to the one used by the model throughout training
         logger.info("  Batch size = %d", args.train_batch_size)
         logger.info("  Num steps = %d", t_total)
         logger.info("  Loader length = %d", len(train_dataloader))
@@ -455,98 +423,45 @@ def main():
         else:
             start_epoch = 1
         for i_epoch in trange(start_epoch, args.num_train_epochs+1, desc="Epoch"):
+            print(i_epoch)
             if args.local_rank >= 0:
                 train_sampler.set_epoch(i_epoch-1)
-                # --------------------------- !!! --------------------------
-                # In distributed mode, calling the set_epoch() method at the beginning of 
-                # each epoch BEFORE creating the DataLoader iterator is necessary to 
-                # make shuffling work properly across multiple epochs. 
-                # Otherwise, the same ordering will be always used.
             iter_bar = tqdm(train_dataloader, desc='Iter (loss=X.XXX)')
             nbatches = len(train_dataloader)
             train_loss = []
-            pretext_loss = []
-            vqa2_loss = []
+            filter_loss = []
             scst_reward = []
             for step, batch in enumerate(iter_bar):
                 batch = [t.to(device) for t in batch]
-                input_ids, segment_ids, input_mask, lm_label_ids, masked_pos, masked_weights, is_next, task_idx, img, vis_masked_pos, vis_pe, ans_labels = batch
-                # lm_label_ids = masked_ids = "gth ids of masked positions + paddings"
+                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, is_distractor, task_idx, img, vis_pe, context_is_img = batch
                 if args.fp16:
                     img = img.half()
                     vis_pe = vis_pe.half()
+                
+                conv_feats = img.data # Bx100x2048
+                vis_pe = vis_pe.data
 
-                if args.enable_butd:
-                    conv_feats = img.data # Bx100x2048
-                    vis_pe = vis_pe.data # Bx100x7
-                else: # deprecated! must use enable_butd
-                    conv_feats, _ = cnn(img.data) # Bx2048x7x7
-                    conv_feats = conv_feats.view(conv_feats.size(0), conv_feats.size(1),
-                        -1).permute(0,2,1).contiguous()
-
-                if not args.scst:
-                    loss_tuple = model(conv_feats, vis_pe, input_ids, segment_ids,
-                        input_mask, lm_label_ids, ans_labels, is_next, masked_pos=masked_pos,
-                        masked_weights=masked_weights, task_idx=task_idx,
-                        vis_masked_pos=vis_masked_pos, mask_image_regions=args.mask_image_regions,
+                # doesn't support scst training for not
+                loss_tuple = model(conv_feats, vis_pe, input_ids, segment_ids, input_mask, masked_ids, \
+                        do_filter_task=do_filter_task, is_distractor=is_distractor, context_is_img=context_is_img, \
+                        next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx,\
                         drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0)
-                    mean_reward = loss_tuple[0].new(1).fill_(0) # w/o scst, reward = 0
-                else:
-                    # scst training
-                    model.eval()
-                    position_ids = torch.arange(input_ids.size(1), dtype=input_ids.dtype,
-                        device=input_ids.device).unsqueeze(0).expand_as(input_ids)
-                    input_dummy = input_ids[:, :args.len_vis_input + 2] # +2 for [CLS] and [SEP]
-                    greedy_res = input_ids.new(input_ids.size(0), input_ids.size(1)-args.len_vis_input-2).fill_(0)
-                    gen_result = input_ids.new(input_ids.size(0), input_ids.size(1)-args.len_vis_input-2).fill_(0)
-
-                    with torch.no_grad():
-                        greedy_res_raw, _ = model(conv_feats, vis_pe, input_dummy, segment_ids,
-                            position_ids, input_mask, task_idx=task_idx, sample_mode='greedy')
-                        for b in range(greedy_res_raw.size(0)):
-                            for idx in range(greedy_res_raw.size(1)):
-                                if greedy_res_raw[b][idx] not in [eos_word_ids, pad_word_ids]:
-                                    greedy_res[b][idx] = greedy_res_raw[b][idx]
-                                else:
-                                    if greedy_res_raw[b][idx] == eos_word_ids:
-                                        greedy_res[b][idx] = eos_word_ids
-                                    break
-                    model.train()
-                    gen_result_raw, sample_logprobs = model(conv_feats, vis_pe, input_dummy, segment_ids,
-                        position_ids, input_mask, task_idx=task_idx, sample_mode='sample')
-                    for b in range(gen_result_raw.size(0)):
-                        for idx in range(gen_result_raw.size(1)):
-                            if gen_result_raw[b][idx] not in [eos_word_ids, pad_word_ids]:
-                                gen_result[b][idx] = gen_result_raw[b][idx]
-                            else:
-                                if gen_result_raw[b][idx] == eos_word_ids:
-                                    gen_result[b][idx] = eos_word_ids
-                                break
-
-                    gt_ids = input_ids[:, args.len_vis_input+2:]
-                    reward = get_self_critical_reward(greedy_res, gt_ids, gen_result, gt_ids.size(0))
-                    reward = torch.from_numpy(reward).float().to(gen_result.device)
-                    mean_reward = reward.mean()
-                    loss = rl_crit(sample_logprobs, gen_result.data, reward)
-
-                    loss_tuple = [loss, loss.new(1).fill_(0.), loss.new(1).fill_(0.)]
+                mean_reward = loss_tuple[0].new(1).fill_(0)
 
                 # disable pretext_loss_deprecated for now
-                masked_lm_loss, pretext_loss_deprecated, ans_loss = loss_tuple
+                masked_lm_loss, cls_loss = loss_tuple
                 if n_gpu > 1:    # mean() to average on multi-gpu. For dist, this is done through gradient addition.
                     masked_lm_loss = masked_lm_loss.mean()
-                    pretext_loss_deprecated = pretext_loss_deprecated.mean()
-                    ans_loss = ans_loss.mean()
-                loss = masked_lm_loss + pretext_loss_deprecated + ans_loss
+                    cls_loss = cls_loss.mean()
+                loss = masked_lm_loss + cls_loss
 
                 # logging for each step (i.e., before normalization by args.gradient_accumulation_steps)
                 iter_bar.set_description('Iter (loss=%5.3f)' % loss.item())
                 train_loss.append(loss.item())
-                pretext_loss.append(pretext_loss_deprecated.item())
-                vqa2_loss.append(ans_loss.item())
+                filter_loss.append(cls_loss.item())
                 scst_reward.append(mean_reward.item())
                 if step%100 == 0:
-                    logger.info("Epoch {}, Iter {}, Loss {:.2f}, Pretext {:.2f}, VQA2 {:.2f}, Mean R {:.3f}\n".format(i_epoch, step, np.mean(train_loss), np.mean(pretext_loss), np.mean(vqa2_loss), np.mean(scst_reward)))
+                    logger.info("Epoch {}, Iter {}, Loss {:.2f}, Filter {:.2f}, Mean R {:.3f}\n".format(i_epoch, step, np.mean(train_loss), np.mean(filter_loss), np.mean(scst_reward)))
 
                 if args.enable_visdom:
                     if vis_window['iter'] is None:
@@ -588,14 +503,13 @@ def main():
                                       args.warmup_proportion)
                     if args.fp16:
                         # modify learning rate with special warm up BERT uses
-                        # save optimizer state
                         for param_group in optimizer.param_groups:
                             param_group['lr'] = lr_this_step
                     optimizer.step()
                     optimizer.zero_grad()
                     global_step += 1
 
-            # Save a trained model every epoch
+            # Save a trained model
             logger.info(
                 "** ** * Saving fine-tuned model and optimizer ** ** * ")
             model_to_save = model.module if hasattr(
@@ -617,3 +531,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

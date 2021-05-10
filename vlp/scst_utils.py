@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-sys.path.append("coco-caption")
+sys.path.append("/home/yingshac/CYS/WebQnA/VLP/coco-caption")
 from pycocoevalcap.cider.cider import Cider
 
 CiderD_scorer = Cider(df='corpus')

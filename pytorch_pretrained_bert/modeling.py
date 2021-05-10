@@ -213,8 +213,9 @@ class BertEmbeddings(nn.Module):
         # any TensorFlow checkpoint file
         self.LayerNorm = BertLayerNorm(config.hidden_size, eps=1e-5)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        print("Inside embedding: hiddensize = ", config.hidden_size)
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, position_ids=None, vis_input=True, len_vis_input=49):
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, context_is_img=True, position_ids=None, max_len_a=400):
         seq_length = input_ids.size(1)
         if position_ids is None:
             position_ids = torch.arange(
@@ -225,14 +226,19 @@ class BertEmbeddings(nn.Module):
 
         words_embeddings = self.word_embeddings(input_ids)
         position_embeddings = self.position_embeddings(position_ids)
-        if vis_input:
+        
+        if True: # hard coded! modify here when incorporating snippets as context!!!!
+            print("\nInside embeddings, before concat: vis_feats.size() = ", vis_feats.size())
+            print("\nInside embeddings, before concat: vis_pe.size() = ", vis_pe.size())
             words_embeddings = torch.cat((words_embeddings[:, :1], vis_feats,
-                words_embeddings[:, len_vis_input+1:]), dim=1)
-            assert len_vis_input == 100, 'only support region attn!'
+                words_embeddings[:, max_len_a+1:]), dim=1)
+            assert max_len_a == 400, 'only support region attn!'
             position_embeddings = torch.cat((position_embeddings[:, :1], vis_pe,
-                position_embeddings[:, len_vis_input+1:]), dim=1) # hacky...
+                position_embeddings[:, max_len_a+1:]), dim=1) # hacky...
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
-
+        #print("words_embeddings.size() = ", words_embeddings.size())
+        #print("position_embeddings.size() = ", position_embeddings.size())
+        #print("token_type_embeddings.size() = ", token_type_embeddings.size())
         embeddings = words_embeddings + position_embeddings + token_type_embeddings
         if self.fp32_embedding:
             embeddings = embeddings.half()
@@ -471,7 +477,8 @@ class BertLMPredictionHead(nn.Module):
         if self.relax_projection > 1:
             num_batch = hidden_states.size(0)
             num_pos = hidden_states.size(1)
-            # (batch, num_pos, relax_projection*hid) -> (batch, num_pos, relax_projection, hid) -> (batch, num_pos, hid)
+            # (batch, num_pos, relax_projection*hid) -> (batch, num_pos, relax_projection, hid) 
+            # -> (batch, num_pos, hid) according to task_idx
             hidden_states = hidden_states.view(
                 num_batch, num_pos, self.relax_projection, -1)[torch.arange(0, num_batch).long(), :, task_idx, :]
         if self.fp32_embedding:
@@ -833,12 +840,12 @@ class BertModel(PreTrainedBertModel):
         return extended_attention_mask
 
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, output_all_encoded_layers=True, len_vis_input=49):
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, context_is_img=True, output_all_encoded_layers=True, max_len_a=400):
         extended_attention_mask = self.get_extended_attention_mask(
             input_ids, token_type_ids, attention_mask)
 
         # hack to load vis feats
-        embedding_output = self.embeddings(vis_feats, vis_pe, input_ids, token_type_ids, len_vis_input=len_vis_input)
+        embedding_output = self.embeddings(vis_feats, vis_pe, input_ids, token_type_ids, context_is_img=context_is_img, max_len_a=max_len_a)
         encoded_layers = self.encoder(embedding_output,
                                       extended_attention_mask,
                                       output_all_encoded_layers=output_all_encoded_layers)
@@ -1032,12 +1039,12 @@ class BertForPreTrainingLossMask(PreTrainedBertModel):
 
     def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, masked_lm_labels=None, ans_labels=None, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, vis_masked_pos=[], mask_image_regions=False, drop_worst_ratio=0.2, vqa_inference=False):
 
-        vis_feats = self.vis_embed(vis_feats) # image region features
-        vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings
+        vis_feats = self.vis_embed(vis_feats) # image region features Bx100xhidden_size
+        vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings Bx100xhidden_size
 
         # VQA inference
-        if vqa_inference:
-            assert(ans_labels == None)
+        if vqa_inference: # vqa_inference=False during training
+            assert(ans_labels == None) # in inference mode, need no gth label
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,
                 attention_mask, output_all_encoded_layers=False, len_vis_input=self.len_vis_input)
 
@@ -1048,9 +1055,9 @@ class BertForPreTrainingLossMask(PreTrainedBertModel):
 
         # zero out vis_masked_pos
         if mask_image_regions:
-            vis_feat_mask = vis_masked_pos.new(*vis_feats.size()[:2], 1).fill_(0).byte()
+            vis_feat_mask = vis_masked_pos.new(*vis_feats.size()[:2], 1).fill_(0).byte() # Bx100x1
             for bb in range(vis_masked_pos.size(0)):
-                for pp in range(vis_masked_pos.size(1)):
+                for pp in range(vis_masked_pos.size(1)): # when vis_masked_pos was generated, 1 were added to pos_ids to account for [CLS]
                     vis_feat_mask[bb, vis_masked_pos[bb, pp]-1] = 1
             sequence_output, pooled_output = self.bert(vis_feats.masked_fill(vis_feat_mask, 0.),
                 vis_pe.masked_fill(vis_feat_mask, 0.), input_ids, token_type_ids,
@@ -1068,7 +1075,7 @@ class BertForPreTrainingLossMask(PreTrainedBertModel):
         def gather_seq_out_by_pos(seq, pos):
             return torch.gather(seq, 1, pos.unsqueeze(2).expand(-1, -1, seq.size(-1)))
 
-        def gather_seq_out_by_pos_average(seq, pos, mask):
+        def gather_seq_out_by_pos_average(seq, pos, mask): # Unused function
             # pos/mask: (batch, num_pair, max_token_num)
             batch_size, max_token_num = pos.size(0), pos.size(-1)
             # (batch, num_pair, max_token_num, seq.size(-1))
@@ -1081,26 +1088,30 @@ class BertForPreTrainingLossMask(PreTrainedBertModel):
             return pos_vec_masked_sum / mask.sum(2, keepdim=True).expand_as(pos_vec_masked_sum)
 
         def loss_mask_and_normalize(loss, mask, drop_worst_ratio):
-            mask = mask.type_as(loss)
+            mask = mask.type_as(loss) # B x max_pred?
             loss = loss * mask
 
-            # Ruotian Luo's drop worst
+            # Ruotian Luo's drop worst (drop batches with worst losses)
+            # <less_than_B> x max_pred
             keep_loss, keep_ind = torch.topk(loss.sum(-1), int(loss.size(0)*(1-drop_worst_ratio)), largest=False)
 
             # denominator = torch.sum(mask) + 1e-5
             # return (loss / denominator).sum()
+            # each batch has different number of actual predictions
+            # divide by num_actual_predictions for each batch
+            # losses on the placeholder tokens should be zero, still being zero after divided by 1e-5
             denominator = torch.sum(mask.sum(-1)[keep_ind]) + 1e-5
-            return (keep_loss / denominator).sum()
+            return (keep_loss / denominator).sum() # sum losses over <less_than_B> batches
 
         # masked lm
-        if masked_pos.numel() == 0:
+        if masked_pos.numel() == 0: # it seems that this won't happen for VLP?
             # hack to avoid empty masked_pos during training for now
-            masked_lm_loss = pooled_output.new(1).fill_(0)
+            masked_lm_loss = pooled_output.new(1).fill_(0) # tensor([0])
         else:
             sequence_output_masked = gather_seq_out_by_pos(
-                sequence_output, masked_pos)
+                sequence_output, masked_pos) # B x max_pred x hidden
             prediction_scores_masked, _ = self.cls(
-                sequence_output_masked, pooled_output, task_idx=task_idx)
+                sequence_output_masked, pooled_output, task_idx=task_idx) # B x max_pred x vocab_size
             if self.crit_mask_lm_smoothed:
                 masked_lm_loss = self.crit_mask_lm_smoothed(
                     F.log_softmax(prediction_scores_masked.float(), dim=-1), masked_lm_labels)
@@ -1110,25 +1121,39 @@ class BertForPreTrainingLossMask(PreTrainedBertModel):
             masked_lm_loss = loss_mask_and_normalize(
                 masked_lm_loss.float(), masked_weights, drop_worst_ratio)
 
+        # vis_feats, vis_pe have been projected to hidden_size dim
         if mask_image_regions:
             # Selfie-like pretext
+            # gth img_feats for masked regions
             masked_vis_feats = torch.gather(vis_feats, 1,
                 (vis_masked_pos-1).unsqueeze(-1).expand((-1, -1, vis_feats.size(-1))))
+            # vis_masked_pos: B x <len_vis_input*vis_mask_prob>
+            # unsqueeze: B x <len_vis_input*vis_mask_prob> x 1
+            # expand: B x <len_vis_input*vis_mask_prob> x hidden
+            # output of this line: B x <len_vis_input*vis_mask_prob> x hidden
 
+            # gth vis_pe for masked regions
             if self.enable_butd:
                 masked_pos_enc = torch.gather(vis_pe, 1,
                 (vis_masked_pos-1).unsqueeze(-1).expand((-1, -1, vis_pe.size(-1))))
+                # B x <len_vis_input*vis_mask_prob> x hidden
             else:
                 masked_pos_enc = self.bert.embeddings.position_embeddings(vis_masked_pos)
 
-            masked_pos_enc += pooled_output.unsqueeze(1).expand_as(masked_pos_enc)
+            # pooled_output: B x hidden
+            # unsqueeze: B x 1 x hidden
+            # expand_as: B x <len_vis_input*vis_mask_prob> x hidden
+            # only pooled_output here gets trained???
+            masked_pos_enc += pooled_output.unsqueeze(1).expand_as(masked_pos_enc) # ? Why add pooled_output to gth masked vis pe?
             assert(masked_vis_feats.size() == masked_pos_enc.size())
+            # pe of a particular region should be most compatible with vis_feat of that region
             sim_mat = torch.matmul(masked_pos_enc, masked_vis_feats.permute(0, 2, 1).contiguous())
+            # B x <len_vis_input*vis_mask_prob> x <len_vis_input*vis_mask_prob>
             sim_mat = F.log_softmax(sim_mat, dim=-1)
             vis_pretext_loss = []
-            for i in range(sim_mat.size(0)):
+            for i in range(sim_mat.size(0)): # gth is the Identity matrix
                 vis_pretext_loss.append(sim_mat[i].diag().mean().view(1)*-1.) # cross entropy for ones
-            vis_pretext_loss = torch.cat(vis_pretext_loss).mean()
+            vis_pretext_loss = torch.cat(vis_pretext_loss).mean() # mean over B batches??? but masked_lm_loss is sum over batches?
         else:
             vis_pretext_loss = masked_lm_loss.new(1).fill_(0)
 
@@ -1136,8 +1161,10 @@ class BertForPreTrainingLossMask(PreTrainedBertModel):
             assert(ans_labels is not None)
             # vqa2_embed = pooled_output
             vqa2_embed = sequence_output[:, 0]*sequence_output[:, self.len_vis_input+1]
-            vqa2_pred = self.ans_classifier(vqa2_embed)
+            vqa2_pred = self.ans_classifier(vqa2_embed) # B x 3129 # without softmax
+            # ans_labels: B x 3129
             vqa2_loss = self.vqa2_crit(vqa2_pred, ans_labels) * ans_labels.size(1) # should not avg over answer dimension
+            # vqa2_loss has been averaged over batches
             return masked_lm_loss.new(1).fill_(0), vis_pretext_loss, vqa2_loss # works better when combined with max_pred=1
         else:
             return masked_lm_loss, vis_pretext_loss, masked_lm_loss.new(1).fill_(0)
@@ -1492,6 +1519,169 @@ class BertForSeq2SeqDecoder(PreTrainedBertModel):
                 ts_list, output_length, 0).to(input_ids.device)
 
         return traces
+
+""" for webqa, based on VLP """
+class BertForWebqa(PreTrainedBertModel):
+    """refer to BertForPreTraining"""
+
+    def __init__(self, config, num_labels=2, max_len_a=400):
+        super(BertForWebqa, self).__init__(config)
+        self.bert = BertModel(config)
+        self.cls = BertPreTrainingHeads(
+            config, self.bert.embeddings.word_embeddings.weight, num_labels=num_labels) # num_labels not applicable for VLP
+        self.apply(self.init_bert_weights)
+        self.crit_mask_lm = nn.CrossEntropyLoss(reduction='none')
+        self.crit_filter = nn.CrossEntropyLoss(reduction='none')
+        self.num_labels = num_labels
+        self.max_len_a = max_len_a
+        if hasattr(config, 'label_smoothing') and config.label_smoothing:
+            self.crit_mask_lm_smoothed = LabelSmoothingLoss(
+                config.label_smoothing, config.vocab_size, ignore_index=0, reduction='none')
+        else:
+            self.crit_mask_lm_smoothed = None
+
+        # will not be initialized when loading BERT weights
+        self.vis_embed = nn.Sequential(nn.Linear(2048, 2048),
+                                       nn.ReLU(),
+                                       nn.Linear(2048, config.hidden_size),
+                                       nn.ReLU(),
+                                       nn.Dropout(config.hidden_dropout_prob)) # use to be 0.3
+        try:
+            self.vis_embed[0].weight.data.copy_(torch.from_numpy(pickle.load(
+                    open('/home/yingshac/CYS/WebQnA/cpts/detectron_weights/fc7_w.pkl', 'rb'))))
+            self.vis_embed[0].bias.data.copy_(torch.from_numpy(pickle.load(
+                    open('/home/yingshac/CYS/WebQnA/cpts/detectron_weights/fc7_b.pkl', 'rb'))))
+        except:
+            raise Exception('Cannot find Detectron fc7 weights! Download from https://dl.fbaipublicfiles.com/ActivityNet-Entities/ActivityNet-Entities/detectron_weights.tar.gz and uncompress under the code root directory.')
+
+        self.vis_pe_embed = nn.Sequential(nn.Linear(6+1601, config.hidden_size),
+                                       nn.ReLU(),
+                                       nn.Dropout(config.hidden_dropout_prob))
+        
+        # self.ans_classifier = nn.Sequential(nn.Linear(config.hidden_size, config.hidden_size*2),
+                                       #nn.ReLU(),
+                                       #nn.Linear(config.hidden_size*2, 3129)) # 3129 hard coded...
+        self.context_classifier = nn.Linear(config.hidden_size, 2) # binary classification
+        self.context_crit = nn.BCEWithLogitsLoss()
+
+
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=False, is_distractor=False, context_is_img=True, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2):
+
+        vis_feats = self.vis_embed(vis_feats) # image region features Bx100xhidden_size
+        vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings Bx100xhidden_size
+
+        '''
+        # VQA inference
+        if vqa_inference: # vqa_inference=False during training
+            assert(ans_labels == None) # in inference mode, need no gth label
+            sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,
+                attention_mask, output_all_encoded_layers=False, len_vis_input=self.len_vis_input)
+
+            vqa2_embed = sequence_output[:, 0]*sequence_output[:, self.len_vis_input+1]
+            vqa2_pred = self.ans_classifier(vqa2_embed)
+            ans_idx = torch.max(vqa2_pred[:, 1:], -1)[1] + 1
+            return ans_idx
+        '''
+
+        sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,
+            attention_mask, context_is_img, output_all_encoded_layers=False, max_len_a=self.max_len_a)
+
+        if masked_lm_labels is None or next_sentence_label is None:
+            raise NotImplementedError
+            # prediction_scores, seq_relationship_score = self.cls(
+            #     sequence_output, pooled_output, task_idx=task_idx)
+            # return prediction_scores, seq_relationship_score
+        def gather_seq_out_by_pos(seq, pos):
+            return torch.gather(seq, 1, pos.unsqueeze(2).expand(-1, -1, seq.size(-1)))
+
+        def mlmloss_mask_and_normalize(loss, mask, do_filter_task, drop_worst_ratio):
+            drop_worst_ratio = 0.3
+            mask = mask.type_as(loss) # B x max_pred?
+            filter_mask = torch.ones(mask.size())
+            filter_mask[do_filter_task.nonzero().squeeze(1), :] = 0
+            filter_mask = filter_mask.type_as(loss)
+            loss = loss * mask * filter_mask
+
+            # Ruotian Luo's drop worst (drop batches with worst losses)
+            # <less_than_B> x max_pred
+            keep_loss, keep_ind = torch.topk(loss.sum(-1), int(loss.size(0)*(1-drop_worst_ratio)), largest=False)
+
+            # denominator = torch.sum(mask) + 1e-5
+            # return (loss / denominator).sum()
+            # each batch has different number of actual predictions
+            # divide by total num_actual_predictions across all survived batches
+            # losses on the placeholder tokens should be zero, still being zero after divided by 1e-5
+            denominator = torch.sum(mask.sum(-1)[keep_ind]) + 1e-5
+            #print("denominator.size() = ", denominator.size())
+            return (keep_loss / denominator).sum() # sum losses over <less_than_B> batches
+
+        def clfloss_mask_and_normalize(loss, do_filter_task):
+            filter_mask = torch.zeros(loss.size())
+            filter_mask[do_filter_task.nonzero().squeeze(1)] = 1.
+            filter_mask = filter_mask.type_as(loss)
+            return (loss*filter_mask).mean()
+        
+        # masked lm
+        sequence_output_masked = gather_seq_out_by_pos(sequence_output, masked_pos) # B x max_pred x hidden
+        prediction_scores_masked, _ = self.cls(
+            sequence_output_masked, pooled_output, task_idx=task_idx) # B x max_pred x vocab_size
+        if self.crit_mask_lm_smoothed:
+            masked_lm_loss = self.crit_mask_lm_smoothed(
+                F.log_softmax(prediction_scores_masked.float(), dim=-1), masked_lm_labels)
+        else:
+            masked_lm_loss = self.crit_mask_lm(
+                prediction_scores_masked.transpose(1, 2).float(), masked_lm_labels)
+        masked_lm_loss = mlmloss_mask_and_normalize(masked_lm_loss.float(), masked_weights, do_filter_task, drop_worst_ratio)
+
+        ''' 
+        # deprecated
+        # vis_feats, vis_pe have been projected to hidden_size dim
+        if mask_image_regions:
+            # Selfie-like pretext
+            # gth img_feats for masked regions
+            masked_vis_feats = torch.gather(vis_feats, 1,
+                (vis_masked_pos-1).unsqueeze(-1).expand((-1, -1, vis_feats.size(-1))))
+            # vis_masked_pos: B x <len_vis_input*vis_mask_prob>
+            # unsqueeze: B x <len_vis_input*vis_mask_prob> x 1
+            # expand: B x <len_vis_input*vis_mask_prob> x hidden
+            # output of this line: B x <len_vis_input*vis_mask_prob> x hidden
+
+            # gth vis_pe for masked regions
+            if self.enable_butd:
+                masked_pos_enc = torch.gather(vis_pe, 1,
+                (vis_masked_pos-1).unsqueeze(-1).expand((-1, -1, vis_pe.size(-1))))
+                # B x <len_vis_input*vis_mask_prob> x hidden
+            else:
+                masked_pos_enc = self.bert.embeddings.position_embeddings(vis_masked_pos)
+
+            # pooled_output: B x hidden
+            # unsqueeze: B x 1 x hidden
+            # expand_as: B x <len_vis_input*vis_mask_prob> x hidden
+            # only pooled_output here gets trained???
+            masked_pos_enc += pooled_output.unsqueeze(1).expand_as(masked_pos_enc) # ? Why add pooled_output to gth masked vis pe?
+            assert(masked_vis_feats.size() == masked_pos_enc.size())
+            # pe of a particular region should be most compatible with vis_feat of that region
+            sim_mat = torch.matmul(masked_pos_enc, masked_vis_feats.permute(0, 2, 1).contiguous())
+            # B x <len_vis_input*vis_mask_prob> x <len_vis_input*vis_mask_prob>
+            sim_mat = F.log_softmax(sim_mat, dim=-1)
+            vis_pretext_loss = []
+            for i in range(sim_mat.size(0)): # gth is the Identity matrix
+                vis_pretext_loss.append(sim_mat[i].diag().mean().view(1)*-1.) # cross entropy for ones
+            vis_pretext_loss = torch.cat(vis_pretext_loss).mean() # mean over B batches??? but masked_lm_loss is sum over batches?
+        else:
+            vis_pretext_loss = masked_lm_loss.new(1).fill_(0)
+        '''
+
+        # calculate classification loss for filter function
+        # vqa2_embed = pooled_output
+        cls_embed = sequence_output[:, 0]*sequence_output[:, self.max_len_a+1]
+        cls_pred = self.context_classifier(cls_embed) # B x 2 # without softmax
+        # cls_labels: B
+        cls_loss = self.crit_filter(cls_pred, is_distractor) # B
+        cls_loss = clfloss_mask_and_normalize(cls_loss, do_filter_task)
+        # vqa2_loss has been averaged over batches
+
+        return masked_lm_loss, cls_loss # works better when combined with max_pred=1
 
 
 class BertForExtractiveSummarization(PreTrainedBertModel):

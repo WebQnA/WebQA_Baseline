@@ -22,8 +22,8 @@ import h5py
 
 
 def truncate_tokens_pair(tokens_a, tokens_b, max_len, max_len_a=0, max_len_b=0, trunc_seg=None, always_truncate_tail=False):
-    num_truncated_a = [0, 0]
-    num_truncated_b = [0, 0]
+    num_truncated_a = [0, 0] # [#tokens_truncated_from_head, #tokens_truncated_from_tail]
+    num_truncated_b = [0, 0] # [#tokens_truncated_from_head, #tokens_truncated_from_tail]
     while True:
         if len(tokens_a) + len(tokens_b) <= max_len:
             break
@@ -33,7 +33,9 @@ def truncate_tokens_pair(tokens_a, tokens_b, max_len, max_len_a=0, max_len_b=0, 
         elif (max_len_b > 0) and len(tokens_b) > max_len_b:
             trunc_tokens = tokens_b
             num_truncated = num_truncated_b
-        elif trunc_seg:
+        elif trunc_seg: 
+            # Neither a or b doesn't exceed their own max_len, 
+            # but the concat of them exceeds total_max_len
             # truncate the specified segment
             if trunc_seg == 'a':
                 trunc_tokens = tokens_a
@@ -41,8 +43,9 @@ def truncate_tokens_pair(tokens_a, tokens_b, max_len, max_len_a=0, max_len_b=0, 
             else:
                 trunc_tokens = tokens_b
                 num_truncated = num_truncated_b
-        else:
-            # truncate the longer segment
+        else: 
+            # doesn't sprcify which segment to trunc
+            # then truncate the longer segment
             if len(tokens_a) > len(tokens_b):
                 trunc_tokens = tokens_a
                 num_truncated = num_truncated_a
@@ -142,7 +145,7 @@ class Img2txtDataset(torch.utils.data.Dataset):
             counter = 0
             for file_s in file_src:
                 img_dat = np.load(file_s, allow_pickle=True)
-                assert(img_dat[0]['has_answer'] == True)
+                assert(img_dat[0]['has_answer'] == True) # in vqa testing file has_answer = False
                 for i in range(1, img_dat.shape[0]):
                     if use_num_imgs == -1 or counter < use_num_imgs:
                         if enable_butd:
@@ -162,6 +165,7 @@ class Img2txtDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         instance = self.ex_list[idx]
+        # Choose a processor according to mode: "s2s | bi"
         proc = choices(self.bi_uni_pipeline, weights=[self.s2s_prob, self.bi_prob])[0]
         instance = proc(instance)
         return instance
@@ -175,6 +179,29 @@ class Img2txtDataset(torch.utils.data.Dataset):
             # To Tensor
             yield batch_list_to_batch_tensors(batch)
 
+'''
+self.bi_uni_pipeline[0]    mode='s2s'
+seq2seq_loader.Preprocess4Seq2seq(args.max_pred, args.mask_prob,
+            list(tokenizer.vocab.keys()), tokenizer.convert_tokens_to_ids, args.max_seq_length,
+            new_segment_ids=args.new_segment_ids, truncate_config={
+            'max_len_b': args.max_len_b, 'trunc_seg': args.trunc_seg, 'always_truncate_tail':
+            args.always_truncate_tail}, mask_image_regions=args.mask_image_regions,
+            mode="s2s", len_vis_input=args.len_vis_input,
+            vis_mask_prob=args.vis_mask_prob, enable_butd=args.enable_butd,
+            region_bbox_file=args.region_bbox_file, region_det_file_prefix=args.region_det_file_prefix,
+            local_rank=args.local_rank, load_vqa_ann=(args.tasks=='vqa2'))
+
+self.bi_uni_pipeline[0]    mode='bi'
+seq2seq_loader.Preprocess4Seq2seq(args.max_pred, args.mask_prob,
+            list(tokenizer.vocab.keys()), tokenizer.convert_tokens_to_ids, args.max_seq_length,
+            new_segment_ids=args.new_segment_ids, truncate_config={
+            'max_len_b': args.max_len_b, 'trunc_seg': args.trunc_seg, 'always_truncate_tail':
+            args.always_truncate_tail}, mask_image_regions=args.mask_image_regions,
+            mode="bi", len_vis_input=args.len_vis_input,
+            vis_mask_prob=args.vis_mask_prob, enable_butd=args.enable_butd,
+            region_bbox_file=args.region_bbox_file, region_det_file_prefix=args.region_det_file_prefix,
+            local_rank=args.local_rank, load_vqa_ann=(args.tasks=='vqa2'))
+'''
 
 class Preprocess4Seq2seq(Pipeline):
     """ Pre-processing steps for pretraining transformer """
@@ -187,7 +214,7 @@ class Preprocess4Seq2seq(Pipeline):
         self.indexer = indexer  # function from token to token index
         self.max_len = max_len
         self._tril_matrix = torch.tril(torch.ones(
-            (max_len, max_len), dtype=torch.long))
+            (max_len, max_len), dtype=torch.long)) # torch.tril: set upper triangular part of a matrix to zero
         self.new_segment_ids = new_segment_ids
         self.always_truncate_tail = truncate_config.get(
             'always_truncate_tail', False)
@@ -214,6 +241,7 @@ class Preprocess4Seq2seq(Pipeline):
             self.RandomCrop = transforms.RandomCrop((224, 224))
             self.ToTensor = transforms.ToTensor()
             self.res_Normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            # channel = (channel-mean)/std. Normalize values to [-1, 1]
         else:
             if load_vqa_ann:
                 # import packages from pythia
@@ -249,14 +277,17 @@ class Preprocess4Seq2seq(Pipeline):
         # the number of prediction is sometimes less than max_pred when sequence is short
         effective_length = len(tokens_b)
         n_pred = min(self.max_pred, max(
-            1, int(round(effective_length * self.mask_prob))))
-        # candidate positions of masked tokens
-        cand_pos = []
-        special_pos = set()
+            1, int(round(effective_length * self.mask_prob)))) 
+        # even if mask_prob = 0, there is one [MASK] at the very end ??? 后面有做这个的处理吗? no好像不是这个意思
+        # at least predict 1 [MASK]
+
+        # candidate  []
+        special_popositions of masked tokens
+        cand_pos =s = set()
         for i, tk in enumerate(tokens):
             # only mask tokens_b (target sequence)
             # we will mask [SEP] as an ending symbol
-            if (i >= len(tokens_a)+2) and (tk != '[CLS]'):
+            if (i >= len(tokens_a)+2) and (tk != '[CLS]'): # but tokens_b doesn't have ['CLS']? or ['CLS'] is inside tokens_b?
                 cand_pos.append(i)
             else:
                 special_pos.add(i)
@@ -276,39 +307,45 @@ class Preprocess4Seq2seq(Pipeline):
                 tokens[pos] = '[MASK]'
             elif rand() < 0.5:  # 10%
                 tokens[pos] = get_random_word(self.vocab_words)
+            # the rest 10% keep the original word
         # when n_pred < max_pred, we only calculate loss within n_pred
         masked_weights = [1]*len(masked_tokens)
 
         # Token Indexing
         input_ids = self.indexer(tokens)
-        masked_ids = self.indexer(masked_tokens)
+        masked_ids = self.indexer(masked_tokens) # gth ids of mask_pos output
 
         # Zero Padding
         n_pad = self.max_len - len(input_ids)
         input_ids.extend([0] * n_pad)
-        segment_ids.extend([0] * n_pad)
+        segment_ids.extend([0] * n_pad) # ????? But 0 has special meanings in segment_ids????
 
         # self-attention mask
         input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
         second_st, second_end = len(tokens_a)+2, len(tokens_a)+len(tokens_b)+3
 
         if self.mode == "s2s":
+            # everyone can attend to segment A
             input_mask[:, :len(tokens_a)+2].fill_(1)
-            input_mask[second_st:second_end, second_st:second_end].copy_(
+            # tokens in segment B can only attend to prev words
+            input_mask[second_st:second_end, second_st:second_end].copy_( 
                 self._tril_matrix[:second_end-second_st, :second_end-second_st])
         else:
+            # everyone can attend to anybody expect paddings
             input_mask = torch.tensor([1] * len(tokens) + [0] * n_pad, dtype=torch.long) \
                 .unsqueeze(0).expand(self.max_len, self.max_len).clone()
 
-        if self.mask_image_regions:
+        if self.mask_image_regions: 
+            # ??? cannot attend to masked img tokens
+            # but still allow attention to masked word tokens???
             input_mask[:, vis_masked_pos].fill_(0) # block the masked visual feature
 
         # Zero Padding for masked target
         if self.max_pred > n_pred:
             n_pad = self.max_pred - n_pred
-            masked_ids.extend([0] * n_pad)
-            masked_pos.extend([0] * n_pad)
-            masked_weights.extend([0] * n_pad)
+            masked_ids.extend([0] * n_pad) # gth ids of mask_pos output
+            masked_pos.extend([0] * n_pad) # pos ids of masked tokens
+            masked_weights.extend([0] * n_pad) # loss in padding part doesn't count
 
         if not self.enable_butd:
             # loading images
@@ -338,12 +375,12 @@ class Preprocess4Seq2seq(Pipeline):
             # lazy normalization of the coordinates...
             w_est = torch.max(vis_pe[:, [0, 2]])*1.+1e-5
             h_est = torch.max(vis_pe[:, [1, 3]])*1.+1e-5
-            vis_pe[:, [0, 2]] /= w_est
+            vis_pe[:, [0, 2]] /= w_est # it seems that one of the boxes must be the entire image?
             vis_pe[:, [1, 3]] /= h_est
             assert h_est > 0, 'should greater than 0! {}'.format(h_est)
             assert w_est > 0, 'should greater than 0! {}'.format(w_est)
             rel_area = (vis_pe[:, 3]-vis_pe[:, 1])*(vis_pe[:, 2]-vis_pe[:, 0])
-            rel_area.clamp_(0)
+            rel_area.clamp_(0) # clamp value to be larger or equal 0
 
             vis_pe = torch.cat((vis_pe[:, :4], rel_area.view(-1, 1), vis_pe[:, 5:]), -1) # confident score
             normalized_coord = F.normalize(vis_pe.data[:, :5]-0.5, dim=-1)
@@ -353,8 +390,11 @@ class Preprocess4Seq2seq(Pipeline):
             # process answer
             if self.ans_proc:
                 ans_tk = self.ans_proc(instance[2])['answers_scores']
+                # gth scores for all ans in answer vocab. Since ans reference is a list, the gth vector is NOT one-hot.
+                # some processing was done to generate a score for each answer, 
+                # based on the ans' compatibility with the rest answers in reference list.
             else:
-                ans_tk = img.new(1)
+                ans_tk = img.new(1) # Seems like it's generating a placeholder with size (1,) and the same type as img?
 
         return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, -1, self.task_idx, img, vis_masked_pos, vis_pe, ans_tk)
 
@@ -399,7 +439,7 @@ class Preprocess4Seq2seqDecoder(Pipeline):
                 (max_a_len + 2 - len(padded_tokens_a))
         assert len(padded_tokens_a) == max_a_len + 2
         max_len_in_batch = min(self.max_tgt_length +
-                               max_a_len + 2, self.max_len)
+                               max_a_len + 2, self.max_len) # max_tgt_length includes the last [SEP]
         tokens = padded_tokens_a
         if self.new_segment_ids:
             segment_ids = [4]*(len(padded_tokens_a)) \

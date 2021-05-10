@@ -141,7 +141,7 @@ def main():
         logger.info("enable fp16 with amp")
 
     # Prepare model
-    cls_num_labels = 2
+    cls_num_labels = 2 # this is not used by models
     type_vocab_size = 6 if args.new_segment_ids else 2
     mask_word_id, eos_word_ids = tokenizer.convert_tokens_to_ids(
         ["[MASK]", "[SEP]"])
@@ -154,7 +154,7 @@ def main():
             else:
                 w_list.append(w)
         forbid_ignore_set = set(tokenizer.convert_tokens_to_ids(w_list))
-    print(args.model_recover_path)
+    print("In decoder main, args.model_recover_path = ", args.model_recover_path)
     for model_recover_path in glob.glob(args.model_recover_path.strip()):
         logger.info("***** Recover model: %s *****", model_recover_path)
         model_recover = torch.load(model_recover_path)
@@ -192,7 +192,7 @@ def main():
                 ('coco', 'flickr30k')) else json.load(open(args.file_valid_jpgs))
             for src in img_dat:
                 if src['split'] == args.split and (valid_jpgs is None or src['filename'] in valid_jpgs):
-                    if args.enable_butd:
+                    if args.enable_butd: # region feature path
                         src_tk = os.path.join(args.image_root, src.get('filepath', 'trainval'), src['filename'][:-4]+'.npy')
                     else:
                         src_tk = os.path.join(args.image_root, src.get('filepath', 'trainval'), src['filename'])
@@ -211,6 +211,7 @@ def main():
         total_batch = math.ceil(len(input_lines) / args.batch_size)
 
         print('start the caption evaluation...')
+        # There is no dataloader. Load data from scratch
         with tqdm(total=total_batch) as pbar:
             while next_i < len(input_lines):
                 _chunk = input_lines[next_i:next_i + args.batch_size]
@@ -246,7 +247,7 @@ def main():
                         output_ids = traces['pred_seq']
                     else:
                         output_ids = traces[0].tolist()
-                    for i in range(len(buf)):
+                    for i in range(len(buf)): # i is index within the current chunk (batch)
                         w_ids = output_ids[i]
                         output_buf = tokenizer.convert_ids_to_tokens(w_ids)
                         output_tokens = []
@@ -256,6 +257,7 @@ def main():
                             output_tokens.append(t)
                         output_sequence = ' '.join(detokenize(output_tokens))
                         output_lines[buf_id[i]] = output_sequence
+                        # buf_id[i] = img_idx (global idx across chunks)
 
                 pbar.update(1)
 
