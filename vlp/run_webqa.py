@@ -437,7 +437,7 @@ def main():
             scst_reward = []
             for step, batch in enumerate(iter_bar):
                 batch = [t.to(device) for t in batch]
-                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, is_distractor, task_idx, img, vis_pe, context_is_img = batch
+                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, task_idx, img, vis_pe, context_is_img = batch
                 if args.fp16:
                     img = img.half()
                     vis_pe = vis_pe.half()
@@ -447,7 +447,7 @@ def main():
 
                 # doesn't support scst training for not
                 loss_tuple = model(conv_feats, vis_pe, input_ids, segment_ids, input_mask, masked_ids, \
-                        do_filter_task=do_filter_task, is_distractor=is_distractor, context_is_img=context_is_img, \
+                        do_filter_task=do_filter_task, filter_label=filter_label, context_is_img=context_is_img, \
                         next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx,\
                         drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0)
                 mean_reward = loss_tuple[0].new(1).fill_(0)

@@ -1562,10 +1562,10 @@ class BertForWebqa(PreTrainedBertModel):
         self.context_crit = nn.BCEWithLogitsLoss()
 
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=False, is_distractor=False, context_is_img=True, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2):
-
-        vis_feats = self.vis_embed(vis_feats) # image region features Bx100xhidden_size
-        vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings Bx100xhidden_size
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=False, filter_label=None, context_is_img=True, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2):
+        if context_is_img[0]: 
+            vis_feats = self.vis_embed(vis_feats) # image region features Bx100xhidden_size
+            vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings Bx100xhidden_size
 
         '''
         # VQA inference
@@ -1581,7 +1581,7 @@ class BertForWebqa(PreTrainedBertModel):
         '''
 
         sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,
-            attention_mask, context_is_img, output_all_encoded_layers=False, max_len_a=self.max_len_a)
+            attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_a=self.max_len_a)
 
         if masked_lm_labels is None or next_sentence_label is None:
             raise NotImplementedError

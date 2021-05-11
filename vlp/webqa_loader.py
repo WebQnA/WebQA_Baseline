@@ -241,30 +241,33 @@ class Preprocess4webqa(Pipeline):
                     tokens_b = Q+A
                     max_len_cxt_meta = self.max_len_a - self.max_len_img_cxt # 200
                     truncate_tokens_pair(cxt, tokens_b, max_len=max_len_cxt_meta + self.max_len_b, max_len_a=max_len_cxt_meta, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
-                    tokens_a += cxt + ['[SEP]']
-                    n_pad = self.max_len_a+1 - len(tokens_a) # +1 for the middle SEP
-                    tokens_a.extend(['[PAD]'] * n_pad)
-                    tokens = ['[CLS]'] + tokens_a + tokens_b + ['[SEP]']
+                    tokens_a += cxt
+                    # it seems that there is no need to pad cxt_meta to 200
+                    #n_pad = self.max_len_a+1 - len(tokens_a) # +1 for the middle SEP
+                    #tokens_a.extend(['[PAD]'] * n_pad)
+                    tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
                     
                     if self.new_segment_ids:
-                        segment_ids = [4] * (len(tokens_a)+1) + [5] * (len(tokens_b)+1)
+                        segment_ids = [4] * (len(tokens_a)+2) + [5] * (len(tokens_b)+1)
                     else:
-                        segment_ids = [0] * (len(tokens_a)+1) + [1] * (len(tokens_b)+1)
+                        segment_ids = [0] * (len(tokens_a)+2) + [1] * (len(tokens_b)+1)
 
-                    input_ids = self.indexer(tokens)
-                    n_pad = self.max_len - len(input_ids)
-                    input_ids.extend([0] * n_pad)
-                    segment_ids.extend([0] * n_pad)
+                    
 
                     # self-attention mask
                     input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
                     # everyone can attend to img, cxt_meta and Q. Nobody cares attention to A for filter task
                     img_end_pos = 1+self.len_vis_input
                     input_mask[:, img_end_pos].fill_(1)
-                    st, end = 1 + self.max_len_img_cxt, 2 + self.max_len_img_cxt + len(cxt)
+                    st, end = 1 + self.max_len_img_cxt, len(tokens_a) + 2 + len(Q)
                     input_mask[:, st:end].fill_(1)
-                    st, end = 2 + self.max_len_a, 2 + self.max_len_a + len(Q)
-                    input_mask[:, st:end].fill_(1)
+                    #st, end = 2 + self.max_len_a, 2 + self.max_len_a + len(Q)
+                    #input_mask[:, st:end].fill_(1)
+
+                    input_ids = self.indexer(tokens)
+                    n_pad = self.max_len - len(input_ids)
+                    input_ids.extend([0] * n_pad)
+                    segment_ids.extend([0] * n_pad)
 
                     try:
                         with open(img_path, "wb") as f:
@@ -292,9 +295,9 @@ class Preprocess4webqa(Pipeline):
 
                     assert img.size(0) == vis_pe.size(0), "img features and vis_pe should have the same token length!"
                     vis_pad = torch.zeros((self.max_len_img_cxt - img.size(0), img.size(-1)))
-                    #img = torch.cat((img, vis_pad), dim=0) # 应该是stack！！！！！！！
+                    img = torch.cat((img, vis_pad), dim=0) 
                     pe_pad = torch.zeros((self.max_len_img_cxt - vis_pe.size(0), vis_pe.size(-1)))
-                    #vis_pe = torch.cat((vis_pe, pe_pad), dim=0)
+                    vis_pe = torch.cat((vis_pe, pe_pad), dim=0)
                     assert vis_pe.size(0) == self.max_len_img_cxt
                     assert img.size(0) == self.max_len_img_cxt
                     input_ids_list.append(input_ids)
@@ -302,12 +305,14 @@ class Preprocess4webqa(Pipeline):
                     input_mask_list.append(input_mask)
                     img_list.append(img)
                     vis_pe_list.append(vis_pe)
-                input_ids = torch.cat(input_ids_list, dim=0)
-                segment_ids = torch.cat(segment_ids_list, dim=0)
-                input_mask = torch.cat(input_mask_list, dim=0)
-                img = torch.cat(img_list, dim=0)
-                vis_pe = torch.cat(vis_pe_list, dim=0)
-                return (input_ids, segment_ids, input_mask, label, self.task_idx, img, vis_pe, do_filter_task, context_is_img)
+                input_ids = torch.stack(input_ids_list, dim=0)
+                segment_ids = torch.stack(segment_ids_list, dim=0)
+                input_mask = torch.stack(input_mask_list, dim=0)
+                img = torch.stack(img_list, dim=0)
+                vis_pe = torch.stack(vis_pe_list, dim=0)
+                
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, self.task_idx, img, vis_pe, context_is_img)
+                return (input_ids, segment_ids, input_mask,       None,       None,       None,       -1,       do_filter_task, label, self.task_idx, img, vis_pe, , context_is_img)
 
             else: # do_filter_task && context_is_text
                 raise NotImplementedError
@@ -316,9 +321,100 @@ class Preprocess4webqa(Pipeline):
             if context_is_img:
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
                 tokens_b = Q+A
-                truncate_tokens_pair((tokens_a, tokens_b, max_len=self.max_len_a + self.max_len_b, max_len_a=self.max_len_a, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail))
+                truncate_tokens_pair((tokens_a, tokens_b, max_len=self.max_len_img_cxt + self.max_len_b, max_len_a=self.max_len_img_cxt, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail))
+                tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
 
+                if self.new_segment_ids:
+                    segment_ids = [4] * (len(tokens_a)+2) + [5] * (len(tokens_b)+1)
+                else:
+                    segment_ids = [0] * (len(tokens_a)+2) + [1] * (len(tokens_b)+1)
 
+                effective_len_A = len(A)
+                n_pred = min(self.max_pred, max(1, int(round(effective_length * self.mask_prob))))
+                cand_pos = []
+                for i, tk in enumerate(tokens):
+                    # only mask tk in A
+                    if (i >= len(tokens_a)+2+len(Q)) and tk!=['CLS']:
+                        cand_pos.append(i)
+                
+                shuffle(cand_pos)
+                masked_pos = cand_pos[:n_pred]
+                masked_tokens = [tokens[pos] for pos in masked_pos] # gth token in masked_pos
+                for pos in masked_pos:
+                    if rand() < 0.8:
+                        tokens[pos] = '[MASK]'
+                    elif rand() < 0.5:
+                        tokens[pos] = get_random_word(self.vocab_words)
+
+                masked_weights = [1] * len(masked_tokens)
+
+                input_ids = self.indexer(tokens)
+                n_pad = self.max_len - len(input_ids)
+                input_ids.extend([0] * n_pad)
+                segment_ids.extend([0] * n_pad)
+
+                # self-attention mask
+                num_img = len(gold_feature_paths)
+                input_mask = torch.zero(self.max_len, self.max_len, dtype=torch.long)
+
+                img_end_pos = 1 + self.len_vis_input*num_img
+                input_mask[:, img_end_pos].fill_(1)
+                st, end = 1 + self.max_len_img_cxt, 2 + len(tokens_a) + len(Q)
+                input_mask[:, st:end].fill_(1)
+                # Tokens in A can attend to previous tokens in A
+                pred_st, pred_end = 2 + len(tokens_a) + len(Q), len(tokens)
+                input_mask[pred_st:pred_end, pred_st:pred_end].copy_(self._tril_matrix[:pred_end-pred_st, :pred_end-pred_st])
+
+                # Zero padding for masked target
+                if self.max_pred > n_pred:
+                    n_pad = self.max_pred - n_pred
+                    masked_ids.extend([0] * n_pad)
+                    masked_pos.extend([0] * n_pad)
+                    masked_weights.extend([0] * n_pad)
+
+                img_list = []
+                vis_pe_list = []
+                for img_path in gold_feature_paths:
+                    assert os.path.exists(img_path), "loader Processor: .pkl file doesn't exist! {}".format(img_path)
+                    try:
+                        with open(c, "rb") as f:
+                            features = pickle.load(f)
+                    except:
+                        print(c)
+                        raise
+                    img = features['fc1_features'].detach().cpu().float()
+                    cls_label = features['cls_features'].detach().cpu().float()
+                    vis_pe = features['pred_boxes'].detach().cpu()
+
+                    # Lazy normalization of the coordinates
+                    w_est = torch.max(vis_pe[:, [0, 2]])*1.+1e-5
+                    h_est = torch.max(vis_pe[:, [1, 3]])*1.+1e-5
+                    vis_pe[:, [0, 2]] /= w_est
+                    vis_pe[:, [1, 3]] /= h_est
+                    assert h_est > 0, 'loader Processor: box h_est should greater than 0! {}'.format(h_est)
+                    assert w_est > 0, 'loader Processor: box w_est should greater than 0! {}'.format(w_est)
+                    rel_area = (vis_pe[:, 3]-vis_pe[:, 1])*(vis_pe[:, 2]-vis_pe[:, 0])
+                    rel_area.clamp_(0)
+
+                    vis_pe = torch.cat((vis_pe[:, :4], rel_area.view(-1, 1), features['scores'].detach().cpu().view(-1, 1)), -1)
+                    normalized_coord = F.normalize(vis_pe.data[:, :5] - 0.5, dim=-1)
+                    vis_pe = torch.cat((F.layer_norm(vis_pe, [6]), F.layer_norm(cls_label, [1601])), dim=-1)
+
+                    img_list.append(img)
+                    vis_pe_list.append(vis_pe)
+
+                img = torch.cat(img_list, dim=0)
+                vis_pe = torch.cat(vis_pe_list, dim=0)
+                assert img.size(0) == vis_pe.size(0), "img features and vis_pe should have the same token length!"
+                vis_pad = torch.zeros((self.max_len_a - img.size(0), img.size(-1)))#.to(device)
+                img = torch.cat((img, vis_pad), dim=0)
+                vis_pad = torch.zeros((self.max_len_a - vis_pe.size(0), vis_pe.size(-1)))#.to(device)
+                vis_pe = torch.cat((vis_pe, vis_pad), dim=0)
+                assert vis_pe.size(0) == self.max_len_a
+                assert img.size(0) == self.max_len_a
+
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, self.task_idx, img, vis_pe, context_is_img)
+                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,      -1,      do_filter_task, None, self.task_idx, img, vis_pe, context_is_img)
 
 
         if context_is_img:
