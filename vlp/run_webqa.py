@@ -156,8 +156,8 @@ def main():
     parser.add_argument('--dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0501-Copy1.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
-    parser.add_argument('--use_num_samples', type=int, default=-1,
-                        help="how many samples should be loaded into memory")
+    parser.add_argument('--img_metadata_path', type=int, default=-1, help="how many samples should be loaded into memory")
+    parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
     
     # Others for VLP
     parser.add_argument("--src_file", default=['/mnt/dat/COCO/annotations/dataset_coco.json'],
@@ -262,11 +262,11 @@ def main():
     processor = webqa_loader.Preprocess4webqa(args.max_pred, args.mask_prob, \
             list(tokenizer.vocab.keys()), tokenizer.convert_tokens_to_ids, max_len=args.max_seq_length, \
             len_vis_input=args.len_vis_input, max_len_a=args.max_len_a, max_len_b=args.max_len_b, \
-            new_segment_ids=args.new_segment_ids, \
+            max_len_img_cxt=args.max_len_img_cxt, new_segment_ids=args.new_segment_ids, \
             truncate_config={'trunc_seg': args.trunc_seg, 'always_truncate_tail': args.always_truncate_tail}, \
             local_rank=args.local_rank)
     
-    train_dataset = webqa_loader.webqaDataset(dataset_json_path=args.dataset_json_path, split=args.split, \
+    train_dataset = webqa_loader.webqaDataset(dataset_json_path=args.dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, \
             batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
             distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
             processor=processor, device=device)
@@ -299,6 +299,7 @@ def main():
 
     # Recover model
     if (recover_step is None) and (args.model_recover_path is None):
+        print("nothing to recover")
         # if _state_dict == {}, the parameters are randomly initialized
         # if _state_dict == None, the parameters are initialized with bert-init
         assert args.scst == False, 'must init from maximum likelihood training'
@@ -349,6 +350,7 @@ def main():
             model.bert.embeddings.word_embeddings.float()
             model.bert.embeddings.position_embeddings.float()
             model.bert.embeddings.token_type_embeddings.float()
+    print("model.to(device)")
     model.to(device)
     if args.local_rank != -1:
         try:
@@ -360,7 +362,8 @@ def main():
         model = DDP(model, device_ids = [args.local_rank], output_device = args.local_rank, find_unused_parameters=True)
     elif n_gpu > 1:
         # model = torch.nn.DataParallel(model)
-        model = DataParallelImbalance(model)
+        pass
+        #model = DataParallelImbalance(model)
 
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())
@@ -412,6 +415,7 @@ def main():
     torch.cuda.empty_cache()
 
     if args.do_train:
+        print("start training")
         logger.info("***** Running training *****")
         logger.info("  Batch size = %d", args.train_batch_size)
         logger.info("  Num steps = %d", t_total)

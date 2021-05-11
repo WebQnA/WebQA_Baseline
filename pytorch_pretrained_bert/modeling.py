@@ -213,7 +213,7 @@ class BertEmbeddings(nn.Module):
         # any TensorFlow checkpoint file
         self.LayerNorm = BertLayerNorm(config.hidden_size, eps=1e-5)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        print("Inside embedding: hiddensize = ", config.hidden_size)
+        #print("Inside embedding: hiddensize = ", config.hidden_size)
 
     def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, context_is_img=True, position_ids=None, max_len_a=400):
         seq_length = input_ids.size(1)
@@ -228,17 +228,14 @@ class BertEmbeddings(nn.Module):
         position_embeddings = self.position_embeddings(position_ids)
         
         if True: # hard coded! modify here when incorporating snippets as context!!!!
-            print("\nInside embeddings, before concat: vis_feats.size() = ", vis_feats.size())
-            print("\nInside embeddings, before concat: vis_pe.size() = ", vis_pe.size())
+            
             words_embeddings = torch.cat((words_embeddings[:, :1], vis_feats,
                 words_embeddings[:, max_len_a+1:]), dim=1)
             assert max_len_a == 400, 'only support region attn!'
             position_embeddings = torch.cat((position_embeddings[:, :1], vis_pe,
                 position_embeddings[:, max_len_a+1:]), dim=1) # hacky...
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
-        #print("words_embeddings.size() = ", words_embeddings.size())
-        #print("position_embeddings.size() = ", position_embeddings.size())
-        #print("token_type_embeddings.size() = ", token_type_embeddings.size())
+        
         embeddings = words_embeddings + position_embeddings + token_type_embeddings
         if self.fp32_embedding:
             embeddings = embeddings.half()
@@ -1620,6 +1617,15 @@ class BertForWebqa(PreTrainedBertModel):
             filter_mask[do_filter_task.nonzero().squeeze(1)] = 1.
             filter_mask = filter_mask.type_as(loss)
             return (loss*filter_mask).mean()
+        
+        def cross_entropy_with_logits_loss(prediction, target):
+            # prediction: batch_size * num_choices
+            # target: batch_size * num_choices. Targets with multiple flags look like: [0,0,1,1,1] (there is no need to normalize them)
+            lp = F.log_softmax(prediction, dim=-1)
+            num_flags = torch.sum(target, dim=-1)
+            labels = target / num_flags.unsqueeze(-1).repeat(1, prediction.size(-1))
+            loss = torch.sum(- lp * labels, dim=-1) * num_flags
+            return torch.mean(loss)
         
         # masked lm
         sequence_output_masked = gather_seq_out_by_pos(sequence_output, masked_pos) # B x max_pred x hidden
