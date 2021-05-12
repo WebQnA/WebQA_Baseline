@@ -1563,7 +1563,7 @@ class BertForWebqa(PreTrainedBertModel):
         #self.context_crit = nn.BCEWithLogitsLoss()
 
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=False, filter_label=None, context_is_img=True, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2):
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=False, filter_label=None, logit_mask=None, context_is_img=True, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2):
         if context_is_img[0]: 
             vis_feats = self.vis_embed(vis_feats) # image region features Bx100xhidden_size
             vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings Bx100xhidden_size
@@ -1595,10 +1595,10 @@ class BertForWebqa(PreTrainedBertModel):
             token_type_ids = token_type_ids.view(B*num_choices, -1)
             attention_mask = attention_mask.view(B*num_choices, -1)
 
-            def cross_entropy_with_logits_loss(prediction, target):
+            def cross_entropy_with_logits_loss(prediction, target, logit_mask):
                 # prediction: batch_size x num_choices
                 # target: batch_size * num_choices. Targets with multiple flags look like: [0,0,1,1,1] (there is no need to normalize them)
-                lp = F.log_softmax(prediction, dim=-1)
+                lp = F.log_softmax(prediction*logit_mask, dim=-1)
                 num_flags = torch.sum(target, dim=-1)
                 labels = target / num_flags.unsqueeze(-1).repeat(1, prediction.size(-1))
                 loss = torch.sum(- lp * labels, dim=-1) * num_flags
@@ -1614,7 +1614,7 @@ class BertForWebqa(PreTrainedBertModel):
             cls_pred = self.context_classifier(cls_embed) # B*num_choices x 1 
             cls_pred = cls_pred.view(-1, num_choices)
             # cls_labels: B
-            cls_loss = cross_entropy_with_logits_loss(cls_pred, filter_label)
+            cls_loss = cross_entropy_with_logits_loss(cls_pred, filter_label, logit_mask)
             masked_lm_loss = cls_loss.new(1).fill_(0)
             return masked_lm_loss, cls_loss
 

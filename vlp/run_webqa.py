@@ -47,6 +47,14 @@ def _get_max_epoch_model(output_dir):
     else:
         return None
 
+def _get_loader_from_dataset(train_dataset, world_size, train_batch_size, num_workers, collate_fn):
+    if world_size == 1:
+        train_sampler = RandomSampler(train_dataset, replacement=False)
+    else:
+        train_sampler = DistributedSampler(train_dataset)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset,
+        batch_size=train_batch_size, sampler=train_sampler, num_workers=num_workers,
+        collate_fn=collate_fn, pin_memory=True)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -153,11 +161,17 @@ def main():
                         help="max position embeddings")
 
     # webqa dataset
-    parser.add_argument('--dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0501-Copy1.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/txt_json.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0501-Copy1.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
     parser.add_argument('--img_metadata_path', type=int, default=-1, help="how many samples should be loaded into memory")
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
+    parser.add_argument('--answer_provided_by', type=str, default="img|txt")
+    parser.add_argument('--task_to_learn', type=str, default="filter|qa")
+
+    parser.add_argument('--txt_filter_num_choices', type=int, default=3)
+    parser.add_argument('--img_filter_num_choices', type=int, default=10)
     
     # Others for VLP
     parser.add_argument("--src_file", default=['/mnt/dat/COCO/annotations/dataset_coco.json'],
@@ -266,20 +280,42 @@ def main():
             truncate_config={'trunc_seg': args.trunc_seg, 'always_truncate_tail': args.always_truncate_tail}, \
             local_rank=args.local_rank)
     
-    train_dataset = webqa_loader.webqaDataset(dataset_json_path=args.dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, \
-            batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
-            distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
-            processor=processor, device=device)
+    train_dataloaders = []
+    if "filter" in args.task_to_learn:
+        if "txt" in args.answer_provided_by:
+            train_dataset = webqa_loader.webqaDataset_filter(dataset_json_path=args.txt_dataset_json_path, split=args.split, \
+                    batch_size=args.train_batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
+                    processor=processor, filter_num_choices=args.txt_filter_num_choices, device=device)
 
-    if args.world_size == 1:
-            train_sampler = RandomSampler(train_dataset, replacement=False)
-    else:
-        train_sampler = DistributedSampler(train_dataset)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset,
-        batch_size=args.train_batch_size, sampler=train_sampler, num_workers=args.num_workers,
-        collate_fn=batch_list_to_batch_tensors, pin_memory=True)
+            train_dataloader = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
+            train_dataloaders.append(train_dataloader)
+        
+        if "img" in args.answer_provided_by:
+            train_dataset = webqa_loader.webqaDataset_filter_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, \
+                    batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
+                    distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
+                    processor=processor, filter_num_choices=args.img_filter_num_choices, device=device)
+            train_dataloader = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
+            train_dataloaders.append(train_dataloader)
+    
+    if "qa" in args.task_to_learn:
+        if "txt" in args.answer_provided_by:
+            train_dataset = webqa_loader.webqaDataset_qa(dataset_json_path=args.txt_dataset_json_path, split=args.split, \
+                    batch_size=args.train_batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
+                    processor=processor, device=device)
 
-    train_dataloaders = [train_dataloader]
+            train_dataloader = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
+            train_dataloaders.append(train_dataloader)
+        
+        if "img" in args.answer_provided_by:
+            train_dataset = webqa_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, \
+                    batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
+                    distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
+                    processor=processor, device=device)
+            train_dataloader = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
+            train_dataloaders.append(train_dataloader)
+
+        
     loader_lengths = [len(l) for l in train_dataloaders]
     train_dataloader_order = []
     for i in range(len(loader_lengths)):
@@ -445,7 +481,7 @@ def main():
             for step, loader_idx in enumerate(iter_bar):
                 batch = next(dataloader_iters[loader_idx])
                 batch = [t.to(device) for t in batch]
-                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, task_idx, img, vis_pe, context_is_img = batch
+                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, task_idx, img, vis_pe, context_is_img = batch
                 if args.fp16:
                     img = img.half()
                     vis_pe = vis_pe.half()
@@ -455,7 +491,7 @@ def main():
 
                 # doesn't support scst training for not
                 loss_tuple = model(conv_feats, vis_pe, input_ids, segment_ids, input_mask, masked_ids, \
-                        do_filter_task=do_filter_task, filter_label=filter_label, context_is_img=context_is_img, \
+                        do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
                         next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx,\
                         drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0)
                 mean_reward = loss_tuple[0].new(1).fill_(0)

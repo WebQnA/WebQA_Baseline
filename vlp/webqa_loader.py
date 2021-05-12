@@ -56,7 +56,7 @@ def truncate_tokens_pair(tokens_a, tokens_b, max_len, max_len_a=0, max_len_b=0, 
 
 class webqaDataset_filter(torch.utils.data.Dataset):
     """ Load image feature path, q, a """
-    def __init__(self, dataset_json_path, img_metadata_path, split, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, filter_num_choices=10, device=None):
+    def __init__(self, dataset_json_path, split, batch_size, tokenizer, use_num_samples, processor, filter_num_choices=10, device=None):
         super().__init__()
         self.processor = processor
         self.tokenizer = tokenizer
@@ -65,7 +65,7 @@ class webqaDataset_filter(torch.utils.data.Dataset):
         self.instance_list = []
         if device is not None:
             self.device=device
-        assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist!"
+        assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist! {}".format(dataset_json_path)
         with open(dataset_json_path, "r") as f:
             dataset_J = json.load(f)
         count = 0
@@ -100,7 +100,7 @@ class webqaDataset_filter(torch.utils.data.Dataset):
         distractor_facts = [distractor_facts[i] for i in dis_idx_list]
 
         instance = (gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img)
-        instance = self.processor(instance, self.device)
+        instance = self.processor(instance, self.filter_num_choices, self.device)
         # Processor returns:
         # (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, 
         #       -1, is_distractor, self.task_idx, img, vis_pe, context_is_img)
@@ -116,16 +116,15 @@ class webqaDataset_filter(torch.utils.data.Dataset):
 
 class webqaDataset_qa(torch.utils.data.Dataset):
     """ Load image feature path, q, a """
-    def __init__(self, dataset_json_path, img_metadata_path, split, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, filter_num_choices=10, device=None):
+    def __init__(self, dataset_json_path, split, batch_size, tokenizer, use_num_samples, processor, device=None):
         super().__init__()
         self.processor = processor
         self.tokenizer = tokenizer
         self.batch_size = batch_size
-        self.filter_num_choices = filter_num_choices
         self.instance_list = []
         if device is not None:
             self.device=device
-        assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist!"
+        assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist! {}".format(dataset_json_path)
         with open(dataset_json_path, "r") as f:
             dataset_J = json.load(f)
         count = 0
@@ -232,7 +231,7 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
         distractor_cxt_list = [distractor_cxt_list[i] for i in dis_idx_list]
 
         instance = (gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img)
-        instance = self.processor(instance, self.device)
+        instance = self.processor(instance, self.filter_num_choices, self.device)
         # Processor returns:
         # (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, 
         #       -1, is_distractor, self.task_idx, img, vis_pe, context_is_img)
@@ -325,9 +324,10 @@ class Preprocess4webqa(Pipeline):
         self.new_segment_ids = new_segment_ids
         assert max_len_a+max_len_b <= max_len, "loader Processor: max_len_a + max_len_b > max_len"
 
-    def __call__(self, instance, device=None):
+    def __call__(self, instance, filter_num_choices=None, device=None):
         
         if do_filter_task:
+            assert filter_num_choices is not None, "must pass in a valid filter_num_choices when doing filter task"
             if context_is_img:
                 gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
                 num_gold = len(gold_feature_paths)
@@ -338,7 +338,7 @@ class Preprocess4webqa(Pipeline):
                 assert len(all_choices_cxt_list) == filter_num_choices and len(all_choices_feature_paths) == filter_num_choices
                 all_choices_feature_paths = [all_choices_feature_paths[p] for p in perm]
                 all_choices_cxt_list = [all_choices_cxt_list[p] for p in perm]
-                label = torch.tensor([1. if p<num_gold else 0. for p in perm])
+                label = [1. if p<num_gold else 0. for p in perm]
                 input_ids_list = []
                 segment_ids_list = []
                 input_mask_list = []
@@ -416,18 +416,74 @@ class Preprocess4webqa(Pipeline):
                     input_mask_list.append(input_mask)
                     img_list.append(img)
                     vis_pe_list.append(vis_pe)
+                
+                logit_mask = [1.] * len(input_ids_list)
+                if len(input_ids_list) < filter_num_choices:
+                    num_placeholder = filter_num_choices - len(input_ids_list)
+                    input_ids_list.extend([input_ids_list[-1]] * num_placeholder)
+                    segment_ids_list.extend([segment_ids_list[-1] * num_placeholder])
+                    input_mask_list.extend([input_mask_list[-1]] * num_placeholder)
+                    img_list.extend([img_list[-1] * num_placeholder])
+                    vis_pe_list.extend([vis_pe_list[-1] * num_placeholder])
+                    logit_mask.extend([-float("Inf")] * num_placeholder)
                 input_ids = torch.stack(input_ids_list, dim=0)
                 segment_ids = torch.stack(segment_ids_list, dim=0)
                 input_mask = torch.stack(input_mask_list, dim=0)
                 img = torch.stack(img_list, dim=0)
                 vis_pe = torch.stack(vis_pe_list, dim=0)
                 
-                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, self.task_idx, img, vis_pe, context_is_img)
-                return (input_ids, segment_ids, input_mask,       None,       None,       None,       -1,       do_filter_task, label, self.task_idx, img, vis_pe, , context_is_img)
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img)
+                return (input_ids, segment_ids, input_mask,       None,       None,       None,       -1,       do_filter_task,       label,       logit_mask, self.task_idx, img, vis_pe, , context_is_img)
 
             else: # do_filter_task && context_is_text
                 gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
-                
+                num_gold = len(gold_facts)
+                filter_num_choices = num_gold + len(distractor_facts)
+                perm = np.random.permutation(filter_num_choices)
+                all_choices_facts = gold_facts + distractor_facts
+                all_choices_facts = [all_choices_facts[p] for p in perm]
+                label = [1. if p<num_gold else 0. for p in perm]
+                input_ids_list = []
+                segment_ids_list = []
+                input_mask_list = []
+                for i in range(filter_num_choices):
+                    tokens_a = all_choices_facts[i]
+                    tokens_b = Q+A
+                    truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_b, max_len_a=self.max_len_a, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
+                    tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
+
+                    if self.new_segment_ids:
+                        segment_ids = [4] * (len(tokens_a)+2) + [5] * (len(tokens_b)+1)
+                    else:
+                        segment_ids = [0] * (len(tokens_a)+2) + [1] * (len(tokens_b)+1)
+
+                    # self-attention mask
+                    input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
+                    # everyone can attend to cxt and Q. Nobody cares attention to A for filter task
+                    input_mask[:len(tokens_a)+2+len(Q)].fill_(1)
+
+                    input_ids = self.indexer(tokens)
+                    n_pad = self.max_len - len(input_ids)
+                    input_ids.extend([0] * n_pad)
+                    segment_ids.extend([0] * n_pad)
+
+                    input_ids_list.append(input_ids)
+                    segment_ids_list.append(segment_ids)
+                    input_mask_list.append(input_mask)
+
+                logit_mask = [1.] * len(input_ids_list)
+                if len(input_ids_list) < filter_num_choices:
+                    num_placeholder = filter_num_choices - len(input_ids_list)
+                    input_ids_list.extend([input_ids_list[-1]] * num_placeholder)
+                    segment_ids_list.extend([segment_ids_list[-1] * num_placeholder])
+                    input_mask_list.extend([input_mask_list[-1]] * num_placeholder)
+                    logit_mask.extend([-float("Inf")] * num_placeholder)
+
+                input_ids = torch.stack(input_ids_list, dim=0) # 不确定，stack可能需要在collator里面操作
+                segment_ids = torch.stack(segment_ids_list, dim=0)
+                input_mask = torch.stack(input_mask_list, dim=0)
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img)
+                return (input_ids, segment_ids, input_mask,       None,        None,        None,         -1,         do_filter_task,        label, logit_mask, self.task_idx, None, None, context_is_img)
                 raise NotImplementedError
         
         else:
@@ -527,11 +583,60 @@ class Preprocess4webqa(Pipeline):
                 assert vis_pe.size(0) == self.max_len_a
                 assert img.size(0) == self.max_len_a
 
-                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, self.task_idx, img, vis_pe, context_is_img)
-                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,      -1,      do_filter_task, None, self.task_idx, img, vis_pe, context_is_img)
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img)
+                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,      -1,      do_filter_task,        None,        None, self.task_idx, img, vis_pe, context_is_img)
             
             
             else:
+                gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
+                tokens_a = sum(gold_facts, [])
+                tokens_b = Q+A
+                truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_b, max_len_a=self.max_len_a, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
+                tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
+
+                if self.new_segment_ids:
+                    segment_ids = [4] * (len(tokens_a)+2) + [5] * (len(tokens_b)+1)
+                else:
+                    segment_ids = [0] * (len(tokens_a)+2) + [1] * (len(tokens_b)+1)
+
+                effective_len_A = len(A)
+                n_pred = min(self.max_pred, max(1, int(round(effective_length * self.mask_prob))))
+                cand_pos = []
+                for i, tk in enumerate(tokens):
+                    # only mask tk in A
+                    if (i >= len(tokens_a)+2+len(Q)) and tk!=['CLS']:
+                        cand_pos.append(i)
+                
+                shuffle(cand_pos)
+                masked_pos = cand_pos[:n_pred]
+                masked_tokens = [tokens[pos] for pos in masked_pos] # gth token in masked_pos
+                for pos in masked_pos:
+                    if rand() < 0.8:
+                        tokens[pos] = '[MASK]'
+                    elif rand() < 0.5:
+                        tokens[pos] = get_random_word(self.vocab_words)
+
+                masked_weights = [1] * len(masked_tokens)
+
+                input_ids = self.indexer(tokens)
+                n_pad = self.max_len - len(input_ids)
+                input_ids.extend([0] * n_pad)
+                segment_ids.extend([0] * n_pad)
+
+                input_mask = torch.zero(self.max_len, self.max_len, dtype=torch.long)
+                input_mask[:, len(tokens_a)+2+len(Q)].fill_(1)
+                st, end = 2 + len(tokens_a) + len(Q), len(tokens)
+                input_mask[pred_st:pred_end, pred_st:pred_end].copy_(self._tril_matrix[:pred_end-pred_st, :pred_end-pred_st])
+
+                # Zero padding for masked target
+                if self.max_pred > n_pred:
+                    n_pad = self.max_pred - n_pred
+                    masked_ids.extend([0] * n_pad)
+                    masked_pos.extend([0] * n_pad)
+                    masked_weights.extend([0] * n_pad)
+                
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img)
+                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,       -1,      do_filter_task,      None,      None,       self.task_idx, None, None, context_is_img)
                 raise NotImplementedError
 
         if context_is_img:
