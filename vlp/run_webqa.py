@@ -279,8 +279,14 @@ def main():
         batch_size=args.train_batch_size, sampler=train_sampler, num_workers=args.num_workers,
         collate_fn=batch_list_to_batch_tensors, pin_memory=True)
 
+    train_dataloaders = [train_dataloader]
+    loader_lengths = [len(l) for l in train_dataloaders]
+    train_dataloader_order = []
+    for i in range(len(loader_lengths)):
+        train_dataloader_order.extend([i] * loader_lengths[i])
+    train_dataloader_order = random.shuffle(train_dataloader_order)
     # The actual number of params updates
-    t_total = int(len(train_dataloader) * args.num_train_epochs * 1. / args.gradient_accumulation_steps)
+    t_total = int(sum(loader_lengths) * args.num_train_epochs * 1. / args.gradient_accumulation_steps)
 
     amp_handle = None
     if args.fp16 and args.amp:
@@ -428,14 +434,16 @@ def main():
             start_epoch = 1
         for i_epoch in trange(start_epoch, args.num_train_epochs+1, desc="Epoch"):
             print(i_epoch)
+            dataloader_iters = [iter(l) for l in train_dataloaders]
             if args.local_rank >= 0:
                 train_sampler.set_epoch(i_epoch-1)
-            iter_bar = tqdm(train_dataloader, desc='Iter (loss=X.XXX)')
-            nbatches = len(train_dataloader)
+            iter_bar = tqdm(train_dataloader_order, desc='Iter (loss=X.XXX), loader_idx=X') 
+            nbatches = sum(loader_lengths)
             train_loss = []
             filter_loss = []
             scst_reward = []
-            for step, batch in enumerate(iter_bar):
+            for step, loader_idx in enumerate(iter_bar):
+                batch = next(dataloader_iters[loader_idx])
                 batch = [t.to(device) for t in batch]
                 input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, task_idx, img, vis_pe, context_is_img = batch
                 if args.fp16:
@@ -460,7 +468,7 @@ def main():
                 loss = masked_lm_loss + cls_loss
 
                 # logging for each step (i.e., before normalization by args.gradient_accumulation_steps)
-                iter_bar.set_description('Iter (loss=%5.3f)' % loss.item())
+                iter_bar.set_description('Iter (loss={:.3f}) loader_idx='.format(loss.item(), loader_idx))
                 train_loss.append(loss.item())
                 filter_loss.append(cls_loss.item())
                 scst_reward.append(mean_reward.item())

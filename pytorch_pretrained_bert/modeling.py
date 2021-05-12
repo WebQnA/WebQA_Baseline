@@ -227,7 +227,7 @@ class BertEmbeddings(nn.Module):
         words_embeddings = self.word_embeddings(input_ids)
         position_embeddings = self.position_embeddings(position_ids)
         
-        if True: # hard coded! modify here when incorporating snippets as context!!!!
+        if context_is_img: # hard coded! modify here when incorporating snippets as context!!!!
             
             words_embeddings = torch.cat((words_embeddings[:, :1], vis_feats,
                 words_embeddings[:, max_len_a+1:]), dim=1)
@@ -838,6 +838,7 @@ class BertModel(PreTrainedBertModel):
 
 
     def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, context_is_img=True, output_all_encoded_layers=True, max_len_a=400):
+            
         extended_attention_mask = self.get_extended_attention_mask(
             input_ids, token_type_ids, attention_mask)
 
@@ -1558,8 +1559,8 @@ class BertForWebqa(PreTrainedBertModel):
         # self.ans_classifier = nn.Sequential(nn.Linear(config.hidden_size, config.hidden_size*2),
                                        #nn.ReLU(),
                                        #nn.Linear(config.hidden_size*2, 3129)) # 3129 hard coded...
-        self.context_classifier = nn.Linear(config.hidden_size, 2) # binary classification
-        self.context_crit = nn.BCEWithLogitsLoss()
+        self.context_classifier = nn.Linear(config.hidden_size, 1) # each choice gets a single logit
+        #self.context_crit = nn.BCEWithLogitsLoss()
 
 
     def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=False, filter_label=None, context_is_img=True, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2):
@@ -1580,64 +1581,89 @@ class BertForWebqa(PreTrainedBertModel):
             return ans_idx
         '''
 
-        sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,
-            attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_a=self.max_len_a)
-
-        if masked_lm_labels is None or next_sentence_label is None:
-            raise NotImplementedError
-            # prediction_scores, seq_relationship_score = self.cls(
-            #     sequence_output, pooled_output, task_idx=task_idx)
-            # return prediction_scores, seq_relationship_score
-        def gather_seq_out_by_pos(seq, pos):
-            return torch.gather(seq, 1, pos.unsqueeze(2).expand(-1, -1, seq.size(-1)))
-
-        def mlmloss_mask_and_normalize(loss, mask, do_filter_task, drop_worst_ratio):
-            drop_worst_ratio = 0.3
-            mask = mask.type_as(loss) # B x max_pred?
-            filter_mask = torch.ones(mask.size())
-            filter_mask[do_filter_task.nonzero().squeeze(1), :] = 0
-            filter_mask = filter_mask.type_as(loss)
-            loss = loss * mask * filter_mask
-
-            # Ruotian Luo's drop worst (drop batches with worst losses)
-            # <less_than_B> x max_pred
-            keep_loss, keep_ind = torch.topk(loss.sum(-1), int(loss.size(0)*(1-drop_worst_ratio)), largest=False)
-
-            # denominator = torch.sum(mask) + 1e-5
-            # return (loss / denominator).sum()
-            # each batch has different number of actual predictions
-            # divide by total num_actual_predictions across all survived batches
-            # losses on the placeholder tokens should be zero, still being zero after divided by 1e-5
-            denominator = torch.sum(mask.sum(-1)[keep_ind]) + 1e-5
-            #print("denominator.size() = ", denominator.size())
-            return (keep_loss / denominator).sum() # sum losses over <less_than_B> batches
-
-        def clfloss_mask_and_normalize(loss, do_filter_task):
-            filter_mask = torch.zeros(loss.size())
-            filter_mask[do_filter_task.nonzero().squeeze(1)] = 1.
-            filter_mask = filter_mask.type_as(loss)
-            return (loss*filter_mask).mean()
         
-        def cross_entropy_with_logits_loss(prediction, target):
-            # prediction: batch_size * num_choices
-            # target: batch_size * num_choices. Targets with multiple flags look like: [0,0,1,1,1] (there is no need to normalize them)
-            lp = F.log_softmax(prediction, dim=-1)
-            num_flags = torch.sum(target, dim=-1)
-            labels = target / num_flags.unsqueeze(-1).repeat(1, prediction.size(-1))
-            loss = torch.sum(- lp * labels, dim=-1) * num_flags
-            return torch.mean(loss)
         
-        # masked lm
-        sequence_output_masked = gather_seq_out_by_pos(sequence_output, masked_pos) # B x max_pred x hidden
-        prediction_scores_masked, _ = self.cls(
-            sequence_output_masked, pooled_output, task_idx=task_idx) # B x max_pred x vocab_size
-        if self.crit_mask_lm_smoothed:
-            masked_lm_loss = self.crit_mask_lm_smoothed(
-                F.log_softmax(prediction_scores_masked.float(), dim=-1), masked_lm_labels)
+        if do_filter_task:
+            # input_ids.size() = (B, num_choices, max_len)
+            num_choices = input_ids.size(1)
+            B = input_ids.size(0)
+            assert filter_label is not None
+            if context_is_img:
+                vis_feats = vis_feats.view(B*num_choices, -1)
+                vis_pe = vis_pe.view(B*num_choices, -1)
+            input_ids = input_ids.view(B*num_choices, -1)
+            token_type_ids = token_type_ids.view(B*num_choices, -1)
+            attention_mask = attention_mask.view(B*num_choices, -1)
+
+            def cross_entropy_with_logits_loss(prediction, target):
+                # prediction: batch_size x num_choices
+                # target: batch_size * num_choices. Targets with multiple flags look like: [0,0,1,1,1] (there is no need to normalize them)
+                lp = F.log_softmax(prediction, dim=-1)
+                num_flags = torch.sum(target, dim=-1)
+                labels = target / num_flags.unsqueeze(-1).repeat(1, prediction.size(-1))
+                loss = torch.sum(- lp * labels, dim=-1) * num_flags
+                return torch.mean(loss)
+            
+            
+            sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
+                                            attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_a=self.max_len_a)
+            # calculate classification loss for filter function
+            # vqa2_embed = pooled_output
+            cls_embed = sequence_output[:, 0] #*sequence_output[:, self.max_len_a+1] 
+            # Don't do multiplication for not cuz cxt_meta wasn't padded to fixed length during preprocessing
+            cls_pred = self.context_classifier(cls_embed) # B*num_choices x 1 
+            cls_pred = cls_pred.view(-1, num_choices)
+            # cls_labels: B
+            cls_loss = cross_entropy_with_logits_loss(cls_pred, filter_label)
+            masked_lm_loss = cls_loss.new(1).fill_(0)
+            return masked_lm_loss, cls_loss
+
         else:
-            masked_lm_loss = self.crit_mask_lm(
-                prediction_scores_masked.transpose(1, 2).float(), masked_lm_labels)
-        masked_lm_loss = mlmloss_mask_and_normalize(masked_lm_loss.float(), masked_weights, do_filter_task, drop_worst_ratio)
+            assert masked_lm_labels is not None
+            sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
+                                            attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_a=self.max_len_a)
+            
+            def gather_seq_out_by_pos(seq, pos):
+                return torch.gather(seq, 1, pos.unsqueeze(2).expand(-1, -1, seq.size(-1)))
+
+            def mlmloss_mask_and_normalize(loss, mask, do_filter_task, drop_worst_ratio):
+                drop_worst_ratio = 0.3
+                mask = mask.type_as(loss) # B x max_pred?
+                filter_mask = torch.ones(mask.size())
+                filter_mask[do_filter_task.nonzero().squeeze(1), :] = 0
+                filter_mask = filter_mask.type_as(loss)
+                loss = loss * mask * filter_mask
+
+                # Ruotian Luo's drop worst (drop batches with worst losses)
+                # <less_than_B> x max_pred
+                keep_loss, keep_ind = torch.topk(loss.sum(-1), int(loss.size(0)*(1-drop_worst_ratio)), largest=False)
+
+                # denominator = torch.sum(mask) + 1e-5
+                # return (loss / denominator).sum()
+                # each batch has different number of actual predictions
+                # divide by total num_actual_predictions across all survived batches
+                # losses on the placeholder tokens should be zero, still being zero after divided by 1e-5
+                denominator = torch.sum(mask.sum(-1)[keep_ind]) + 1e-5
+                #print("denominator.size() = ", denominator.size())
+                return (keep_loss / denominator).sum() # sum losses over <less_than_B> batches
+
+            def clfloss_mask_and_normalize(loss, do_filter_task):
+                filter_mask = torch.zeros(loss.size())
+                filter_mask[do_filter_task.nonzero().squeeze(1)] = 1.
+                filter_mask = filter_mask.type_as(loss)
+                return (loss*filter_mask).mean()
+            
+            # masked lm
+            sequence_output_masked = gather_seq_out_by_pos(sequence_output, masked_pos) # B x max_pred x hidden
+            prediction_scores_masked, _ = self.cls(
+                sequence_output_masked, pooled_output, task_idx=task_idx) # B x max_pred x vocab_size
+            if self.crit_mask_lm_smoothed:
+                masked_lm_loss = self.crit_mask_lm_smoothed(
+                    F.log_softmax(prediction_scores_masked.float(), dim=-1), masked_lm_labels)
+            else:
+                masked_lm_loss = self.crit_mask_lm(
+                    prediction_scores_masked.transpose(1, 2).float(), masked_lm_labels)
+            masked_lm_loss = mlmloss_mask_and_normalize(masked_lm_loss.float(), masked_weights, do_filter_task, drop_worst_ratio)
 
         ''' 
         # deprecated
@@ -1677,15 +1703,6 @@ class BertForWebqa(PreTrainedBertModel):
         else:
             vis_pretext_loss = masked_lm_loss.new(1).fill_(0)
         '''
-
-        # calculate classification loss for filter function
-        # vqa2_embed = pooled_output
-        cls_embed = sequence_output[:, 0]*sequence_output[:, self.max_len_a+1]
-        cls_pred = self.context_classifier(cls_embed) # B x 2 # without softmax
-        # cls_labels: B
-        cls_loss = self.crit_filter(cls_pred, is_distractor) # B
-        cls_loss = clfloss_mask_and_normalize(cls_loss, do_filter_task)
-        # vqa2_loss has been averaged over batches
 
         return masked_lm_loss, cls_loss # works better when combined with max_pred=1
 

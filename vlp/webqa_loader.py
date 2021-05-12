@@ -54,6 +54,116 @@ def truncate_tokens_pair(tokens_a, tokens_b, max_len, max_len_a=0, max_len_b=0, 
             num_truncated[1] += 1
     return num_truncated_a, num_truncated_b
 
+class webqaDataset_filter(torch.utils.data.Dataset):
+    """ Load image feature path, q, a """
+    def __init__(self, dataset_json_path, img_metadata_path, split, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, filter_num_choices=10, device=None):
+        super().__init__()
+        self.processor = processor
+        self.tokenizer = tokenizer
+        self.batch_size = batch_size
+        self.filter_num_choices = filter_num_choices
+        self.instance_list = []
+        if device is not None:
+            self.device=device
+        assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist!"
+        with open(dataset_json_path, "r") as f:
+            dataset_J = json.load(f)
+        count = 0
+        for i in dataset_J:
+            datum = dataset_J[i]
+            if datum['split'] in split:
+                if use_num_samples == -1 or count < use_num_samples:
+                    Q = self.tokenizer.tokenize(datum['Q'])
+                    A = self.tokenizer.tokenize(datum['A'])
+                    gold_facts = []
+                    distractor_facts = []
+                    for fa in datum['SupportingFacts']:
+                        gold_facts.append(self.tokenizer.tokenize(fa['fact']))
+
+                    for fa in datum['DistractorFacts']:
+                        distractor_facts.append(self.tokenizer.tokenize(fa['fact']))
+                    self.instance_list.append((gold_facts, distractor_facts, [], [], Q, A, True, False)) # do_filter_task, context_is_img
+                    
+                    count += 1
+
+        print("Load {} instances from {} samples".format(len(self.instance_list), count))
+
+    def __len__(self):
+        return len(self.instance_list)
+
+    def __getitem__(self, idx):
+        gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = self.instance_list[idx]
+        
+        sample_size = self.filter_num_choices - len(gold_facts)
+        if len(distractor_facts) < sample_size: sample_size = len(distractor_facts)
+        dis_idx_list = random.sample(range(len(distractor_facts)), sample_size)
+        distractor_facts = [distractor_facts[i] for i in dis_idx_list]
+
+        instance = (gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img)
+        instance = self.processor(instance, self.device)
+        # Processor returns:
+        # (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, 
+        #       -1, is_distractor, self.task_idx, img, vis_pe, context_is_img)
+        return instance
+
+    def __iter__(self): # iterator to load data
+        for __ in range(math.ceil(len(self.instance_list) / float(self.batch_size))):
+            batch = []
+            for _ in range(self.batch_size):
+                idx = randint(0, len(self.instance_list)-1) # allow overlap between batches???
+                batch.append(self.__getitem__(idx))
+            yield batch_list_to_batch_tensors(batch)
+
+class webqaDataset_qa(torch.utils.data.Dataset):
+    """ Load image feature path, q, a """
+    def __init__(self, dataset_json_path, img_metadata_path, split, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, filter_num_choices=10, device=None):
+        super().__init__()
+        self.processor = processor
+        self.tokenizer = tokenizer
+        self.batch_size = batch_size
+        self.filter_num_choices = filter_num_choices
+        self.instance_list = []
+        if device is not None:
+            self.device=device
+        assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist!"
+        with open(dataset_json_path, "r") as f:
+            dataset_J = json.load(f)
+        count = 0
+        for i in dataset_J:
+            datum = dataset_J[i]
+            if datum['split'] in split:
+                if use_num_samples == -1 or count < use_num_samples:
+                    Q = self.tokenizer.tokenize(datum['Q'])
+                    A = self.tokenizer.tokenize(datum['A'])
+                    gold_facts = []
+                    distractor_facts = []
+                    for fa in datum['SupportingFacts']:
+                        gold_facts.append(self.tokenizer.tokenize(fa['fact']))
+
+                    self.instance_list.append((gold_facts, [], [], [], Q, A, False, False)) # do_filter_task, context_is_img
+                    
+                    count += 1
+
+        print("Load {} instances from {} samples".format(len(self.instance_list), count))
+
+    def __len__(self):
+        return len(self.instance_list)
+
+    def __getitem__(self, idx):
+        instance = self.instance_list[idx]
+        instance = self.processor(instance, self.device)
+        # Processor returns:
+        # (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, 
+        #       -1, is_distractor, self.task_idx, img, vis_pe, context_is_img)
+        return instance
+
+    def __iter__(self): # iterator to load data
+        for __ in range(math.ceil(len(self.instance_list) / float(self.batch_size))):
+            batch = []
+            for _ in range(self.batch_size):
+                idx = randint(0, len(self.instance_list)-1) # allow overlap between batches???
+                batch.append(self.__getitem__(idx))
+            yield batch_list_to_batch_tensors(batch)
 
 class webqaDataset_filter_with_img(torch.utils.data.Dataset):
     """ Load image feature path, q, a """
@@ -136,7 +246,7 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                 batch.append(self.__getitem__(idx))
             yield batch_list_to_batch_tensors(batch)
 
-class webqaDataset(torch.utils.data.Dataset):
+class webqaDataset_qa_with_img(torch.utils.data.Dataset):
     """ Load image feature path, q, a """
     def __init__(self, dataset_json_path, img_metadata_path, split, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, device=None):
         super().__init__()
@@ -216,9 +326,10 @@ class Preprocess4webqa(Pipeline):
         assert max_len_a+max_len_b <= max_len, "loader Processor: max_len_a + max_len_b > max_len"
 
     def __call__(self, instance, device=None):
-        gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
+        
         if do_filter_task:
             if context_is_img:
+                gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
                 num_gold = len(gold_feature_paths)
                 filter_num_choices = num_gold + len(distractor_feature_paths)
                 perm = np.random.permutation(filter_num_choices)
@@ -315,10 +426,13 @@ class Preprocess4webqa(Pipeline):
                 return (input_ids, segment_ids, input_mask,       None,       None,       None,       -1,       do_filter_task, label, self.task_idx, img, vis_pe, , context_is_img)
 
             else: # do_filter_task && context_is_text
+                gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
+                
                 raise NotImplementedError
         
         else:
             if context_is_img:
+                gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
                 tokens_b = Q+A
                 truncate_tokens_pair((tokens_a, tokens_b, max_len=self.max_len_img_cxt + self.max_len_b, max_len_a=self.max_len_img_cxt, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail))
@@ -415,7 +529,10 @@ class Preprocess4webqa(Pipeline):
 
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, self.task_idx, img, vis_pe, context_is_img)
                 return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,      -1,      do_filter_task, None, self.task_idx, img, vis_pe, context_is_img)
-
+            
+            
+            else:
+                raise NotImplementedError
 
         if context_is_img:
             tokens_a = ['[UNK]'] * (self.len_vis_input*len(context))
