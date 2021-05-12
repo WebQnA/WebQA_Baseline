@@ -146,7 +146,9 @@ def main():
     parser.add_argument('--max_len_b', type=int, default=109,
                         help="Truncate_config: maximum length of segment B.")
     parser.add_argument('--max_len_a', type=int, default=400,
-                        help="Truncate_config: maximum length of segment B.")
+                        help="Truncate_config: maximum length of segment A.")
+    parser.add_argument('--max_len_img_cxt', type=int, default=200,
+                        help="maximum length of segment image context.")
     parser.add_argument('--trunc_seg', default='b',
                         help="Truncate_config: first truncate segment A/B (option: a, b).")
     parser.add_argument('--always_truncate_tail', action='store_true',
@@ -352,7 +354,7 @@ def main():
             config_path=args.config_path, task_idx=task_idx_proj,
             max_position_embeddings=args.max_position_embeddings, label_smoothing=args.label_smoothing,
             fp32_embedding=args.fp32_embedding, cache_dir=args.output_dir+'/.pretrained_model_{}'.format(args.global_rank),
-            drop_prob=args.drop_prob, max_len_a=args.max_len_a)
+            drop_prob=args.drop_prob, max_len_img_cxt=args.max_len_img_cxt)
         global_step = 0
     else:
         if recover_step:

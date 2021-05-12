@@ -215,7 +215,7 @@ class BertEmbeddings(nn.Module):
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         #print("Inside embedding: hiddensize = ", config.hidden_size)
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, context_is_img=True, position_ids=None, max_len_a=400):
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, context_is_img=False, position_ids=None, max_len_img_cxt=200):
         seq_length = input_ids.size(1)
         if position_ids is None:
             position_ids = torch.arange(
@@ -230,10 +230,10 @@ class BertEmbeddings(nn.Module):
         if context_is_img: # hard coded! modify here when incorporating snippets as context!!!!
             
             words_embeddings = torch.cat((words_embeddings[:, :1], vis_feats,
-                words_embeddings[:, max_len_a+1:]), dim=1)
-            assert max_len_a == 400, 'only support region attn!'
+                words_embeddings[:, max_len_img_cxt+1:]), dim=1)
+            assert max_len_img_cxt == 200, 'only support region attn!'
             position_embeddings = torch.cat((position_embeddings[:, :1], vis_pe,
-                position_embeddings[:, max_len_a+1:]), dim=1) # hacky...
+                position_embeddings[:, max_len_img_cxt+1:]), dim=1) # hacky...
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
         
         embeddings = words_embeddings + position_embeddings + token_type_embeddings
@@ -837,13 +837,13 @@ class BertModel(PreTrainedBertModel):
         return extended_attention_mask
 
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, context_is_img=True, output_all_encoded_layers=True, max_len_a=400):
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, context_is_img=True, output_all_encoded_layers=True, max_len_img_cxt=200):
             
         extended_attention_mask = self.get_extended_attention_mask(
             input_ids, token_type_ids, attention_mask)
 
         # hack to load vis feats
-        embedding_output = self.embeddings(vis_feats, vis_pe, input_ids, token_type_ids, context_is_img=context_is_img, max_len_a=max_len_a)
+        embedding_output = self.embeddings(vis_feats, vis_pe, input_ids, token_type_ids, context_is_img=context_is_img, max_len_img_cxt=max_len_img_cxt)
         encoded_layers = self.encoder(embedding_output,
                                       extended_attention_mask,
                                       output_all_encoded_layers=output_all_encoded_layers)
@@ -1522,7 +1522,7 @@ class BertForSeq2SeqDecoder(PreTrainedBertModel):
 class BertForWebqa(PreTrainedBertModel):
     """refer to BertForPreTraining"""
 
-    def __init__(self, config, num_labels=2, max_len_a=400):
+    def __init__(self, config, num_labels=2, max_len_img_cxt=200):
         super(BertForWebqa, self).__init__(config)
         self.bert = BertModel(config)
         self.cls = BertPreTrainingHeads(
@@ -1531,7 +1531,7 @@ class BertForWebqa(PreTrainedBertModel):
         self.crit_mask_lm = nn.CrossEntropyLoss(reduction='none')
         self.crit_filter = nn.CrossEntropyLoss(reduction='none')
         self.num_labels = num_labels
-        self.max_len_a = max_len_a
+        self.max_len_img_cxt = max_len_img_cxt
         if hasattr(config, 'label_smoothing') and config.label_smoothing:
             self.crit_mask_lm_smoothed = LabelSmoothingLoss(
                 config.label_smoothing, config.vocab_size, ignore_index=0, reduction='none')
@@ -1582,13 +1582,12 @@ class BertForWebqa(PreTrainedBertModel):
         '''
 
         
-        
         if do_filter_task:
             # input_ids.size() = (B, num_choices, max_len)
             num_choices = input_ids.size(1)
             B = input_ids.size(0)
             assert filter_label is not None
-            if context_is_img:
+            if context_is_img[0]:
                 vis_feats = vis_feats.view(B*num_choices, -1)
                 vis_pe = vis_pe.view(B*num_choices, -1)
             input_ids = input_ids.view(B*num_choices, -1)
@@ -1598,7 +1597,7 @@ class BertForWebqa(PreTrainedBertModel):
             def cross_entropy_with_logits_loss(prediction, target, logit_mask):
                 # prediction: batch_size x num_choices
                 # target: batch_size * num_choices. Targets with multiple flags look like: [0,0,1,1,1] (there is no need to normalize them)
-                lp = F.log_softmax(prediction*logit_mask, dim=-1)
+                lp = F.log_softmax(prediction+logit_mask, dim=-1)
                 num_flags = torch.sum(target, dim=-1)
                 labels = target / num_flags.unsqueeze(-1).repeat(1, prediction.size(-1))
                 loss = torch.sum(- lp * labels, dim=-1) * num_flags
@@ -1606,7 +1605,7 @@ class BertForWebqa(PreTrainedBertModel):
             
             
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
-                                            attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_a=self.max_len_a)
+                                            attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
             # calculate classification loss for filter function
             # vqa2_embed = pooled_output
             cls_embed = sequence_output[:, 0] #*sequence_output[:, self.max_len_a+1] 
@@ -1621,7 +1620,7 @@ class BertForWebqa(PreTrainedBertModel):
         else:
             assert masked_lm_labels is not None
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
-                                            attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_a=self.max_len_a)
+                                            attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
             
             def gather_seq_out_by_pos(seq, pos):
                 return torch.gather(seq, 1, pos.unsqueeze(2).expand(-1, -1, seq.size(-1)))
