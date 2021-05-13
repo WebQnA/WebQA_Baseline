@@ -17,7 +17,9 @@ def get_random_word(vocab_words):
 def batch_list_to_batch_tensors(batch):
     batch_tensors = []
     for x in zip(*batch):
-        if isinstance(x[0], torch.Tensor):
+        if x[0] is None:
+            batch_tensors.append(torch.zeros(1))
+        elif isinstance(x[0], torch.Tensor):
             batch_tensors.append(torch.stack(x))
         else:
             batch_tensors.append(torch.tensor(x, dtype=torch.long))

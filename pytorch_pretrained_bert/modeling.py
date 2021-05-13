@@ -26,7 +26,7 @@ from __future__ import print_function
 import os
 import copy
 import json
-import math
+import math, time
 import logging
 import tarfile
 import tempfile
@@ -226,16 +226,20 @@ class BertEmbeddings(nn.Module):
 
         words_embeddings = self.word_embeddings(input_ids)
         position_embeddings = self.position_embeddings(position_ids)
-        
+        #print("\ninput_ids.size() = ", input_ids.size())
+        #print("\nposition_ids.size() = ", position_ids.size())
+        #print("\nvis_feats.size() = ", vis_feats.size())
+        #print("\nvis_pe.size() = ", vis_pe.size())
         if context_is_img: # hard coded! modify here when incorporating snippets as context!!!!
-            
             words_embeddings = torch.cat((words_embeddings[:, :1], vis_feats,
                 words_embeddings[:, max_len_img_cxt+1:]), dim=1)
             assert max_len_img_cxt == 200, 'only support region attn!'
             position_embeddings = torch.cat((position_embeddings[:, :1], vis_pe,
                 position_embeddings[:, max_len_img_cxt+1:]), dim=1) # hacky...
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
-        
+        #print("\nwords_embeddings.size() = ", words_embeddings.size())
+        #print("\nposition_embeddings_size() = ", position_embeddings.size())
+        #print("\ntoken_type_embeddings.size() = ", token_type_embeddings.size())
         embeddings = words_embeddings + position_embeddings + token_type_embeddings
         if self.fp32_embedding:
             embeddings = embeddings.half()
@@ -1114,6 +1118,7 @@ class BertForPreTrainingLossMask(PreTrainedBertModel):
                 masked_lm_loss = self.crit_mask_lm_smoothed(
                     F.log_softmax(prediction_scores_masked.float(), dim=-1), masked_lm_labels)
             else:
+                
                 masked_lm_loss = self.crit_mask_lm(
                     prediction_scores_masked.transpose(1, 2).float(), masked_lm_labels)
             masked_lm_loss = loss_mask_and_normalize(
@@ -1582,17 +1587,17 @@ class BertForWebqa(PreTrainedBertModel):
         '''
 
         
-        if do_filter_task:
+        if do_filter_task[0]:
             # input_ids.size() = (B, num_choices, max_len)
             num_choices = input_ids.size(1)
             B = input_ids.size(0)
             assert filter_label is not None
             if context_is_img[0]:
-                vis_feats = vis_feats.view(B*num_choices, -1)
-                vis_pe = vis_pe.view(B*num_choices, -1)
+                vis_feats = vis_feats.view(B*num_choices, -1, vis_feats.size(-1))
+                vis_pe = vis_pe.view(B*num_choices, -1, vis_pe.size(-1))
             input_ids = input_ids.view(B*num_choices, -1)
             token_type_ids = token_type_ids.view(B*num_choices, -1)
-            attention_mask = attention_mask.view(B*num_choices, -1)
+            attention_mask = attention_mask.view(B*num_choices, -1, attention_mask.size(-1))
 
             def cross_entropy_with_logits_loss(prediction, target, logit_mask):
                 # prediction: batch_size x num_choices
@@ -1625,33 +1630,33 @@ class BertForWebqa(PreTrainedBertModel):
             def gather_seq_out_by_pos(seq, pos):
                 return torch.gather(seq, 1, pos.unsqueeze(2).expand(-1, -1, seq.size(-1)))
 
-            def mlmloss_mask_and_normalize(loss, mask, do_filter_task, drop_worst_ratio):
-                drop_worst_ratio = 0.3
+            def mlmloss_mask_and_normalize(loss, mask, drop_worst_ratio):
                 mask = mask.type_as(loss) # B x max_pred?
-                filter_mask = torch.ones(mask.size())
-                filter_mask[do_filter_task.nonzero().squeeze(1), :] = 0
-                filter_mask = filter_mask.type_as(loss)
-                loss = loss * mask * filter_mask
+                #filter_mask = torch.ones(mask.size())
+                #filter_mask[do_filter_task.nonzero().squeeze(1), :] = 0
+                #filter_mask = filter_mask.type_as(loss)
+                loss = loss * mask
 
                 # Ruotian Luo's drop worst (drop batches with worst losses)
                 # <less_than_B> x max_pred
                 keep_loss, keep_ind = torch.topk(loss.sum(-1), int(loss.size(0)*(1-drop_worst_ratio)), largest=False)
-
+                print("\nkeep_loss = ", keep_loss)
                 # denominator = torch.sum(mask) + 1e-5
                 # return (loss / denominator).sum()
                 # each batch has different number of actual predictions
                 # divide by total num_actual_predictions across all survived batches
                 # losses on the placeholder tokens should be zero, still being zero after divided by 1e-5
                 denominator = torch.sum(mask.sum(-1)[keep_ind]) + 1e-5
-                #print("denominator.size() = ", denominator.size())
-                return (keep_loss / denominator).sum() # sum losses over <less_than_B> batches
 
+                print("denominator = ", denominator)
+                return (keep_loss / denominator).sum() # sum losses over <less_than_B> batches
+            '''
             def clfloss_mask_and_normalize(loss, do_filter_task):
                 filter_mask = torch.zeros(loss.size())
                 filter_mask[do_filter_task.nonzero().squeeze(1)] = 1.
                 filter_mask = filter_mask.type_as(loss)
                 return (loss*filter_mask).mean()
-            
+            '''
             # masked lm
             sequence_output_masked = gather_seq_out_by_pos(sequence_output, masked_pos) # B x max_pred x hidden
             prediction_scores_masked, _ = self.cls(
@@ -1660,10 +1665,13 @@ class BertForWebqa(PreTrainedBertModel):
                 masked_lm_loss = self.crit_mask_lm_smoothed(
                     F.log_softmax(prediction_scores_masked.float(), dim=-1), masked_lm_labels)
             else:
+                print("\nprediction_scores_maksed.transpose(1,2) size = ", prediction_scores_masked.transpose(1, 2).float().size())
+                print("\nmasked_lm_labels.size() = ", masked_lm_labels.size())
                 masked_lm_loss = self.crit_mask_lm(
                     prediction_scores_masked.transpose(1, 2).float(), masked_lm_labels)
-            masked_lm_loss = mlmloss_mask_and_normalize(masked_lm_loss.float(), masked_weights, do_filter_task, drop_worst_ratio)
-
+            masked_lm_loss = mlmloss_mask_and_normalize(masked_lm_loss.float(), masked_weights, drop_worst_ratio)
+            cls_loss= masked_lm_loss.new(1).fill_(0)
+            return masked_lm_loss, cls_loss
         ''' 
         # deprecated
         # vis_feats, vis_pe have been projected to hidden_size dim

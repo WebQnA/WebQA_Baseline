@@ -111,10 +111,12 @@ class BertTokenizer(object):
     def convert_tokens_to_ids(self, tokens):
         """Converts a sequence of tokens into ids using the vocab."""
         ids = []
+        #print(len(tokens))
+        #if len(tokens)<200: print(tokens)
         for token in tokens:
             if token not in self.vocab:
-                print(token)
-                raise
+                print("\nproblematic tokens = ", tokens)
+                raise ValueError("token not in self.vocab ", token)
             ids.append(self.vocab[token])
         if len(ids) > self.max_len:
             raise ValueError(

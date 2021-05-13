@@ -55,6 +55,7 @@ def _get_loader_from_dataset(train_dataset, world_size, train_batch_size, num_wo
     train_dataloader = torch.utils.data.DataLoader(train_dataset,
         batch_size=train_batch_size, sampler=train_sampler, num_workers=num_workers,
         collate_fn=collate_fn, pin_memory=True)
+    return train_dataloader
 
 def main():
     parser = argparse.ArgumentParser()
@@ -123,7 +124,7 @@ def main():
                         help="random seed for initialization")
     parser.add_argument('--gradient_accumulation_steps',
                         type=int,
-                        default=4,
+                        default=8,
                         help="Number of updates steps to accumulate before performing a backward/update pass.")
     parser.add_argument('--fp16', action='store_true',
                         help="Whether to use 16-bit float precision instead of 32-bit")
@@ -167,7 +168,7 @@ def main():
     parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0501-Copy1.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
-    parser.add_argument('--img_metadata_path', type=int, default=-1, help="how many samples should be loaded into memory")
+    parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
     parser.add_argument('--answer_provided_by', type=str, default="img|txt")
     parser.add_argument('--task_to_learn', type=str, default="filter|qa")
@@ -319,10 +320,12 @@ def main():
 
         
     loader_lengths = [len(l) for l in train_dataloaders]
+    print("\nnbatches = ", sum(loader_lengths))
     train_dataloader_order = []
     for i in range(len(loader_lengths)):
         train_dataloader_order.extend([i] * loader_lengths[i])
-    train_dataloader_order = random.shuffle(train_dataloader_order)
+    random.shuffle(train_dataloader_order)
+    print("\ntrain_dataloader_order = ", train_dataloader_order)
     # The actual number of params updates
     t_total = int(sum(loader_lengths) * args.num_train_epochs * 1. / args.gradient_accumulation_steps)
 
@@ -376,7 +379,7 @@ def main():
                 config_path=args.config_path, task_idx=task_idx_proj,
                 max_position_embeddings=args.max_position_embeddings, label_smoothing=args.label_smoothing,
                 fp32_embedding=args.fp32_embedding, cache_dir=args.output_dir+'/.pretrained_model_{}'.format(args.global_rank),
-                drop_prob=args.drop_prob, max_len_a=args.max_len_a)
+                drop_prob=args.drop_prob, max_len_img_cxt=args.max_len_img_cxt)
         else:
             model = BertForSeq2SeqDecoder.from_pretrained(args.bert_model,
                 max_position_embeddings=args.max_position_embeddings, config_path=args.config_path,
@@ -477,7 +480,8 @@ def main():
                 train_sampler.set_epoch(i_epoch-1)
             iter_bar = tqdm(train_dataloader_order, desc='Iter (loss=X.XXX), loader_idx=X') 
             nbatches = sum(loader_lengths)
-            train_loss = []
+            
+            qa_loss = []
             filter_loss = []
             scst_reward = []
             for step, loader_idx in enumerate(iter_bar):
@@ -504,14 +508,14 @@ def main():
                     masked_lm_loss = masked_lm_loss.mean()
                     cls_loss = cls_loss.mean()
                 loss = masked_lm_loss + cls_loss
-
+                #print("\n", loss.item())
                 # logging for each step (i.e., before normalization by args.gradient_accumulation_steps)
-                iter_bar.set_description('Iter (loss={:.3f}) loader_idx='.format(loss.item(), loader_idx))
-                train_loss.append(loss.item())
+                iter_bar.set_description('Iter (loss={:.3f}) loader_idx={}'.format(loss.item(), loader_idx))
+                qa_loss.append(masked_lm_loss.item())
                 filter_loss.append(cls_loss.item())
                 scst_reward.append(mean_reward.item())
                 if step%100 == 0:
-                    logger.info("Epoch {}, Iter {}, Loss {:.2f}, Filter {:.2f}, Mean R {:.3f}\n".format(i_epoch, step, np.mean(train_loss), np.mean(filter_loss), np.mean(scst_reward)))
+                    logger.info("Epoch {}, Iter {}, Loss {:.2f}, Filter {:.2f}, Mean R {:.3f}\n".format(i_epoch, step, np.mean(qa_loss), np.mean(filter_loss), np.mean(scst_reward)))
 
                 if args.enable_visdom:
                     if vis_window['iter'] is None:
@@ -559,6 +563,8 @@ def main():
                     optimizer.zero_grad()
                     global_step += 1
 
+            print(qa_loss)
+            print(filter_loss)
             # Save a trained model
             logger.info(
                 "** ** * Saving fine-tuned model and optimizer ** ** * ")

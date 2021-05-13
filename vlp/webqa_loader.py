@@ -2,7 +2,7 @@ import random
 from random import randint, shuffle, choices
 from random import random as rand
 import pickle
-import math
+import math, time
 import json
 from collections import namedtuple
 import torch
@@ -200,7 +200,7 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                         gold_feature_paths.append(image_feature_path)
                         img_meta_key = str(int(im))
                         cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
-                        cxt = cxt.replace("_", " ").strip()
+                        cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
                         gold_cxt_list.append(cxt)
 
                     for im in datum['DistractorIds']:
@@ -208,7 +208,7 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                         if os.path.exists(image_feature_path):
                             img_meta_key = str(int(im))
                             cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
-                            cxt = self.tokenizer(cxt.replace("_", " ").strip())
+                            cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
                             distractor_feature_paths.append(image_feature_path)
                             distractor_cxt_list.append(cxt)
                     self.instance_list.append((gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, True, True)) # do_filter_task, context_is_img
@@ -278,7 +278,7 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
                         gold_feature_paths.append(image_feature_path)
                         img_meta_key = str(int(im))
                         cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
-                        cxt = self.tokenizer(cxt.replace("_", " ").strip())
+                        cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
                         gold_cxt_list.append(cxt)
                     self.instance_list.append((gold_feature_paths, [], gold_cxt_list, [], Q, A, False, True)) # do_filter_task, context_is_img )
                     count += 1
@@ -325,7 +325,7 @@ class Preprocess4webqa(Pipeline):
         assert max_len_a+max_len_b <= max_len, "loader Processor: max_len_a + max_len_b > max_len"
 
     def __call__(self, instance, filter_num_choices=None, device=None):
-        
+        _, __, ___, ____, _____, ______, do_filter_task, context_is_img = instance
         if do_filter_task:
             assert filter_num_choices is not None, "must pass in a valid filter_num_choices when doing filter task"
             if context_is_img:
@@ -357,7 +357,7 @@ class Preprocess4webqa(Pipeline):
                     #n_pad = self.max_len_a+1 - len(tokens_a) # +1 for the middle SEP
                     #tokens_a.extend(['[PAD]'] * n_pad)
                     tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
-                    
+                    #print(tokens)
                     if self.new_segment_ids:
                         segment_ids = [4] * (len(tokens_a)+2) + [5] * (len(tokens_b)+1)
                     else:
@@ -381,7 +381,7 @@ class Preprocess4webqa(Pipeline):
                     segment_ids.extend([0] * n_pad)
 
                     try:
-                        with open(img_path, "wb") as f:
+                        with open(img_path, "rb") as f:
                             features = pickle.load(f)
                     except:
                         print("can't load pickle file: ", img_path)
@@ -411,8 +411,8 @@ class Preprocess4webqa(Pipeline):
                     vis_pe = torch.cat((vis_pe, pe_pad), dim=0)
                     assert vis_pe.size(0) == self.max_len_img_cxt
                     assert img.size(0) == self.max_len_img_cxt
-                    input_ids_list.append(input_ids)
-                    segment_ids_list.append(segment_ids)
+                    input_ids_list.append(torch.tensor(input_ids))
+                    segment_ids_list.append(torch.tensor(segment_ids))
                     input_mask_list.append(input_mask)
                     img_list.append(img)
                     vis_pe_list.append(vis_pe)
@@ -431,9 +431,10 @@ class Preprocess4webqa(Pipeline):
                 input_mask = torch.stack(input_mask_list, dim=0)
                 img = torch.stack(img_list, dim=0)
                 vis_pe = torch.stack(vis_pe_list, dim=0)
-                
+                logit_mask = torch.tensor(logit_mask)
+                label = torch.tensor(label)
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img)
-                return (input_ids, segment_ids, input_mask,       None,       None,       None,       -1,       do_filter_task,       label,       logit_mask, self.task_idx, img, vis_pe, , context_is_img)
+                return (input_ids, segment_ids, input_mask,       None,       None,       None,       -1,       do_filter_task,       label,       logit_mask, self.task_idx, img, vis_pe, context_is_img)
 
             else: # do_filter_task && context_is_text
                 gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
@@ -467,8 +468,8 @@ class Preprocess4webqa(Pipeline):
                     input_ids.extend([0] * n_pad)
                     segment_ids.extend([0] * n_pad)
 
-                    input_ids_list.append(input_ids)
-                    segment_ids_list.append(segment_ids)
+                    input_ids_list.append(torch.tensor(input_ids))
+                    segment_ids_list.append(torch.tensor(segment_ids))
                     input_mask_list.append(input_mask)
 
                 logit_mask = [1.] * len(input_ids_list)
@@ -482,6 +483,8 @@ class Preprocess4webqa(Pipeline):
                 input_ids = torch.stack(input_ids_list, dim=0) # 不确定，stack可能需要在collator里面操作
                 segment_ids = torch.stack(segment_ids_list, dim=0)
                 input_mask = torch.stack(input_mask_list, dim=0)
+                logit_mask = torch.tensor(logit_mask)
+                label = torch.tensor(label)
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img)
                 return (input_ids, segment_ids, input_mask,       None,        None,        None,         -1,         do_filter_task,        label, logit_mask, self.task_idx, None, None, context_is_img)
                 raise NotImplementedError
@@ -491,16 +494,18 @@ class Preprocess4webqa(Pipeline):
                 gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
                 tokens_b = Q+A
-                truncate_tokens_pair((tokens_a, tokens_b, max_len=self.max_len_img_cxt + self.max_len_b, max_len_a=self.max_len_img_cxt, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail))
+                truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_img_cxt + self.max_len_b, max_len_a=self.max_len_img_cxt, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
                 tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
-
+                #print("\nnum_gold = ", len(gold_feature_paths))
+                #print("\n")
+                time.sleep(2)
                 if self.new_segment_ids:
                     segment_ids = [4] * (len(tokens_a)+2) + [5] * (len(tokens_b)+1)
                 else:
                     segment_ids = [0] * (len(tokens_a)+2) + [1] * (len(tokens_b)+1)
 
                 effective_len_A = len(A)
-                n_pred = min(self.max_pred, max(1, int(round(effective_length * self.mask_prob))))
+                n_pred = min(self.max_pred, max(1, int(round(effective_len_A * self.mask_prob))))
                 cand_pos = []
                 for i, tk in enumerate(tokens):
                     # only mask tk in A
@@ -517,6 +522,7 @@ class Preprocess4webqa(Pipeline):
                         tokens[pos] = get_random_word(self.vocab_words)
 
                 masked_weights = [1] * len(masked_tokens)
+                masked_ids = self.indexer(masked_tokens)
 
                 input_ids = self.indexer(tokens)
                 n_pad = self.max_len - len(input_ids)
@@ -525,7 +531,7 @@ class Preprocess4webqa(Pipeline):
 
                 # self-attention mask
                 num_img = len(gold_feature_paths)
-                input_mask = torch.zero(self.max_len, self.max_len, dtype=torch.long)
+                input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
 
                 img_end_pos = 1 + self.len_vis_input*num_img
                 input_mask[:, img_end_pos].fill_(1)
@@ -547,10 +553,10 @@ class Preprocess4webqa(Pipeline):
                 for img_path in gold_feature_paths:
                     assert os.path.exists(img_path), "loader Processor: .pkl file doesn't exist! {}".format(img_path)
                     try:
-                        with open(c, "rb") as f:
+                        with open(img_path, "rb") as f:
                             features = pickle.load(f)
                     except:
-                        print(c)
+                        print(img_path)
                         raise
                     img = features['fc1_features'].detach().cpu().float()
                     cls_label = features['cls_features'].detach().cpu().float()
@@ -576,12 +582,12 @@ class Preprocess4webqa(Pipeline):
                 img = torch.cat(img_list, dim=0)
                 vis_pe = torch.cat(vis_pe_list, dim=0)
                 assert img.size(0) == vis_pe.size(0), "img features and vis_pe should have the same token length!"
-                vis_pad = torch.zeros((self.max_len_a - img.size(0), img.size(-1)))#.to(device)
+                vis_pad = torch.zeros((self.max_len_img_cxt - img.size(0), img.size(-1)))#.to(device)
                 img = torch.cat((img, vis_pad), dim=0)
-                vis_pad = torch.zeros((self.max_len_a - vis_pe.size(0), vis_pe.size(-1)))#.to(device)
+                vis_pad = torch.zeros((self.max_len_img_cxt - vis_pe.size(0), vis_pe.size(-1)))#.to(device)
                 vis_pe = torch.cat((vis_pe, vis_pad), dim=0)
-                assert vis_pe.size(0) == self.max_len_a
-                assert img.size(0) == self.max_len_a
+                assert vis_pe.size(0) == self.max_len_img_cxt
+                assert img.size(0) == self.max_len_img_cxt
 
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img)
                 return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,      -1,      do_filter_task,        None,        None, self.task_idx, img, vis_pe, context_is_img)
@@ -600,7 +606,7 @@ class Preprocess4webqa(Pipeline):
                     segment_ids = [0] * (len(tokens_a)+2) + [1] * (len(tokens_b)+1)
 
                 effective_len_A = len(A)
-                n_pred = min(self.max_pred, max(1, int(round(effective_length * self.mask_prob))))
+                n_pred = min(self.max_pred, max(1, int(round(effective_len_A * self.mask_prob))))
                 cand_pos = []
                 for i, tk in enumerate(tokens):
                     # only mask tk in A
@@ -617,13 +623,14 @@ class Preprocess4webqa(Pipeline):
                         tokens[pos] = get_random_word(self.vocab_words)
 
                 masked_weights = [1] * len(masked_tokens)
+                masked_ids = self.indexer(masked_tokens)
 
                 input_ids = self.indexer(tokens)
                 n_pad = self.max_len - len(input_ids)
                 input_ids.extend([0] * n_pad)
                 segment_ids.extend([0] * n_pad)
 
-                input_mask = torch.zero(self.max_len, self.max_len, dtype=torch.long)
+                input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
                 input_mask[:, len(tokens_a)+2+len(Q)].fill_(1)
                 st, end = 2 + len(tokens_a) + len(Q), len(tokens)
                 input_mask[pred_st:pred_end, pred_st:pred_end].copy_(self._tril_matrix[:pred_end-pred_st, :pred_end-pred_st])
@@ -638,7 +645,7 @@ class Preprocess4webqa(Pipeline):
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img)
                 return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,       -1,      do_filter_task,      None,      None,       self.task_idx, None, None, context_is_img)
                 raise NotImplementedError
-
+        '''
         if context_is_img:
             tokens_a = ['[UNK]'] * (self.len_vis_input*len(context))
         else:
@@ -755,7 +762,7 @@ class Preprocess4webqa(Pipeline):
             assert vis_pe.size(0) == self.max_len_a
             assert img.size(0) == self.max_len_a
         return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, -1, do_filter_task, is_distractor, self.task_idx, img, vis_pe, context_is_img)
-
+        '''
 
         
 
