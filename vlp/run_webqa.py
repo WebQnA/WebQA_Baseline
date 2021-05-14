@@ -74,6 +74,7 @@ def main():
                         type=str,
                         help="The output directory where the log will be written.")
     parser.add_argument("--model_recover_path",
+                        #default=None,
                         default="/home/yingshac/CYS/WebQnA/cpts/cc_g8_lr1e-4_batch512_s0.75_b0.25/model.30.bin",
                         type=str,
                         help="The file of fine-tuned pretraining model.")
@@ -173,8 +174,8 @@ def main():
     parser.add_argument('--answer_provided_by', type=str, default="img|txt")
     parser.add_argument('--task_to_learn', type=str, default="filter|qa")
 
-    parser.add_argument('--txt_filter_num_choices', type=int, default=3)
-    parser.add_argument('--img_filter_num_choices', type=int, default=10)
+    parser.add_argument('--txt_filter_max_choices', type=int, default=7)
+    parser.add_argument('--img_filter_max_choices', type=int, default=10)
     
     # Others for VLP
     parser.add_argument("--src_file", default=['/mnt/dat/COCO/annotations/dataset_coco.json'],
@@ -288,7 +289,7 @@ def main():
         if "txt" in args.answer_provided_by:
             train_dataset = webqa_loader.webqaDataset_filter(dataset_json_path=args.txt_dataset_json_path, split=args.split, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
-                    processor=processor, filter_num_choices=args.txt_filter_num_choices, device=device)
+                    processor=processor, filter_max_choices=args.txt_filter_max_choices, device=device)
 
             train_dataloader = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
             train_dataloaders.append(train_dataloader)
@@ -297,7 +298,7 @@ def main():
             train_dataset = webqa_loader.webqaDataset_filter_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
                     distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
-                    processor=processor, filter_num_choices=args.img_filter_num_choices, device=device)
+                    processor=processor, filter_max_choices=args.img_filter_max_choices, device=device)
             train_dataloader = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
             train_dataloaders.append(train_dataloader)
     
@@ -337,6 +338,7 @@ def main():
 
     # Prepare model
     recover_step = _get_max_epoch_model(args.output_dir)
+    recover_step = None
     cls_num_labels = 2
     type_vocab_size = 6 if args.new_segment_ids else 2
     relax_projection = 4 if args.relax_projection else 0
@@ -445,7 +447,8 @@ def main():
                              lr=args.learning_rate,
                              warmup=args.warmup_proportion,
                              schedule=args.sche_mode,
-                             t_total=t_total)
+                             t_total=t_total,
+                             weight_decay = args.weight_decay)
 
     if recover_step:
         logger.info("***** Recover optimizer: %d *****", recover_step)
@@ -463,6 +466,8 @@ def main():
 
     if args.do_train:
         print("start training")
+        for param_tensor in model.state_dict():
+            print(param_tensor, "\t", model.state_dict()[param_tensor].size())
         logger.info("***** Running training *****")
         logger.info("  Batch size = %d", args.train_batch_size)
         logger.info("  Num steps = %d", t_total)
@@ -486,6 +491,12 @@ def main():
             scst_reward = []
             for step, loader_idx in enumerate(iter_bar):
                 batch = next(dataloader_iters[loader_idx])
+                print("\nlr = ", optimizer.get_lr())
+                print("\n")
+                #if step < 86: continue
+                for param_tensor in model.state_dict():
+                    if torch.isnan(model.state_dict()[param_tensor]).any().item():
+                        print("\n nan exists in ", param_tensor)
                 batch = [t.to(device) for t in batch]
                 input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, task_idx, img, vis_pe, context_is_img = batch
                 if args.fp16:
@@ -576,7 +587,7 @@ def main():
                 args.output_dir, "optim.{0}.bin".format(i_epoch))
             if args.global_rank in (-1, 0): # save model if the first device or no dist
                 torch.save(copy.deepcopy(model_to_save).cpu().state_dict(), output_model_file)
-                # torch.save(optimizer.state_dict(), output_optim_file) # disable for now, need to sanitize state and ship everthing back to cpu
+                torch.save(optimizer.state_dict(), output_optim_file) # disable for now, need to sanitize state and ship everthing back to cpu
 
             logger.info("***** CUDA.empty_cache() *****")
             torch.cuda.empty_cache()

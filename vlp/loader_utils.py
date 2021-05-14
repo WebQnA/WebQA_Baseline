@@ -21,6 +21,7 @@ def batch_list_to_batch_tensors(batch):
             batch_tensors.append(torch.zeros(1))
         elif isinstance(x[0], torch.Tensor):
             batch_tensors.append(torch.stack(x))
+            
         else:
             batch_tensors.append(torch.tensor(x, dtype=torch.long))
     return batch_tensors
