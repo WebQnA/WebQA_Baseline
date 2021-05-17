@@ -105,6 +105,9 @@ class DataParallelImbalance(DataParallel):
         if len(self.device_ids) == 1:
             return self.module(*inputs[0], **kwargs[0])
         replicas = self.replicate(self.module, self.device_ids[:len(inputs)])
+        #print("\n In misc, ")
+        #print(inputs)
+        #print(kwargs)
         outputs = self.parallel_apply(replicas, inputs, kwargs)
         return self.gather(outputs, self.output_device)
 

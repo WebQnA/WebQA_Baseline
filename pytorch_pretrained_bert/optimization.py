@@ -95,11 +95,17 @@ class BertAdam(Optimizer):
 
     def get_lr(self):
         lr = []
+        #print("\n\t ------------------self.param_groups------------------------- \t\n")
+        #print(self.param_groups)
+        #print("\n\t ------------------self.state ------------------------- \t\n")
+        #print(self.state)
         for group in self.param_groups:
             for p in group['params']:
                 state = self.state[p]
-                if len(state) == 0:
-                    return [0]
+                #if len(state) == 0:
+                    #print("\n", group)
+                    #print("Hello")
+                    #return [0]
                 if group['t_total'] != -1:
                     schedule_fct = SCHEDULES[group['schedule']]
                     lr_scheduled = group['lr'] * schedule_fct(

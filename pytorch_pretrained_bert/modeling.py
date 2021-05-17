@@ -176,20 +176,21 @@ try:
 except ImportError:
     print("Better speed can be achieved with apex installed from https://www.github.com/nvidia/apex.")
 
-    class BertLayerNorm(nn.Module):
-        def __init__(self, hidden_size, eps=1e-5):
-            """Construct a layernorm module in the TF style (epsilon inside the square root).
-            """
-            super(BertLayerNorm, self).__init__()
-            self.weight = nn.Parameter(torch.ones(hidden_size))
-            self.bias = nn.Parameter(torch.zeros(hidden_size))
-            self.variance_epsilon = eps
+class BertLayerNorm(nn.Module):
+    def __init__(self, hidden_size, eps=1e-5):
+        """Construct a layernorm module in the TF style (epsilon inside the square root)."""
+        super(BertLayerNorm, self).__init__()
+        self.weight = nn.Parameter(torch.ones(hidden_size))
+        self.bias = nn.Parameter(torch.zeros(hidden_size))
+        self.variance_epsilon = eps
 
-        def forward(self, x):
-            u = x.mean(-1, keepdim=True)
-            s = (x - u).pow(2).mean(-1, keepdim=True)
-            x = (x - u) / torch.sqrt(s + self.variance_epsilon)
-            return self.weight * x + self.bias
+    def forward(self, x):
+        u = x.mean(-1, keepdim=True)
+        s = (x - u).pow(2).mean(-1, keepdim=True)
+        x = (x - u) / torch.sqrt(s + self.variance_epsilon)
+        #print("Hello")
+        #if torch.isnan(self.weight).any().item(): print( "nan exists in layerNorm forward() !!! ")
+        return self.weight * x + self.bias
 
 
 class BertEmbeddings(nn.Module):
@@ -1568,7 +1569,9 @@ class BertForWebqa(PreTrainedBertModel):
         #self.context_crit = nn.BCEWithLogitsLoss()
 
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=False, filter_label=None, logit_mask=None, context_is_img=True, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2):
+    def forward(self, vis_feats=None, vis_pe=None, input_ids=None, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=None, filter_label=None, logit_mask=None, context_is_img=None, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2):
+        #print("\n")
+        #print(context_is_img)
         if context_is_img[0]: 
             vis_feats = self.vis_embed(vis_feats) # image region features Bx100xhidden_size
             vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings Bx100xhidden_size
@@ -1604,8 +1607,11 @@ class BertForWebqa(PreTrainedBertModel):
                 # target: batch_size * num_choices. Targets with multiple flags look like: [0,0,1,1,1] (there is no need to normalize them)
                 lp = F.log_softmax(prediction+logit_mask, dim=-1)
                 num_flags = torch.sum(target, dim=-1)
+                num_flags = torch.max(num_flags, torch.ones_like(num_flags))
                 labels = target / num_flags.unsqueeze(-1).repeat(1, prediction.size(-1))
-                loss = torch.sum(- lp * labels, dim=-1) * num_flags
+                m = lp * labels
+                m = torch.where(torch.isnan(m), torch.zeros_like(m), m)
+                loss = torch.sum(- m, dim=-1) * num_flags
                 return torch.mean(loss)
             
             
@@ -1635,20 +1641,28 @@ class BertForWebqa(PreTrainedBertModel):
                 #filter_mask = torch.ones(mask.size())
                 #filter_mask[do_filter_task.nonzero().squeeze(1), :] = 0
                 #filter_mask = filter_mask.type_as(loss)
+                #print("\nloss before multiplying mask = ", loss)
                 loss = loss * mask
 
                 # Ruotian Luo's drop worst (drop batches with worst losses)
                 # <less_than_B> x max_pred
                 keep_loss, keep_ind = torch.topk(loss.sum(-1), int(loss.size(0)*(1-drop_worst_ratio)), largest=False)
-                print("\nkeep_loss = ", keep_loss)
+                #print("\nkeep_loss = ", keep_loss)
                 # denominator = torch.sum(mask) + 1e-5
                 # return (loss / denominator).sum()
                 # each batch has different number of actual predictions
                 # divide by total num_actual_predictions across all survived batches
                 # losses on the placeholder tokens should be zero, still being zero after divided by 1e-5
-                denominator = torch.sum(mask.sum(-1)[keep_ind]) + 1e-5
 
-                print("denominator = ", denominator)
+                try: 
+                    denominator = torch.sum(torch.sum(mask, dim=-1)[keep_ind]) + 1e-5
+                except:
+                    print("keep_ind = ", keep_ind)
+                    print("loss.size() = ", loss.size())
+                    print("loss = ", loss)
+                    raise
+
+                #print("denominator = ", denominator)
                 return (keep_loss / denominator).sum() # sum losses over <less_than_B> batches
             '''
             def clfloss_mask_and_normalize(loss, do_filter_task):
@@ -1658,6 +1672,7 @@ class BertForWebqa(PreTrainedBertModel):
                 return (loss*filter_mask).mean()
             '''
             # masked lm
+            if torch.isnan(sequence_output).any().item(): print("\nsequence_output is nan !!")
             sequence_output_masked = gather_seq_out_by_pos(sequence_output, masked_pos) # B x max_pred x hidden
             prediction_scores_masked, _ = self.cls(
                 sequence_output_masked, pooled_output, task_idx=task_idx) # B x max_pred x vocab_size
@@ -1665,12 +1680,13 @@ class BertForWebqa(PreTrainedBertModel):
                 masked_lm_loss = self.crit_mask_lm_smoothed(
                     F.log_softmax(prediction_scores_masked.float(), dim=-1), masked_lm_labels)
             else:
-                print("\nprediction_scores_maksed.transpose(1,2) size = ", prediction_scores_masked.transpose(1, 2).float().size())
-                print("\nmasked_lm_labels.size() = ", masked_lm_labels.size())
+                #print("\nprediction_scores_maksed.transpose(1,2) size = ", prediction_scores_masked.transpose(1, 2).float().size())
                 masked_lm_loss = self.crit_mask_lm(
                     prediction_scores_masked.transpose(1, 2).float(), masked_lm_labels)
+            if torch.isnan(prediction_scores_masked).any().item(): print("\nprediction_scores_masked is nan !!!!!! ")
             masked_lm_loss = mlmloss_mask_and_normalize(masked_lm_loss.float(), masked_weights, drop_worst_ratio)
             cls_loss= masked_lm_loss.new(1).fill_(0)
+            #print("\n ----------------- before returning from forward(), masked_lm_loss = --------------------")
             return masked_lm_loss, cls_loss
         ''' 
         # deprecated

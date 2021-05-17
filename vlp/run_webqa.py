@@ -5,11 +5,12 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+#os.environ['MASTER_PORT'] = '8888'
 import sys
 sys.path.append("/home/yingshac/CYS/WebQnA/VLP")
 import logging
 import glob
-import math
+import math, time
 import json
 import argparse
 from tqdm import tqdm, trange
@@ -18,7 +19,7 @@ import numpy as np
 import torch
 import torch.multiprocessing as mp
 mp.set_start_method('spawn', force=True)
-from torch.utils.data import DataLoader, RandomSampler
+from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 import random
 import copy
@@ -49,7 +50,9 @@ def _get_max_epoch_model(output_dir):
 
 def _get_loader_from_dataset(train_dataset, world_size, train_batch_size, num_workers, collate_fn):
     if world_size == 1:
-        train_sampler = RandomSampler(train_dataset, replacement=False)
+        #train_sampler = RandomSampler(train_dataset, replacement=False)
+        print("\nSequentialSampler")
+        train_sampler = SequentialSampler(train_dataset)
     else:
         train_sampler = DistributedSampler(train_dataset)
     train_dataloader = torch.utils.data.DataLoader(train_dataset,
@@ -370,6 +373,7 @@ def main():
             global_step = math.floor(
                 recover_step * t_total * 1. / args.num_train_epochs)
         elif args.model_recover_path:
+            print("------------------ recover from path ----------------------")
             logger.info("***** Recover model: %s *****",
                         args.model_recover_path)
             model_recover = torch.load(args.model_recover_path)
@@ -410,9 +414,9 @@ def main():
                 "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
         model = DDP(model, device_ids = [args.local_rank], output_device = args.local_rank, find_unused_parameters=True)
     elif n_gpu > 1:
-        # model = torch.nn.DataParallel(model)
-        pass
-        #model = DataParallelImbalance(model)
+        #model = torch.nn.DataParallel(model)
+        #pass
+        model = DataParallelImbalance(model, device_ids=[0,1,2,3])
 
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())
@@ -443,12 +447,13 @@ def main():
             optimizer = FP16_Optimizer_State(
                 optimizer, static_loss_scale=args.loss_scale)
     else:
-        optimizer = BertAdam(optimizer_grouped_parameters,
-                             lr=args.learning_rate,
-                             warmup=args.warmup_proportion,
-                             schedule=args.sche_mode,
-                             t_total=t_total,
-                             weight_decay = args.weight_decay)
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+        #optimizer = BertAdam(optimizer_grouped_parameters,
+                             #lr=args.learning_rate,
+                             #warmup=args.warmup_proportion,
+                             #schedule=args.sche_mode,
+                             #t_total=t_total,
+                             #weight_decay = args.weight_decay)
 
     if recover_step:
         logger.info("***** Recover optimizer: %d *****", recover_step)
@@ -466,8 +471,8 @@ def main():
 
     if args.do_train:
         print("start training")
-        for param_tensor in model.state_dict():
-            print(param_tensor, "\t", model.state_dict()[param_tensor].size())
+        #for param_tensor in model.state_dict():
+            #print(param_tensor, "\t", model.state_dict()[param_tensor].size())
         logger.info("***** Running training *****")
         logger.info("  Batch size = %d", args.train_batch_size)
         logger.info("  Num steps = %d", t_total)
@@ -488,12 +493,14 @@ def main():
             
             qa_loss = []
             filter_loss = []
+            loss_dict = [[],[],[],[]]
             scst_reward = []
             for step, loader_idx in enumerate(iter_bar):
                 batch = next(dataloader_iters[loader_idx])
-                print("\nlr = ", optimizer.get_lr())
-                print("\n")
-                #if step < 86: continue
+                #print("\nlr = ", optimizer.get_lr())
+                #print("\noptimizer.state_dict() = ", optimizer.state_dict())
+                #print("\n")
+                #if step < 80: continue
                 for param_tensor in model.state_dict():
                     if torch.isnan(model.state_dict()[param_tensor]).any().item():
                         print("\n nan exists in ", param_tensor)
@@ -507,10 +514,10 @@ def main():
                 vis_pe = vis_pe.data
 
                 # doesn't support scst training for not
-                loss_tuple = model(conv_feats, vis_pe, input_ids, segment_ids, input_mask, masked_ids, \
-                        do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
-                        next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx,\
-                        drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0)
+                loss_tuple = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
+                    masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
+                        next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
+                            drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0)
                 mean_reward = loss_tuple[0].new(1).fill_(0)
 
                 # disable pretext_loss_deprecated for now
@@ -524,7 +531,12 @@ def main():
                 iter_bar.set_description('Iter (loss={:.3f}) loader_idx={}'.format(loss.item(), loader_idx))
                 qa_loss.append(masked_lm_loss.item())
                 filter_loss.append(cls_loss.item())
+                loss_dict[loader_idx].append(loss.item())
                 scst_reward.append(mean_reward.item())
+                #print("\n ---------------------- loss.grad ------------------------ \n")
+                #for name, parms in model.named_parameters():
+                    #print('-->name:', name, '-->grad_requirs:',parms.requires_grad, ' -->grad_value:',parms.grad)
+                
                 if step%100 == 0:
                     logger.info("Epoch {}, Iter {}, Loss {:.2f}, Filter {:.2f}, Mean R {:.3f}\n".format(i_epoch, step, np.mean(qa_loss), np.mean(filter_loss), np.mean(scst_reward)))
 
@@ -571,11 +583,37 @@ def main():
                         for param_group in optimizer.param_groups:
                             param_group['lr'] = lr_this_step
                     optimizer.step()
+                    #if step>0:
+                        #time.sleep(1)
+                        #flat_grads = torch.cat([parms.grad.view(-1) for name, parms in model.named_parameters() if parms.grad is not None])
+                        #print(torch.max(flat_grads))
+                        #print(torch.min(flat_grads))
+                        #flat_grads = torch.cat([x.grad.detach().cpu().view(-1) for x in optimizer.param_groups[0]['params'] if x.grad is not None], dim=0)
+                        #print(torch.sum(torch.isnan(flat_grads)))
+                        #print(torch.max(flat_grads))
+                        #print(torch.min(flat_grads))
+                        #print(torch.mean(flat_grads))
+
+                        #flat_parms = torch.cat([parms.data.view(-1) for name, parms in model.named_parameters() if parms.data is not None], dim=0)
+                        #print(len([parms.data.view(-1) for name, parms in model.named_parameters() if parms.data is not None]))
+                        #print(torch.max(flat_parms))
+                        #print(torch.min(flat_parms))
+                        #flat_parms = torch.cat([x.data.detach().cpu().view(-1) for x in optimizer.param_groups[0]['params'] if x.data is not None], dim=0)
+                        #print(len([x.data.view(-1) for x in optimizer.param_groups[0]['params'] if x.data is not None]))
+                        #print(torch.sum(torch.isnan(flat_parms)))
+                        #print(torch.max(flat_parms))
+                        #print(torch.min(flat_parms))
+                        #print(torch.mean(flat_parms))
+                        #print(flat_parms[:10])
                     optimizer.zero_grad()
                     global_step += 1
+                #print("\n------------------------------ loss.grad ------------------------------\n")
+                #print(loss.grad)
+                #print("\n")
 
             print(qa_loss)
             print(filter_loss)
+            print(loss_dict)
             # Save a trained model
             logger.info(
                 "** ** * Saving fine-tuned model and optimizer ** ** * ")
