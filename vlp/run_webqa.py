@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-#os.environ['MASTER_PORT'] = '8888'
+os.environ['MASTER_PORT'] = '8887s'
 import sys
 sys.path.append("/home/yingshac/CYS/WebQnA/VLP")
 import logging
@@ -32,6 +32,7 @@ from vlp.loader_utils import batch_list_to_batch_tensors
 import vlp.webqa_loader as webqa_loader
 from vlp.scst_utils import *
 from misc.data_parallel import DataParallelImbalance
+import matplotlib.pyplot as plt
 
 
 
@@ -54,11 +55,20 @@ def _get_loader_from_dataset(train_dataset, world_size, train_batch_size, num_wo
         print("\nSequentialSampler")
         train_sampler = SequentialSampler(train_dataset)
     else:
-        train_sampler = DistributedSampler(train_dataset)
+        train_sampler = DistributedSampler(train_dataset, shuffle=False)
     train_dataloader = torch.utils.data.DataLoader(train_dataset,
         batch_size=train_batch_size, sampler=train_sampler, num_workers=num_workers,
         collate_fn=collate_fn, pin_memory=True)
     return train_dataloader
+
+def save_loss_curve(loss, i_epoch, output_dir, task, all_tasks):
+    plt.figure(figsize=(12, 5))
+    plt.plot(range(1, len(loss)+1), loss)
+    plt.xlabel("iter")
+    plt.ylabel("loss")
+    title = "{}__epc={}__all_tasks={}".format(task, i_epoch, all_tasks)
+    plt.title(title)
+    plt.savefig(os.path.join(output_dir, "figs/"+title+".jpg"))
 
 def main():
     parser = argparse.ArgumentParser()
@@ -185,7 +195,8 @@ def main():
                         type=str, nargs='+',
                         help="The input data file name.")
     parser.add_argument('--enable_visdom', action='store_true')
-    parser.add_argument('--visdom_port', type=int, default=8888)
+    parser.add_argument('--save_loss_curve', action='store_true')
+    parser.add_argument('--visdom_port', type=int, default=8887)
     # parser.add_argument('--resnet_model', type=str, default='imagenet_weights/resnet101.pth')
     parser.add_argument('--image_root', type=str, default='/mnt/dat/COCO/images')
     parser.add_argument('--dataset', default='coco', type=str,
@@ -341,7 +352,7 @@ def main():
 
     # Prepare model
     recover_step = _get_max_epoch_model(args.output_dir)
-    recover_step = None
+    if args.do_train: recover_step = None
     cls_num_labels = 2
     type_vocab_size = 6 if args.new_segment_ids else 2
     relax_projection = 4 if args.relax_projection else 0
@@ -366,6 +377,7 @@ def main():
         global_step = 0
     else:
         if recover_step:
+            print("-------------------- recover from step {} -----------------------".format(recover_step))
             logger.info("***** Recover model: %d *****", recover_step)
             model_recover = torch.load(os.path.join(
                 args.output_dir, "model.{0}.bin".format(recover_step)))
@@ -415,8 +427,8 @@ def main():
         model = DDP(model, device_ids = [args.local_rank], output_device = args.local_rank, find_unused_parameters=True)
     elif n_gpu > 1:
         #model = torch.nn.DataParallel(model)
-        #pass
-        model = DataParallelImbalance(model, device_ids=[0,1,2,3])
+        pass
+        #model = DataParallelImbalance(model, device_ids=[0,1,2,3])
 
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())
@@ -500,7 +512,8 @@ def main():
                 #print("\nlr = ", optimizer.get_lr())
                 #print("\noptimizer.state_dict() = ", optimizer.state_dict())
                 #print("\n")
-                #if step < 80: continue
+                #if step < 2743: 
+                    #continue
                 for param_tensor in model.state_dict():
                     if torch.isnan(model.state_dict()[param_tensor]).any().item():
                         print("\n nan exists in ", param_tensor)
@@ -540,12 +553,13 @@ def main():
                 if step%100 == 0:
                     logger.info("Epoch {}, Iter {}, Loss {:.2f}, Filter {:.2f}, Mean R {:.3f}\n".format(i_epoch, step, np.mean(qa_loss), np.mean(filter_loss), np.mean(scst_reward)))
 
+
                 if args.enable_visdom:
                     if vis_window['iter'] is None:
                         vis_window['iter'] = vis.line(
                             X=np.tile(np.arange((i_epoch-1)*nbatches+step,
                                       (i_epoch-1)*nbatches+step+1), (1,1)).T,
-                            Y=np.column_stack((np.asarray([np.mean(train_loss)]),)),
+                            Y=np.column_stack((np.asarray([np.mean(loss_dict[0])]),)),
                             opts=dict(title='Training Loss',
                                       xlabel='Training Iteration',
                                       ylabel='Loss',
@@ -555,7 +569,7 @@ def main():
                         vis.line(
                             X=np.tile(np.arange((i_epoch-1)*nbatches+step,
                                       (i_epoch-1)*nbatches+step+1), (1,1)).T,
-                            Y=np.column_stack((np.asarray([np.mean(train_loss)]),)),
+                            Y=np.column_stack((np.asarray([np.mean(loss_dict[0])]),)),
                             opts=dict(title='Training Loss',
                                       xlabel='Training Iteration',
                                       ylabel='Loss',
@@ -614,6 +628,21 @@ def main():
             print(qa_loss)
             print(filter_loss)
             print(loss_dict)
+            # Save loss curve
+            if args.save_loss_curve:
+                loss_idx = 0
+                if "filter" in args.task_to_learn and "txt" in args.answer_provided_by:
+                    save_loss_curve(loss_dict[loss_idx], i_epoch, args.output_dir, "filter-txt", "-".join([args.task_to_learn, args.answer_provided_by]))
+                    loss_idx += 1
+                if "filter" in args.task_to_learn and "img" in args.answer_provided_by:
+                    save_loss_curve(loss_dict[loss_idx], i_epoch, args.output_dir, "filter-img", "-".join([args.task_to_learn, args.answer_provided_by]))
+                    loss_idx += 1
+                if "qa" in args.task_to_learn and "txt" in args.answer_provided_by:
+                    save_loss_curve(loss_dict[loss_idx], i_epoch, args.output_dir, "qa-txt", "-".join([args.task_to_learn, args.answer_provided_by]))
+                    loss_idx += 1
+                if "qa" in args.task_to_learn and "img" in args.answer_provided_by:
+                    save_loss_curve(loss_dict[loss_idx], i_epoch, args.output_dir, "qa-img", "-".join([args.task_to_learn, args.answer_provided_by]))
+                    loss_idx += 1
             # Save a trained model
             logger.info(
                 "** ** * Saving fine-tuned model and optimizer ** ** * ")
@@ -632,6 +661,52 @@ def main():
 
             if args.world_size > 1:
                 torch.distributed.barrier()
+    else: # inference mode
+        print("-------------------- Inference mode ------------------------")
+        model.eval()
+        dataloader_iters = [iter(l) for l in train_dataloaders]
+        if args.local_rank >= 0:
+                train_sampler.set_epoch(i_epoch-1)
+        iter_bar = tqdm(train_dataloader_order, desc='Iter (loss=X.XXX), loader_idx=X') 
+        nbatches = sum(loader_lengths)
+            
+        loss_list = []
+        metric1_list = []
+        metric2_list = []
+        with torch.no_grad():
+            for step, loader_idx in enumerate(iter_bar):
+                batch = next(dataloader_iters[loader_idx])
+                for param_tensor in model.state_dict():
+                    if torch.isnan(model.state_dict()[param_tensor]).any().item():
+                        print("\n nan exists in ", param_tensor)
+                batch = [t.to(device) for t in batch]
+                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, task_idx, img, vis_pe, context_is_img = batch
+                if args.fp16:
+                    img = img.half()
+                    vis_pe = vis_pe.half()
+                    
+                conv_feats = img.data # Bx100x2048
+                vis_pe = vis_pe.data
+
+                # doesn't support scst training for not
+                metrics_tuple = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
+                        masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
+                        next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
+                        drop_worst_ratio=0, do_inference=True)
+
+                if "filter" in args.task_to_learn:
+                    loss, metric1, metric2 = metrics_tuple
+                    iter_bar.set_description('Iter (loss={:.3f}, metric1={:.3f}, metric2={:.3f}) loader_idx={}'.format(loss.item(), metric1.item(), metric2.item(), loader_idx))
+                    loss_list.append(loss.item())
+                    metric1_list.append(metric1.item())
+                    metric2_list.append(metric2.item())
+                else:
+                    raise ValueError("Currently don't support qa task in inference mode")
+            
+            print("loss.mean = ", np.mean(loss_list))
+            print("metric1.mean = ", np.mean(metric1_list))
+            print("metric2.mean = ", np.mean(metric2_list))
+        torch.cuda.empty_cache()
 
 
 if __name__ == "__main__":
