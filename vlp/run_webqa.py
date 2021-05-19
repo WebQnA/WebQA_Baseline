@@ -33,6 +33,9 @@ import vlp.webqa_loader as webqa_loader
 from vlp.scst_utils import *
 from misc.data_parallel import DataParallelImbalance
 import matplotlib.pyplot as plt
+from datetime import datetime
+from pytz import timezone
+
 
 
 
@@ -189,6 +192,9 @@ def main():
 
     parser.add_argument('--txt_filter_max_choices', type=int, default=7)
     parser.add_argument('--img_filter_max_choices', type=int, default=10)
+    parser.add_argument('--log_txt', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/log.txt")
+    parser.add_argument("--recover_ori_ckpt", action='store_true',
+                        help="Whether to load original VLP checkpoint.")
     
     # Others for VLP
     parser.add_argument("--src_file", default=['/mnt/dat/COCO/annotations/dataset_coco.json'],
@@ -234,6 +240,7 @@ def main():
 
     args = parser.parse_args()
 
+    log_txt_content = []
     print('global_rank: {}, local rank: {}'.format(args.global_rank, args.local_rank))
     args.max_seq_length = args.max_len_b + args.max_len_a + 3 # +3 for 2x[SEP] and [CLS]
     args.dist_url = args.dist_url.replace('[PT_OUTPUT_DIR]', args.output_dir)
@@ -352,7 +359,8 @@ def main():
 
     # Prepare model
     recover_step = _get_max_epoch_model(args.output_dir)
-    if args.do_train: recover_step = None
+    if args.do_train or args.recover_ori_ckpt or args.from_scratch: recover_step = None
+    if args.from_scratch: args.model_recover_path = None
     cls_num_labels = 2
     type_vocab_size = 6 if args.new_segment_ids else 2
     relax_projection = 4 if args.relax_projection else 0
@@ -362,7 +370,8 @@ def main():
 
     # Recover model
     if (recover_step is None) and (args.model_recover_path is None):
-        print("nothing to recover")
+        print("----------------------- nothing to recover -------------------------")
+        log_txt_content.append("----------------------- nothing to recover -------------------------")
         # if _state_dict == {}, the parameters are randomly initialized
         # if _state_dict == None, the parameters are initialized with bert-init
         assert args.scst == False, 'must init from maximum likelihood training'
@@ -378,6 +387,7 @@ def main():
     else:
         if recover_step:
             print("-------------------- recover from step {} -----------------------".format(recover_step))
+            log_txt_content.append("-------------------- recover from step {} -----------------------".format(recover_step))
             logger.info("***** Recover model: %d *****", recover_step)
             model_recover = torch.load(os.path.join(
                 args.output_dir, "model.{0}.bin".format(recover_step)))
@@ -386,6 +396,7 @@ def main():
                 recover_step * t_total * 1. / args.num_train_epochs)
         elif args.model_recover_path:
             print("------------------ recover from path ----------------------")
+            log_txt_content.append("------------------ recover from path ----------------------")
             logger.info("***** Recover model: %s *****",
                         args.model_recover_path)
             model_recover = torch.load(args.model_recover_path)
@@ -628,6 +639,19 @@ def main():
             print(qa_loss)
             print(filter_loss)
             print(loss_dict)
+            
+            # Save a trained model
+            logger.info(
+                "** ** * Saving fine-tuned model and optimizer ** ** * ")
+            model_to_save = model.module if hasattr(
+                model, 'module') else model  # Only save the model it-self
+            output_model_file = os.path.join(
+                args.output_dir, "model.{0}.bin".format(i_epoch))
+            output_optim_file = os.path.join(
+                args.output_dir, "optim.{0}.bin".format(i_epoch))
+            if args.global_rank in (-1, 0): # save model if the first device or no dist
+                torch.save(copy.deepcopy(model_to_save).cpu().state_dict(), output_model_file)
+                torch.save(optimizer.state_dict(), output_optim_file) # disable for now, need to sanitize state and ship everthing back to cpu
             # Save loss curve
             if args.save_loss_curve:
                 loss_idx = 0
@@ -643,19 +667,6 @@ def main():
                 if "qa" in args.task_to_learn and "img" in args.answer_provided_by:
                     save_loss_curve(loss_dict[loss_idx], i_epoch, args.output_dir, "qa-img", "-".join([args.task_to_learn, args.answer_provided_by]))
                     loss_idx += 1
-            # Save a trained model
-            logger.info(
-                "** ** * Saving fine-tuned model and optimizer ** ** * ")
-            model_to_save = model.module if hasattr(
-                model, 'module') else model  # Only save the model it-self
-            output_model_file = os.path.join(
-                args.output_dir, "model.{0}.bin".format(i_epoch))
-            output_optim_file = os.path.join(
-                args.output_dir, "optim.{0}.bin".format(i_epoch))
-            if args.global_rank in (-1, 0): # save model if the first device or no dist
-                torch.save(copy.deepcopy(model_to_save).cpu().state_dict(), output_model_file)
-                torch.save(optimizer.state_dict(), output_optim_file) # disable for now, need to sanitize state and ship everthing back to cpu
-
             logger.info("***** CUDA.empty_cache() *****")
             torch.cuda.empty_cache()
 
@@ -663,6 +674,9 @@ def main():
                 torch.distributed.barrier()
     else: # inference mode
         print("-------------------- Inference mode ------------------------")
+        log_txt_content.append("-------------------- Inference mode ------------------------")
+        log_txt_content.append("split = {}".format(args.split))
+        log_txt_content.append("use_num_samples = {}".format(args.use_num_samples))
         model.eval()
         dataloader_iters = [iter(l) for l in train_dataloaders]
         if args.local_rank >= 0:
@@ -706,6 +720,12 @@ def main():
             print("loss.mean = ", np.mean(loss_list))
             print("metric1.mean = ", np.mean(metric1_list))
             print("metric2.mean = ", np.mean(metric2_list))
+            log_txt_content.append("loss.mean = {}".format(np.mean(loss_list)))
+            log_txt_content.append("metric1.mean = {}".format(np.mean(metric1_list)))
+            log_txt_content.append("metric2.mean = {}".format(np.mean(metric2_list)))
+        with open(args.log_txt, "a") as f:
+            f.write('\n\n' + datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
+            f.write("\n".join(log_txt_content))
         torch.cuda.empty_cache()
 
 
