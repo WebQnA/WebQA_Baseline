@@ -281,9 +281,9 @@ class Preprocess4Seq2seq(Pipeline):
         # even if mask_prob = 0, there is one [MASK] at the very end ??? 后面有做这个的处理吗? no好像不是这个意思
         # at least predict 1 [MASK]
 
-        # candidate  []
-        special_popositions of masked tokens
-        cand_pos =s = set()
+        # candidate positions of masked tokens
+        cand_pos = []
+        special_pos = set()
         for i, tk in enumerate(tokens):
             # only mask tokens_b (target sequence)
             # we will mask [SEP] as an ending symbol

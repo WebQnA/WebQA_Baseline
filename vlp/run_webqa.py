@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-os.environ['MASTER_PORT'] = '8887s'
+os.environ['MASTER_PORT'] = '8887'
 import sys
 sys.path.append("/home/yingshac/CYS/WebQnA/VLP")
 import logging
@@ -54,9 +54,9 @@ def _get_max_epoch_model(output_dir):
 
 def _get_loader_from_dataset(train_dataset, world_size, train_batch_size, num_workers, collate_fn):
     if world_size == 1:
-        #train_sampler = RandomSampler(train_dataset, replacement=False)
+        train_sampler = RandomSampler(train_dataset, replacement=False)
         print("\nSequentialSampler")
-        train_sampler = SequentialSampler(train_dataset)
+        #train_sampler = SequentialSampler(train_dataset)
     else:
         train_sampler = DistributedSampler(train_dataset, shuffle=False)
     train_dataloader = torch.utils.data.DataLoader(train_dataset,
@@ -247,6 +247,7 @@ def main():
     assert args.len_vis_input == 100, "run main: only support 100 region features per image"
     # output config
     os.makedirs(args.output_dir, exist_ok=True)
+    os.makedirs(os.path.join(args.output_dir, "figs"), exist_ok=True)
     json.dump(args.__dict__, open(os.path.join(
         args.output_dir, 'opt.json'), 'w'), sort_keys=True, indent=2)
     
@@ -359,7 +360,7 @@ def main():
 
     # Prepare model
     recover_step = _get_max_epoch_model(args.output_dir)
-    if args.do_train or args.recover_ori_ckpt or args.from_scratch: recover_step = None
+    if args.recover_ori_ckpt or args.from_scratch: recover_step = None
     if args.from_scratch: args.model_recover_path = None
     cls_num_labels = 2
     type_vocab_size = 6 if args.new_segment_ids else 2
@@ -541,7 +542,7 @@ def main():
                 loss_tuple = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
                     masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
                         next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
-                            drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0)
+                            drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0, tokenizer=tokenizer)
                 mean_reward = loss_tuple[0].new(1).fill_(0)
 
                 # disable pretext_loss_deprecated for now
