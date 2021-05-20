@@ -216,7 +216,7 @@ class BertEmbeddings(nn.Module):
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         #print("Inside embedding: hiddensize = ", config.hidden_size)
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, context_is_img=False, position_ids=None, max_len_img_cxt=200):
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, context_is_img=False, position_ids=None, max_len_img_cxt=200, prev_is_None=True):
         seq_length = input_ids.size(1)
         if position_ids is None:
             position_ids = torch.arange(
@@ -231,7 +231,7 @@ class BertEmbeddings(nn.Module):
         #print("\nposition_ids.size() = ", position_ids.size())
         #print("\nvis_feats.size() = ", vis_feats.size())
         #print("\nvis_pe.size() = ", vis_pe.size())
-        if context_is_img: # hard coded! modify here when incorporating snippets as context!!!!
+        if context_is_img and prev_is_None: # hard coded! modify here when incorporating snippets as context!!!!
             words_embeddings = torch.cat((words_embeddings[:, :1], vis_feats,
                 words_embeddings[:, max_len_img_cxt+1:]), dim=1)
             assert max_len_img_cxt == 200, 'only support region attn!'
@@ -863,16 +863,16 @@ class BertModelIncr(BertModel):
     def __init__(self, config):
         super(BertModelIncr, self).__init__(config)
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask,
-                prev_embedding=None, prev_encoded_layers=None, output_all_encoded_layers=True,
-                len_vis_input=49):
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context_is_img, 
+                prev_embedding=None, prev_encoded_layers=None, output_all_encoded_layers=True, max_len_img_cxt=200):
 
         extended_attention_mask = self.get_extended_attention_mask(
             input_ids, token_type_ids, attention_mask)
 
+        prev_is_None = prev_embedding is None
+        #print(prev_is_None)
         embedding_output = self.embeddings(
-            vis_feats, vis_pe, input_ids, token_type_ids, position_ids,
-            vis_input=(prev_encoded_layers is None), len_vis_input=len_vis_input)
+            vis_feats, vis_pe, input_ids, token_type_ids, position_ids=position_ids, context_is_img=context_is_img, max_len_img_cxt=max_len_img_cxt, prev_is_None=prev_is_None)
         encoded_layers = self.encoder(embedding_output,
                                       extended_attention_mask,
                                       prev_embedding=prev_embedding,
@@ -1286,10 +1286,10 @@ class BertForSeq2SeqDecoder(PreTrainedBertModel):
 
     def beam_search(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, task_idx=None):
 
-        input_shape = list(input_ids.size())
+        input_shape = list(input_ids.size()) # batch_size x (max_len_a+2)
         batch_size = input_shape[0]
         input_length = input_shape[1]
-        output_shape = list(token_type_ids.size())
+        output_shape = list(token_type_ids.size()) # batch_size x max_len_in_batch
         output_length = output_shape[1]
 
         output_ids = []
@@ -1322,17 +1322,18 @@ class BertForSeq2SeqDecoder(PreTrainedBertModel):
                 curr_attention_mask, prev_embedding=prev_embedding,
                 prev_encoded_layers=prev_encoded_layers,
                 output_all_encoded_layers=True, len_vis_input=self.len_vis_input)
+            # compared with BertModel, BertModelIncr returns an additional embedding_output from forward()
+            # new_encoded_layers == sequence_output
 
-            last_hidden = new_encoded_layers[-1][:, -1:, :]
-            prediction_scores, _ = self.cls(
-                last_hidden, None, task_idx=task_idx)
-            log_scores = torch.nn.functional.log_softmax(
-                prediction_scores, dim=-1)
+            last_hidden = new_encoded_layers[-1][:, -1:, :] # batch_size(*K) x 1 x emb_dim
+            prediction_scores, _ = self.cls(last_hidden, None, task_idx=task_idx) # batch_size(*K) x 1 x vocab_size
+            log_scores = torch.nn.functional.log_softmax(prediction_scores, dim=-1) # batch_size(*K) x 1 x vocab_size
             if forbid_word_mask is not None:
-                log_scores += (forbid_word_mask * -10000.0)
+                log_scores += (forbid_word_mask * -10000.0) 
+                # forbid_word_mask has the same size as log_scores, positions with 1 indicate forbid_words
             if self.min_len and (next_pos-input_length+1 <= self.min_len):
-                log_scores[:, :, self.eos_id].fill_(-10000.0)
-            kk_scores, kk_ids = torch.topk(log_scores, k=K)
+                log_scores[:, :, self.eos_id].fill_(-10000.0) # forbid generating <eos> when min_len is not reached
+            kk_scores, kk_ids = torch.topk(log_scores, k=K) # batch_size(*K) x 1 x K
             if len(total_scores) == 0:
                 k_ids = torch.reshape(kk_ids, [batch_size, K])
                 back_ptrs = torch.zeros(batch_size, K, dtype=torch.long)
@@ -1342,51 +1343,59 @@ class BertForSeq2SeqDecoder(PreTrainedBertModel):
                     beam_masks[-1], [batch_size * K, 1, 1])
                 last_seq_scores = torch.reshape(
                     total_scores[-1], [batch_size * K, 1, 1])
-                kk_scores += last_eos * (-10000.0) + last_seq_scores
+                kk_scores += last_eos * (-10000.0) + last_seq_scores # don't consider beams that already have <eos> in the last step
                 kk_scores = torch.reshape(kk_scores, [batch_size, K * K])
-                k_scores, k_ids = torch.topk(kk_scores, k=K)
-                back_ptrs = torch.div(k_ids, K)
+                k_scores, k_ids = torch.topk(kk_scores, k=K) # sample K from K*K # batch_size x K
+                back_ptrs = torch.div(k_ids, K) # batch_size x K (choose top K from K*K)
                 kk_ids = torch.reshape(kk_ids, [batch_size, K * K])
-                k_ids = torch.gather(kk_ids, 1, k_ids)
-            step_back_ptrs.append(back_ptrs)
+                k_ids = torch.gather(kk_ids, 1, k_ids) # batch_size x K    top K idx of kk_scores --> top K vocab idx
+            step_back_ptrs.append(back_ptrs) # record prev_step beam id. get the actual word_id from corresponding pos in step_ids
             step_ids.append(k_ids)
-            beam_masks.append(torch.eq(k_ids, self.eos_id).float())
+            beam_masks.append(torch.eq(k_ids, self.eos_id).float()) # block beams that reach <eos> at an early point
+            # stop beam if <eos> is generated
+            # but that won't happen bc <eos> is masked in log_scores if output_len < min_len ???
             total_scores.append(k_scores)
 
             def first_expand(x):
                 input_shape = list(x.size())
                 expanded_shape = input_shape[:1] + [1] + input_shape[1:]
-                x = torch.reshape(x, expanded_shape)
-                repeat_count = [1, K] + [1] * (len(input_shape) - 1)
-                x = x.repeat(*repeat_count)
-                x = torch.reshape(x, [input_shape[0] * K] + input_shape[1:])
+                x = torch.reshape(x, expanded_shape) # batch_size x 1 x ori_len x emb_dim
+                repeat_count = [1, K] + [1] * (len(input_shape) - 1) # [1, K, 1, 1] 
+                x = x.repeat(*repeat_count) # --> batch_size x K x ori_len x emb_dim
+                x = torch.reshape(x, [input_shape[0] * K] + input_shape[1:]) # (batch_size * K) x ori_len x emb_dim
                 return x
 
             def select_beam_items(x, ids):
+                # ids:
+                # batch_size x K (choose top K from K*K)
                 id_shape = list(ids.size())
                 id_rank = len(id_shape)
                 assert len(id_shape) == 2
                 x_shape = list(x.size())
-                x = torch.reshape(x, [batch_size, K] + x_shape[1:])
+                x = torch.reshape(x, [batch_size, K] + x_shape[1:]) # batch_size x K x (ori_len+1) x emb_dim
                 x_rank = len(x_shape) + 1
                 assert x_rank >= 2
                 if id_rank < x_rank:
                     ids = torch.reshape(
-                        ids, id_shape + [1] * (x_rank - id_rank))
-                    ids = ids.expand(id_shape + x_shape[1:])
-                y = torch.gather(x, 1, ids)
-                y = torch.reshape(y, x_shape)
+                        ids, id_shape + [1] * (x_rank - id_rank)) # batch_size x K x 1 x 1
+                    ids = ids.expand(id_shape + x_shape[1:]) # batch_size x K x (ori_len+1) x emb_dim
+                y = torch.gather(x, 1, ids) # batch_size x K x (ori_len+1) x emb_dim
+                y = torch.reshape(y, x_shape) # batch_size*K x (ori_len+1) x emb_dim
                 return y
 
             is_first = (prev_embedding is None)
 
             if prev_embedding is None:
-                prev_embedding = first_expand(new_embedding[:, :-1, :])
+                prev_embedding = first_expand(new_embedding[:, :-1, :]) 
+                # ori_len = length before appending mask
+                # batch_size x ori_len x emb_dim 
             else:
                 prev_embedding = torch.cat(
-                    (prev_embedding, new_embedding[:, :-1, :]), dim=1)
+                    (prev_embedding, new_embedding[:, :-1, :]), dim=1) # new_embedding[:, :-1, :].size() = batch_size*K x 1 x emb_dim
+                    # --> batch_size*K x (ori_len+1) x emb_dim
                 prev_embedding = select_beam_items(prev_embedding, back_ptrs)
             if prev_encoded_layers is None:
+                # new_encoded_layers: num_layers x batch_size x ori_len x emb_dim
                 prev_encoded_layers = [first_expand(
                     x[:, :-1, :]) for x in new_encoded_layers]
             else:
@@ -1460,23 +1469,24 @@ class BertForSeq2SeqDecoder(PreTrainedBertModel):
             next_pos += 1
 
         # [(batch, beam)]
-        total_scores = [x.tolist() for x in total_scores]
+        total_scores = [x.tolist() for x in total_scores] # each x: batch_size x K
         step_ids = [x.tolist() for x in step_ids]
         step_back_ptrs = [x.tolist() for x in step_back_ptrs]
         # back tracking
         traces = {'pred_seq': [], 'scores': [], 'wids': [], 'ptrs': []}
         for b in range(batch_size):
             # [(beam,)]
-            scores = [x[b] for x in total_scores]
-            wids_list = [x[b] for x in step_ids]
-            ptrs = [x[b] for x in step_back_ptrs]
-            traces['scores'].append(scores)
+            scores = [x[b] for x in total_scores] # output_len x K 
+            wids_list = [x[b] for x in step_ids]  # output_len x K 
+            ptrs = [x[b] for x in step_back_ptrs] # output_len x K 
+            traces['scores'].append(scores) # 这个跟 total_scores, step_ids, step_back_ptrs有什么区别啊。。。又重新一个个append一遍。。。
             traces['wids'].append(wids_list)
             traces['ptrs'].append(ptrs)
             # first we need to find the eos frame where all symbols are eos
             # any frames after the eos frame are invalid
-            last_frame_id = len(scores) - 1
-            for i, wids in enumerate(wids_list):
+            last_frame_id = len(scores) - 1 # last id within output_len
+            for i, wids in enumerate(wids_list): 
+                # if all topK beams reach <eos> before reaching output_len, then set last_frame_id to an earlier frame.
                 if all(wid == self.eos_id for wid in wids):
                     last_frame_id = i
                     break
@@ -1492,7 +1502,7 @@ class BertForSeq2SeqDecoder(PreTrainedBertModel):
                             max_score = s
                             frame_id = fid
                             pos_in_frame = i
-            if frame_id == -1:
+            if frame_id == -1: # prediction is empty
                 traces['pred_seq'].append([0])
             else:
                 seq = [wids_list[frame_id][pos_in_frame]]
@@ -1503,14 +1513,15 @@ class BertForSeq2SeqDecoder(PreTrainedBertModel):
                 traces['pred_seq'].append(seq)
 
         def _pad_sequence(sequences, max_len, padding_value=0):
-            trailing_dims = sequences[0].size()[1:]
-            out_dims = (len(sequences), max_len) + trailing_dims
+            # sequences: batch_size x output_len x K
+            trailing_dims = sequences[0].size()[1:] # K
+            out_dims = (len(sequences), max_len) + trailing_dims # batch_size x max_len x K
 
             out_tensor = sequences[0].data.new(*out_dims).fill_(padding_value)
             for i, tensor in enumerate(sequences):
                 length = tensor.size(0)
                 # use index notation to prevent duplicate references to the tensor
-                out_tensor[i, :length, ...] = tensor
+                out_tensor[i, :length, ...] = tensor # ... is equivalent to :   ???
             return out_tensor
 
         # convert to tensors for DataParallel
@@ -1569,7 +1580,7 @@ class BertForWebqa(PreTrainedBertModel):
         #self.context_crit = nn.BCEWithLogitsLoss()
 
 
-    def forward(self, vis_feats=None, vis_pe=None, input_ids=None, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=None, filter_label=None, logit_mask=None, context_is_img=None, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2):
+    def forward(self, vis_feats=None, vis_pe=None, input_ids=None, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=None, filter_label=None, logit_mask=None, context_is_img=None, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2, do_inference=False, tokenizer=None):
         #print("\n")
         #print(context_is_img)
         if context_is_img[0]: 
@@ -1604,7 +1615,7 @@ class BertForWebqa(PreTrainedBertModel):
 
             def cross_entropy_with_logits_loss(prediction, target, logit_mask):
                 # prediction: batch_size x num_choices
-                # target: batch_size * num_choices. Targets with multiple flags look like: [0,0,1,1,1] (there is no need to normalize them)
+                # target: batch_size x num_choices. Targets with multiple flags look like: [0,0,1,1,1] (there is no need to normalize them)
                 lp = F.log_softmax(prediction+logit_mask, dim=-1)
                 num_flags = torch.sum(target, dim=-1)
                 num_flags = torch.max(num_flags, torch.ones_like(num_flags))
@@ -1613,7 +1624,37 @@ class BertForWebqa(PreTrainedBertModel):
                 m = torch.where(torch.isnan(m), torch.zeros_like(m), m)
                 loss = torch.sum(- m, dim=-1) * num_flags
                 return torch.mean(loss)
-            
+            def filter_metric(prediction, target, logit_mask):
+                # prediction: batch_size x num_choices
+                # target: batch_size x num_choices
+                num_choices = prediction.size(1)
+
+                lp = torch.nn.functional.log_softmax(prediction+logit_mask, dim=-1)
+                num_flags = torch.sum(target, dim=-1)
+                num_flags = torch.max(num_flags, torch.ones_like(num_flags))
+                labels = target / num_flags.unsqueeze(-1).repeat(1, prediction.size(-1))
+                m = lp * labels
+                m = torch.where(torch.isnan(m), torch.zeros_like(m), m)
+                loss = torch.sum(- m, dim=-1) * num_flags
+
+                probs = torch.nn.functional.softmax(prediction+logit_mask, dim=-1)
+                m = probs * labels
+                m = torch.where(torch.isnan(m), torch.zeros_like(m), m)
+                metric1 = torch.sum(m, dim=-1)
+
+                values, indices = torch.topk(probs, 2, dim=-1)
+                res = torch.zeros_like(prediction)
+                try:
+                    res = res.scatter(1, indices, torch.ones_like(values))
+                except:
+                    print(res.size())
+                    print(indices.size())
+                    print(values.size())
+                m = res * labels
+                m = torch.where(torch.isnan(m), torch.zeros_like(m), m)
+                metric2 = torch.sum(m, dim=-1)
+                return torch.mean(loss), torch.mean(metric1), torch.mean(metric2)
+
             
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
                                             attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
@@ -1624,6 +1665,9 @@ class BertForWebqa(PreTrainedBertModel):
             cls_pred = self.context_classifier(cls_embed) # B*num_choices x 1 
             cls_pred = cls_pred.view(-1, num_choices)
             # cls_labels: B
+            if do_inference:
+                loss, metric1, metric2 = filter_metric(cls_pred, filter_label, logit_mask)
+                return loss, metric1, metric2
             cls_loss = cross_entropy_with_logits_loss(cls_pred, filter_label, logit_mask)
             masked_lm_loss = cls_loss.new(1).fill_(0)
             return masked_lm_loss, cls_loss
@@ -1676,6 +1720,7 @@ class BertForWebqa(PreTrainedBertModel):
             sequence_output_masked = gather_seq_out_by_pos(sequence_output, masked_pos) # B x max_pred x hidden
             prediction_scores_masked, _ = self.cls(
                 sequence_output_masked, pooled_output, task_idx=task_idx) # B x max_pred x vocab_size
+            
             if self.crit_mask_lm_smoothed:
                 masked_lm_loss = self.crit_mask_lm_smoothed(
                     F.log_softmax(prediction_scores_masked.float(), dim=-1), masked_lm_labels)
@@ -1687,6 +1732,15 @@ class BertForWebqa(PreTrainedBertModel):
             masked_lm_loss = mlmloss_mask_and_normalize(masked_lm_loss.float(), masked_weights, drop_worst_ratio)
             cls_loss= masked_lm_loss.new(1).fill_(0)
             #print("\n ----------------- before returning from forward(), masked_lm_loss = --------------------")
+            if tokenizer is not None:
+                ids = torch.argmax(prediction_scores_masked[0], dim=-1).detach().cpu().numpy() # max_pred x 1
+                sequence = tokenizer.convert_ids_to_tokens([i for i in list(ids) if i>0 and i!=102])
+                print(sequence)
+                #print(masked_lm_loss.item())
+                print(tokenizer.convert_ids_to_tokens([i for i in list(input_ids.detach().cpu().numpy()[0][202:]) if i>0 and i!=102]))
+                print(tokenizer.convert_ids_to_tokens([i for i in list(masked_lm_labels.detach().cpu().numpy()[0]) if i>0 and i!=102]))
+                #print("\n")
+                time.sleep(2)
             return masked_lm_loss, cls_loss
         ''' 
         # deprecated
@@ -1728,6 +1782,359 @@ class BertForWebqa(PreTrainedBertModel):
         '''
 
         return masked_lm_loss, cls_loss # works better when combined with max_pred=1
+
+""" for webqa, based on VLP """
+class BertForWebqaDecoder(PreTrainedBertModel):
+    """refer to BertForPreTraining"""
+
+    def __init__(self, config, mask_word_id=0, num_labels=2,
+                 search_beam_size=1, length_penalty=1.0, eos_id=0,
+                 forbid_duplicate_ngrams=False, forbid_ignore_set=None,
+                 ngram_size=3, min_len=0, max_len_img_cxt=200):
+        super(BertForWebqaDecoder, self).__init__(config)
+        self.bert = BertModelIncr(config)
+        self.cls = BertPreTrainingHeads(
+            config, self.bert.embeddings.word_embeddings.weight, num_labels=num_labels)
+        self.apply(self.init_bert_weights)
+        self.crit_mask_lm = nn.CrossEntropyLoss(reduction='none')
+        self.mask_word_id = mask_word_id
+        self.num_labels = num_labels
+        self.max_len_img_cxt = max_len_img_cxt
+        self.search_beam_size = search_beam_size
+        self.length_penalty = length_penalty
+        self.eos_id = eos_id
+        self.forbid_duplicate_ngrams = forbid_duplicate_ngrams
+        self.forbid_ignore_set = forbid_ignore_set
+        self.ngram_size = ngram_size
+        self.min_len = min_len
+
+        # will not be initialized when loading BERT weights
+        self.vis_embed = nn.Sequential(nn.Linear(2048, 2048),
+                                       nn.ReLU(),
+                                       nn.Linear(2048, config.hidden_size),
+                                       nn.ReLU(),
+                                       nn.Dropout(config.hidden_dropout_prob))
+        self.vis_pe_embed = nn.Sequential(nn.Linear(6+1601, config.hidden_size),
+                                       nn.ReLU(),
+                                       nn.Dropout(config.hidden_dropout_prob))
+    
+
+
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context_is_img, task_idx=None, sample_mode='greedy'):
+        if context_is_img[0]:
+            vis_feats = self.vis_embed(vis_feats) # image region features
+            vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings
+
+        if self.search_beam_size > 1:
+            return self.beam_search(vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context_is_img, task_idx)
+        input_shape = list(input_ids.size())
+        batch_size = input_shape[0]
+        input_length = input_shape[1]
+        output_shape = list(token_type_ids.size())
+        output_length = output_shape[1]
+
+        output_ids = []
+        output_probs = []
+        prev_embedding = None
+        prev_encoded_layers = None
+        curr_ids = input_ids
+        mask_ids = input_ids[:, :1] * 0 + self.mask_word_id # same size as input_ids[:, :1], filled with mask_word_id # batch_size x 1
+        next_pos = input_length
+
+        while next_pos < output_length:
+            curr_length = list(curr_ids.size())[1]
+            start_pos = next_pos - curr_length
+            x_input_ids = torch.cat((curr_ids, mask_ids), dim=1)
+            curr_token_type_ids = token_type_ids[:, start_pos:next_pos + 1]
+            curr_attention_mask = attention_mask[:,
+                start_pos:next_pos + 1, :next_pos + 1]
+            curr_position_ids = position_ids[:, start_pos:next_pos + 1]
+            new_embedding, new_encoded_layers, _ = \
+                self.bert(vis_feats, vis_pe, x_input_ids, curr_token_type_ids, curr_position_ids, curr_attention_mask, 
+                context_is_img[0], prev_embedding=prev_embedding, prev_encoded_layers=prev_encoded_layers, 
+                output_all_encoded_layers=True, max_len_img_cxt=self.max_len_img_cxt)
+
+            last_hidden = new_encoded_layers[-1][:, -1:, :]
+            prediction_scores, _ = self.cls(
+                last_hidden, None, task_idx=task_idx)
+            if sample_mode == 'greedy':
+                max_probs, max_ids = torch.max(prediction_scores, dim=-1)
+            elif sample_mode == 'sample':
+                prediction_scores.squeeze_(1)
+                prediction_probs = F.softmax(prediction_scores, dim=-1).detach()
+                max_ids = torch.multinomial(prediction_probs, num_samples=1,
+                    replacement=True)
+                max_probs = torch.gather(F.log_softmax(prediction_scores, dim=-1),
+                    1, max_ids) # this should be logprobs
+            else:
+                raise NotImplementedError
+            output_ids.append(max_ids)
+            output_probs.append(max_probs)
+            if prev_embedding is None:
+                prev_embedding = new_embedding[:, :-1, :]
+            else:
+                prev_embedding = torch.cat(
+                    (prev_embedding, new_embedding[:, :-1, :]), dim=1)
+            if prev_encoded_layers is None:
+                prev_encoded_layers = [x[:, :-1, :]
+                                       for x in new_encoded_layers]
+            else:
+                prev_encoded_layers = [torch.cat((x[0], x[1][:, :-1, :]), dim=1)
+                                       for x in zip(prev_encoded_layers, new_encoded_layers)]
+            curr_ids = max_ids
+            next_pos += 1
+        return torch.cat(output_ids, dim=1), torch.cat(output_probs, dim=1)
+
+
+    def beam_search(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context_is_img, task_idx=None):
+
+        input_shape = list(input_ids.size()) # batch_size x (max_len_a+2)
+        batch_size = input_shape[0]
+        input_length = input_shape[1]
+        output_shape = list(token_type_ids.size()) # batch_size x max_len_in_batch
+        output_length = output_shape[1]
+
+        output_ids = []
+        prev_embedding = None
+        prev_encoded_layers = None
+        curr_ids = input_ids
+        mask_ids = input_ids[:, :1] * 0 + self.mask_word_id
+        next_pos = input_length
+
+        K = self.search_beam_size
+
+        total_scores = []
+        beam_masks = []
+        step_ids = []
+        step_back_ptrs = []
+        partial_seqs = []
+        forbid_word_mask = None
+        buf_matrix = None
+
+        while next_pos < output_length:
+            curr_length = list(curr_ids.size())[1]
+            start_pos = next_pos - curr_length
+            x_input_ids = torch.cat((curr_ids, mask_ids), dim=1)
+            curr_token_type_ids = token_type_ids[:, start_pos:next_pos + 1]
+            curr_attention_mask = attention_mask[:,
+                                                 start_pos:next_pos + 1, :next_pos + 1]
+            curr_position_ids = position_ids[:, start_pos:next_pos + 1]
+            new_embedding, new_encoded_layers, _ = \
+                self.bert(vis_feats, vis_pe, x_input_ids, curr_token_type_ids, curr_position_ids, curr_attention_mask, 
+                context_is_img[0], prev_embedding=prev_embedding, prev_encoded_layers=prev_encoded_layers, 
+                output_all_encoded_layers=True, max_len_img_cxt=self.max_len_img_cxt)
+            # compared with BertModel, BertModelIncr returns an additional embedding_output from forward()
+            # new_encoded_layers == sequence_output
+
+            last_hidden = new_encoded_layers[-1][:, -1:, :] # batch_size(*K) x 1 x emb_dim
+            prediction_scores, _ = self.cls(last_hidden, None, task_idx=task_idx) # batch_size(*K) x 1 x vocab_size
+            log_scores = torch.nn.functional.log_softmax(prediction_scores, dim=-1) # batch_size(*K) x 1 x vocab_size
+            if forbid_word_mask is not None:
+                log_scores += (forbid_word_mask * -10000.0) 
+                # forbid_word_mask has the same size as log_scores, positions with 1 indicate forbid_words
+            if self.min_len and (next_pos-input_length+1 <= self.min_len):
+                log_scores[:, :, self.eos_id].fill_(-10000.0) # forbid generating <eos> when min_len is not reached
+            kk_scores, kk_ids = torch.topk(log_scores, k=K) # batch_size(*K) x 1 x K
+            if len(total_scores) == 0:
+                k_ids = torch.reshape(kk_ids, [batch_size, K])
+                back_ptrs = torch.zeros(batch_size, K, dtype=torch.long)
+                k_scores = torch.reshape(kk_scores, [batch_size, K])
+            else:
+                last_eos = torch.reshape(
+                    beam_masks[-1], [batch_size * K, 1, 1])
+                last_seq_scores = torch.reshape(
+                    total_scores[-1], [batch_size * K, 1, 1])
+                kk_scores += last_eos * (-10000.0) + last_seq_scores # don't consider beams that already have <eos> in the last step
+                kk_scores = torch.reshape(kk_scores, [batch_size, K * K])
+                k_scores, k_ids = torch.topk(kk_scores, k=K) # sample K from K*K # batch_size x K
+                back_ptrs = torch.div(k_ids, K) # batch_size x K (choose top K from K*K)
+                kk_ids = torch.reshape(kk_ids, [batch_size, K * K])
+                k_ids = torch.gather(kk_ids, 1, k_ids) # batch_size x K    top K idx of kk_scores --> top K vocab idx
+            step_back_ptrs.append(back_ptrs) # record prev_step beam id. get the actual word_id from corresponding pos in step_ids
+            step_ids.append(k_ids)
+            beam_masks.append(torch.eq(k_ids, self.eos_id).float()) # block beams that reach <eos> at an early point
+            # stop beam if <eos> is generated
+            # but that won't happen bc <eos> is masked in log_scores if output_len < min_len ???
+            total_scores.append(k_scores)
+
+            def first_expand(x):
+                input_shape = list(x.size())
+                expanded_shape = input_shape[:1] + [1] + input_shape[1:]
+                x = torch.reshape(x, expanded_shape) # batch_size x 1 x ori_len x emb_dim
+                repeat_count = [1, K] + [1] * (len(input_shape) - 1) # [1, K, 1, 1] 
+                x = x.repeat(*repeat_count) # --> batch_size x K x ori_len x emb_dim
+                x = torch.reshape(x, [input_shape[0] * K] + input_shape[1:]) # (batch_size * K) x ori_len x emb_dim
+                return x
+
+            def select_beam_items(x, ids):
+                # ids:
+                # batch_size x K (choose top K from K*K)
+                id_shape = list(ids.size())
+                id_rank = len(id_shape)
+                assert len(id_shape) == 2
+                x_shape = list(x.size())
+                x = torch.reshape(x, [batch_size, K] + x_shape[1:]) # batch_size x K x (ori_len+1) x emb_dim
+                x_rank = len(x_shape) + 1
+                assert x_rank >= 2
+                if id_rank < x_rank:
+                    ids = torch.reshape(
+                        ids, id_shape + [1] * (x_rank - id_rank)) # batch_size x K x 1 x 1
+                    ids = ids.expand(id_shape + x_shape[1:]) # batch_size x K x (ori_len+1) x emb_dim
+                y = torch.gather(x, 1, ids) # batch_size x K x (ori_len+1) x emb_dim
+                y = torch.reshape(y, x_shape) # batch_size*K x (ori_len+1) x emb_dim
+                return y
+
+            is_first = (prev_embedding is None)
+
+            if prev_embedding is None:
+                prev_embedding = first_expand(new_embedding[:, :-1, :]) 
+                # ori_len = length before appending mask
+                # batch_size x ori_len x emb_dim 
+            else:
+                prev_embedding = torch.cat(
+                    (prev_embedding, new_embedding[:, :-1, :]), dim=1) # new_embedding[:, :-1, :].size() = batch_size*K x 1 x emb_dim
+                    # --> batch_size*K x (ori_len+1) x emb_dim
+                prev_embedding = select_beam_items(prev_embedding, back_ptrs)
+            if prev_encoded_layers is None:
+                # new_encoded_layers: num_layers x batch_size x ori_len x emb_dim
+                prev_encoded_layers = [first_expand(
+                    x[:, :-1, :]) for x in new_encoded_layers]
+            else:
+                prev_encoded_layers = [torch.cat((x[0], x[1][:, :-1, :]), dim=1)
+                                       for x in zip(prev_encoded_layers, new_encoded_layers)]
+                prev_encoded_layers = [select_beam_items(
+                    x, back_ptrs) for x in prev_encoded_layers]
+
+            curr_ids = torch.reshape(k_ids, [batch_size * K, 1])
+
+            if is_first:
+                token_type_ids = first_expand(token_type_ids)
+                position_ids = first_expand(position_ids)
+                attention_mask = first_expand(attention_mask)
+                mask_ids = first_expand(mask_ids)
+
+            if self.forbid_duplicate_ngrams:
+                wids = step_ids[-1].tolist()
+                ptrs = step_back_ptrs[-1].tolist()
+                if is_first:
+                    partial_seqs = []
+                    for b in range(batch_size):
+                        for k in range(K):
+                            partial_seqs.append([wids[b][k]])
+                else:
+                    new_partial_seqs = []
+                    for b in range(batch_size):
+                        for k in range(K):
+                            new_partial_seqs.append(
+                                partial_seqs[ptrs[b][k] + b * K] + [wids[b][k]])
+                    partial_seqs = new_partial_seqs
+
+                def get_dup_ngram_candidates(seq, n):
+                    cands = set()
+                    if len(seq) < n:
+                        return []
+                    tail = seq[-(n-1):]
+                    if self.forbid_ignore_set and any(tk in self.forbid_ignore_set for tk in tail):
+                        return []
+                    for i in range(len(seq) - (n - 1)):
+                        mismatch = False
+                        for j in range(n - 1):
+                            if tail[j] != seq[i + j]:
+                                mismatch = True
+                                break
+                        if (not mismatch) and not(self.forbid_ignore_set and (seq[i + n - 1] in self.forbid_ignore_set)):
+                            cands.add(seq[i + n - 1])
+                    return list(sorted(cands))
+
+                if len(partial_seqs[0]) >= self.ngram_size:
+                    dup_cands = []
+                    for seq in partial_seqs:
+                        dup_cands.append(
+                            get_dup_ngram_candidates(seq, self.ngram_size))
+                    if max(len(x) for x in dup_cands) > 0:
+                        if buf_matrix is None:
+                            vocab_size = list(log_scores.size())[-1]
+                            buf_matrix = np.zeros(
+                                (batch_size * K, vocab_size), dtype=float)
+                        else:
+                            buf_matrix.fill(0)
+                        for bk, cands in enumerate(dup_cands):
+                            for i, wid in enumerate(cands):
+                                buf_matrix[bk, wid] = 1.0
+                        forbid_word_mask = torch.tensor(
+                            buf_matrix, dtype=log_scores.dtype)
+                        forbid_word_mask = torch.reshape(
+                            forbid_word_mask, [batch_size * K, 1, vocab_size]).cuda()
+                    else:
+                        forbid_word_mask = None
+            next_pos += 1
+
+        # [(batch, beam)]
+        total_scores = [x.tolist() for x in total_scores] # each x: batch_size x K
+        step_ids = [x.tolist() for x in step_ids]
+        step_back_ptrs = [x.tolist() for x in step_back_ptrs]
+        # back tracking
+        traces = {'pred_seq': [], 'scores': [], 'wids': [], 'ptrs': []}
+        for b in range(batch_size):
+            # [(beam,)]
+            scores = [x[b] for x in total_scores] # output_len x K 
+            wids_list = [x[b] for x in step_ids]  # output_len x K 
+            ptrs = [x[b] for x in step_back_ptrs] # output_len x K 
+            traces['scores'].append(scores) # 这个跟 total_scores, step_ids, step_back_ptrs有什么区别啊。。。又重新一个个append一遍。。。
+            traces['wids'].append(wids_list)
+            traces['ptrs'].append(ptrs)
+            # first we need to find the eos frame where all symbols are eos
+            # any frames after the eos frame are invalid
+            last_frame_id = len(scores) - 1 # last id within output_len
+            for i, wids in enumerate(wids_list): 
+                # if all topK beams reach <eos> before reaching output_len, then set last_frame_id to an earlier frame.
+                if all(wid == self.eos_id for wid in wids):
+                    last_frame_id = i
+                    break
+            max_score = -math.inf
+            frame_id = -1
+            pos_in_frame = -1
+
+            for fid in range(last_frame_id + 1):
+                for i, wid in enumerate(wids_list[fid]):
+                    if wid == self.eos_id or fid == last_frame_id:
+                        s = scores[fid][i] + self.length_penalty * (fid + 1)
+                        if s > max_score:
+                            max_score = s
+                            frame_id = fid
+                            pos_in_frame = i
+            if frame_id == -1: # prediction is empty
+                traces['pred_seq'].append([0])
+            else:
+                seq = [wids_list[frame_id][pos_in_frame]]
+                for fid in range(frame_id, 0, -1):
+                    pos_in_frame = ptrs[fid][pos_in_frame]
+                    seq.append(wids_list[fid - 1][pos_in_frame])
+                seq.reverse()
+                traces['pred_seq'].append(seq)
+
+        def _pad_sequence(sequences, max_len, padding_value=0):
+            # sequences: batch_size x output_len x K
+            trailing_dims = sequences[0].size()[1:] # K
+            out_dims = (len(sequences), max_len) + trailing_dims # batch_size x max_len x K
+
+            out_tensor = sequences[0].data.new(*out_dims).fill_(padding_value)
+            for i, tensor in enumerate(sequences):
+                length = tensor.size(0)
+                # use index notation to prevent duplicate references to the tensor
+                out_tensor[i, :length, ...] = tensor # ... is equivalent to :   ???
+            return out_tensor
+
+        # convert to tensors for DataParallel
+        for k in ('pred_seq', 'scores', 'wids', 'ptrs'):
+            ts_list = traces[k]
+            if not isinstance(ts_list[0], torch.Tensor):
+                dt = torch.float if k == 'scores' else torch.long
+                ts_list = [torch.tensor(it, dtype=dt) for it in ts_list]
+            traces[k] = _pad_sequence(
+                ts_list, output_length, 0).to(input_ids.device)
+
+        return traces
 
 
 class BertForExtractiveSummarization(PreTrainedBertModel):

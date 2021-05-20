@@ -811,8 +811,8 @@ class Preprocess4webqaDecoder(Pipeline):
                 truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_img_cxt + self.max_len_Q, max_len_a=self.max_len_img_cxt, max_len_b=self.max_len_Q, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
                 
                 # Pad tokens_b to max_len_Q
-                n_pad = self.max_len_Q - len(tokens_b)
-                tokens_b += ['[PAD]'] * n_pad
+                #n_pad = self.max_len_Q - len(tokens_b)
+                #tokens_b += ['[PAD]'] * n_pad
 
                 tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b # + ['[SEP]'] # start generating right after Q
                 #print("\ntokens = ", tokens)
