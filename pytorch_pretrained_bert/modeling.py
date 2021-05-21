@@ -1820,7 +1820,7 @@ class BertForWebqaDecoder(PreTrainedBertModel):
     
 
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context_is_img, task_idx=None, sample_mode='greedy'):
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context_is_img, task_idx=None, sample_mode='greedy', tokenizer=None):
         if context_is_img[0]:
             vis_feats = self.vis_embed(vis_feats) # image region features
             vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings
@@ -1857,6 +1857,16 @@ class BertForWebqaDecoder(PreTrainedBertModel):
             last_hidden = new_encoded_layers[-1][:, -1:, :]
             prediction_scores, _ = self.cls(
                 last_hidden, None, task_idx=task_idx)
+
+            if tokenizer is not None:
+
+                ids = torch.argmax(prediction_scores[0], dim=-1).detach().cpu().numpy() # batch_size x 1 x 1
+                sequence = tokenizer.convert_ids_to_tokens([i for i in list(ids) if i>0 and i!=102])
+                print(sequence)
+                print(tokenizer.convert_ids_to_tokens([i for i in list(input_ids.detach().cpu().numpy()[0][202:]) if i>0 and i!=102]))
+                #print("\n")
+                time.sleep(2)
+
             if sample_mode == 'greedy':
                 max_probs, max_ids = torch.max(prediction_scores, dim=-1)
             elif sample_mode == 'sample':
