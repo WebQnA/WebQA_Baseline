@@ -26,7 +26,14 @@ def batch_list_to_batch_tensors(batch):
                 print([i.size() for i in x])
             
         else:
-            batch_tensors.append(torch.tensor(x, dtype=torch.long))
+            try:
+                batch_tensors.append(torch.tensor(x, dtype=torch.long))
+            except:
+                #print(x)
+                print(len(x))
+                #print("-------------batch-----------")
+                #print(batch)
+                raise
     return batch_tensors
 
 

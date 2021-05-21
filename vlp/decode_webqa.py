@@ -7,6 +7,7 @@ from __future__ import print_function
 import os
 import sys
 sys.path.append("/home/yingshac/CYS/WebQnA/VLP")
+
 import logging
 import glob
 import json, time
@@ -14,27 +15,81 @@ import argparse
 import math
 from tqdm import tqdm, trange
 from pathlib import Path
-import numpy as np
+
 import torch
 import torch.multiprocessing as mp
 mp.set_start_method('spawn', force=True)
 import random
 import pickle
-
+import numpy as np
 from pytorch_pretrained_bert.tokenization import BertTokenizer, WhitespaceTokenizer
 from pytorch_pretrained_bert.modeling import BertForWebqaDecoder
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 
 from vlp.loader_utils import batch_list_to_batch_tensors
 import vlp.seq2seq_loader as seq2seq_loader
-from vlp.lang_utils import language_eval
 from misc.data_parallel import DataParallelImbalance
 
 import vlp.webqa_loader as webqa_loader
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 
-# SPECIAL_TOKEN = ["[UNK]", "[PAD]", "[CLS]", "[MASK]"]
+from pycocoevalcap.spice.spice import Spice
+from pycocoevalcap.bleu.bleu import Bleu
+from pycocoevalcap.rouge.rouge import Rouge
+from pycocoevalcap.meteor.meteor import Meteor
+from pycocoevalcap.cider.cider import Cider
 
+from datetime import datetime
+from pytz import timezone
+
+# SPECIAL_TOKEN = ["[UNK]", "[PAD]", "[CLS]", "[MASK]"]
+class Evaluate(object):
+    def __init__(self):
+        self.scorers = [
+            (Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]),
+            (Meteor(), "METEOR"),
+            (Rouge(), "ROUGE_L"),
+            #(Cider(), "CIDEr"),
+            #(Spice(), "Spice")
+        ]
+    
+    def score(self, ref, hypo):
+        final_scores = {}
+        for scorer, method in self.scorers:
+            score, scores = scorer.compute_score(ref, hypo)
+            if type(score) == list:
+                for m, s in zip(method, score):
+                    print(m)
+                    final_scores[m] = s
+            else:
+                print(method)
+                final_scores[method] = score
+        return final_scores
+
+    def evaluate(self, return_scores=False, **kwargs):
+        ans = kwargs.pop('ref', {})
+        cand = kwargs.pop('cand', {})
+
+        hypo = {}
+        ref = {}
+        i = 0
+        for i in range(len(cand)):
+            hypo[i] = [cand[i]]
+            ref[i] = [ans[i]]
+        
+        final_scores = self.score(ref, hypo)
+        print ('Bleu_1:\t', final_scores['Bleu_1'])
+        print ('Bleu_2:\t', final_scores['Bleu_2'])
+        print ('Bleu_3:\t', final_scores['Bleu_3'])
+        print ('Bleu_4:\t', final_scores['Bleu_4'])
+        print ('METEOR:\t', final_scores['METEOR'])
+        print ('ROUGE_L:', final_scores['ROUGE_L'])
+        #print ('CIDEr:\t', final_scores['CIDEr'])
+        #print ('Spice:\t', final_scores['Spice'])
+
+        if return_scores:
+            return final_scores
+        
 
 def detokenize(tk_list):
     r_list = []
@@ -130,7 +185,6 @@ def main():
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
     parser.add_argument('--answer_provided_by', type=str, default="img|txt")
 
-    parser.add_argument('--log_txt', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/log.txt")
     parser.add_argument("--recover_ori_ckpt", action='store_true',
                         help="Whether to load original VLP checkpoint.")
 
@@ -180,6 +234,7 @@ def main():
 
     # output config
     os.makedirs(args.output_dir, exist_ok=True)
+    os.makedirs(os.path.join(args.output_dir, 'qa_infr'), exist_ok=True)
     json.dump(args.__dict__, open(os.path.join(
         args.output_dir, 'opt.json'), 'w'), sort_keys=True, indent=2)
     
@@ -304,6 +359,7 @@ def main():
         
         iter_bar = tqdm(infr_dataloader, desc = 'Step = X')
         for step, batch in enumerate(iter_bar):
+            #if step<834: continue
             with torch.no_grad():
                 batch = [t.to(device) for t in batch]
                 input_ids, segment_ids, position_ids, input_mask, task_idx, img, vis_pe, context_is_img = batch
@@ -330,12 +386,12 @@ def main():
                     #output_buf = tokenizer.convert_ids_to_tokens([i for i in w_ids if i>0 and i!=102])
                     output_tokens = []
                     for t in output_buf:
-                        #if t in ("[SEP]", "[PAD]"):
-                            #break
+                        if t in ("[SEP]", "[PAD]"):
+                            break
                         output_tokens.append(t)
                     output_sequence = ' '.join(detokenize(output_tokens))
                     output_lines.append(output_sequence)
-                    print(output_sequence)
+                    #print("\noutput_sequence for cur batch = ", output_sequence)
                     # buf_id[i] = img_idx (global idx across chunks)
                 iter_bar.set_description('Step = {}'.format(step))
 
@@ -344,10 +400,24 @@ def main():
         assert len(Q) == len(A) == len(output_lines)
         
         predictions = zip(Q, A, output_lines)
-        print("\n\n".join(output_lines))
-        print('Yay can work on language_eval now!')
-        #lang_stats = language_eval(args.dataset, predictions, args.model_recover_path.split('/')[-2]+'-'+args.split+'-'+args.model_recover_path.split('/')[-1].split('.')[-2], args.split)
+        #for q, a, o in predictions:
+            #print(q)
+            #print(a)
+            #print(o)
+        eval_f = Evaluate()
+        scores = eval_f.evaluate(cand=output_lines, ref=A, return_scores=True)
 
+        with open(os.path.join(args.output_dir, 'qa_infr', args.split+"_qainfr_beam{}.txt".format(args.beam_size)), "w") as f:
+            f.write('\n\n' + datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
+            f.write("\n".join(log_txt_content))
+            f.write('\n --------------------- results -----------------------\n')
+            f.write(str(scores))
+            f.write('\n')
+            f.write('-----Starting writing results:-----')
+            for q, a, o in zip(Q, A, output_lines):
+                f.write("\n\n")
+                f.write("\n".join([q, a, o]))
+                
 
 if __name__ == "__main__":
     main()

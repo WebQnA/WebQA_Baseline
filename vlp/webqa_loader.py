@@ -133,8 +133,8 @@ class webqaDataset_qa(torch.utils.data.Dataset):
             datum = i
             if datum['split'] in split:
                 if use_num_samples == -1 or count < use_num_samples:
-                    Q = self.tokenizer.tokenize(datum['Q'])
-                    A = self.tokenizer.tokenize(datum['A'])
+                    Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
+                    A = self.tokenizer.tokenize(datum['A'].replace('"', ""))
                     gold_facts = []
                     distractor_facts = []
                     for fa in datum['SupportingFacts']:
@@ -506,9 +506,7 @@ class Preprocess4webqa(Pipeline):
                 tokens_b = Q+A
                 truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_img_cxt + self.max_len_b, max_len_a=self.max_len_img_cxt, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
                 tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
-                #print("\n", tokens_b)
-                #print("\nnum_gold = ", len(gold_feature_paths))
-                #print("\n")
+
                 #time.sleep(2)
                 if self.new_segment_ids:
                     segment_ids = [4] * (len(tokens_a)+2) + [5] * (len(tokens_b)+1)
@@ -528,15 +526,15 @@ class Preprocess4webqa(Pipeline):
                 masked_tokens = [tokens[pos] for pos in masked_pos] # gth token in masked_pos
                 for pos in masked_pos:
                     if rand() < 0.8:
-                        print("<0.8")
+                        #print("<0.8")
                         tokens[pos] = '[MASK]'
                     elif rand() < 0.5:
-                        print("<0.5")
+                        #print("<0.5")
                         tokens[pos] = get_random_word(self.vocab_words)
                 #print("\nIn loader, A = ", A)
                 #print("effective length = ", effective_len_A)
                 #print("\n", [tokens[i] for i in cand_pos])
-                print("\nIn loader after masking: ------>", tokens[len(tokens_a)+2+len(Q):])
+                #print("\nIn loader after masking: ------>", tokens[len(tokens_a)+2+len(Q):])
 
                 masked_weights = [1] * len(masked_tokens)
                 masked_ids = self.indexer(masked_tokens)
@@ -807,15 +805,15 @@ class Preprocess4webqaDecoder(Pipeline):
             if context_is_img:
                 gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, _, do_filter_task, context_is_img = instance # '_' as a placeholder for 'A'
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
-                tokens_b = Q
+                tokens_b = Q.copy() # without copy Q will change as we modify tokens_b during padding!!!!!
                 truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_img_cxt + self.max_len_Q, max_len_a=self.max_len_img_cxt, max_len_b=self.max_len_Q, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
                 
                 # Pad tokens_b to max_len_Q
-                #n_pad = self.max_len_Q - len(tokens_b)
-                #tokens_b += ['[PAD]'] * n_pad
+                n_pad = self.max_len_Q - len(tokens_b)
+                tokens_b += ['[PAD]'] * n_pad
 
                 tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b # + ['[SEP]'] # start generating right after Q
-                #print("\ntokens = ", tokens)
+                #print(tokens_b)
                 if self.new_segment_ids:
                     segment_ids = [4] * (len(tokens_a)+2) + [5] * len(tokens_b) + [5] * (self.max_len - len(tokens))
                 else:
@@ -824,13 +822,16 @@ class Preprocess4webqaDecoder(Pipeline):
                 
                 # Q 和 A中间的position_id不连续真的会出问题。。。
                 # position_ids
+                ori_Q_len = min(len(Q), self.max_len_Q)
                 position_ids = []
-                for i in range(len(tokens_a) + 2 + len(Q)):
+                for i in range(len(tokens_a) + 2 + ori_Q_len):
                     position_ids.append(i)
-                for i in range(len(tokens_a) + 2 + len(Q), len(tokens)):
+                for i in range(len(tokens_a) + 2 + ori_Q_len, len(tokens)):
                     position_ids.append(0)
                 for i in range(len(tokens), self.max_len):
-                    position_ids.append(i - len(tokens) + len(tokens_a) + 2 + len(Q))
+                    position_ids.append(i - len(tokens) + len(tokens_a) + 2 + ori_Q_len)
+                #print(position_ids[202:302])
+                
                 
 
                 # Token Indexing

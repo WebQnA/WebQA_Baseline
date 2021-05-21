@@ -5,7 +5,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-os.environ['MASTER_PORT'] = '8887'
+os.environ['MASTER_ADDR'] = 'localhost'
+#os.environ['MASTER_PORT'] = '12355'
 import sys
 sys.path.append("/home/yingshac/CYS/WebQnA/VLP")
 import logging
@@ -54,15 +55,18 @@ def _get_max_epoch_model(output_dir):
 
 def _get_loader_from_dataset(train_dataset, world_size, train_batch_size, num_workers, collate_fn):
     if world_size == 1:
+        print("\nRandomSampler")
         train_sampler = RandomSampler(train_dataset, replacement=False)
-        print("\nSequentialSampler")
+        pass
+        #print("\nSequentialSampler")
         #train_sampler = SequentialSampler(train_dataset)
     else:
-        train_sampler = DistributedSampler(train_dataset, shuffle=False)
+        print("\nDistributedSampler")
+        train_sampler = DistributedSampler(train_dataset)
     train_dataloader = torch.utils.data.DataLoader(train_dataset,
         batch_size=train_batch_size, sampler=train_sampler, num_workers=num_workers,
         collate_fn=collate_fn, pin_memory=True)
-    return train_dataloader
+    return train_dataloader, train_sampler
 
 def save_loss_curve(loss, i_epoch, output_dir, task, all_tasks):
     plt.figure(figsize=(12, 5))
@@ -268,7 +272,8 @@ def main():
         device = torch.device("cuda", args.local_rank)
         n_gpu = 1
         # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
-        torch.distributed.init_process_group(backend='nccl', init_method = args.dist_url,
+        port = '12355'
+        torch.distributed.init_process_group(backend='nccl', init_method = 'tcp://128.2.205.68:{}'.format(port),
             world_size=args.world_size, rank=args.global_rank)
     logger.info("device: {} n_gpu: {}, distributed training: {}, 16-bits training: {}".format(
         device, n_gpu, bool(args.local_rank != -1), args.fp16))
@@ -307,22 +312,25 @@ def main():
             local_rank=args.local_rank)
     
     train_dataloaders = []
+    train_samplers = []
     if "filter" in args.task_to_learn:
         if "txt" in args.answer_provided_by:
             train_dataset = webqa_loader.webqaDataset_filter(dataset_json_path=args.txt_dataset_json_path, split=args.split, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
                     processor=processor, filter_max_choices=args.txt_filter_max_choices, device=device)
 
-            train_dataloader = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
+            train_dataloader, train_sampler = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
             train_dataloaders.append(train_dataloader)
+            train_samplers.append(train_sampler)
         
         if "img" in args.answer_provided_by:
             train_dataset = webqa_loader.webqaDataset_filter_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
                     distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
                     processor=processor, filter_max_choices=args.img_filter_max_choices, device=device)
-            train_dataloader = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
+            train_dataloader, train_sampler = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
             train_dataloaders.append(train_dataloader)
+            train_samplers.append(train_sampler)
     
     if "qa" in args.task_to_learn:
         if "txt" in args.answer_provided_by:
@@ -330,16 +338,18 @@ def main():
                     batch_size=args.train_batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
                     processor=processor, device=device)
 
-            train_dataloader = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
+            train_dataloader, train_sampler = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
             train_dataloaders.append(train_dataloader)
+            train_samplers.append(train_sampler)
         
         if "img" in args.answer_provided_by:
             train_dataset = webqa_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
                     distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
                     processor=processor, device=device)
-            train_dataloader = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
+            train_dataloader, train_sampler = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
             train_dataloaders.append(train_dataloader)
+            train_samplers.append(train_sampler)
 
         
     loader_lengths = [len(l) for l in train_dataloaders]
@@ -438,9 +448,10 @@ def main():
                 "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
         model = DDP(model, device_ids = [args.local_rank], output_device = args.local_rank, find_unused_parameters=True)
     elif n_gpu > 1:
-        #model = torch.nn.DataParallel(model)
-        pass
-        #model = DataParallelImbalance(model, device_ids=[0,1,2,3])
+        model = torch.nn.DataParallel(model, device_ids=[0,1])
+        #pass
+        print("\nn_gpu = ", n_gpu)
+        #model = DataParallelImbalance(model, device_ids=[0,1])
 
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())
@@ -511,7 +522,8 @@ def main():
             print(i_epoch)
             dataloader_iters = [iter(l) for l in train_dataloaders]
             if args.local_rank >= 0:
-                train_sampler.set_epoch(i_epoch-1)
+                for train_sampler in train_samplers:
+                    train_sampler.set_epoch(i_epoch-1)
             iter_bar = tqdm(train_dataloader_order, desc='Iter (loss=X.XXX), loader_idx=X') 
             nbatches = sum(loader_lengths)
             
@@ -542,7 +554,7 @@ def main():
                 loss_tuple = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
                     masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
                         next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
-                            drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0, tokenizer=tokenizer)
+                            drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0)
                 mean_reward = loss_tuple[0].new(1).fill_(0)
 
                 # disable pretext_loss_deprecated for now
@@ -673,6 +685,8 @@ def main():
 
             if args.world_size > 1:
                 torch.distributed.barrier()
+        # cleanup
+        torch.distributed.destroy_process_group()
     else: # inference mode
         print("-------------------- Inference mode ------------------------")
         log_txt_content.append("-------------------- Inference mode ------------------------")
@@ -680,8 +694,8 @@ def main():
         log_txt_content.append("use_num_samples = {}".format(args.use_num_samples))
         model.eval()
         dataloader_iters = [iter(l) for l in train_dataloaders]
-        if args.local_rank >= 0:
-                train_sampler.set_epoch(i_epoch-1)
+        #if args.local_rank >= 0:
+            #train_sampler.set_epoch(i_epoch-1)
         iter_bar = tqdm(train_dataloader_order, desc='Iter (loss=X.XXX), loader_idx=X') 
         nbatches = sum(loader_lengths)
             
