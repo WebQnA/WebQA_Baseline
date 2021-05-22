@@ -1576,7 +1576,7 @@ class BertForWebqa(PreTrainedBertModel):
         # self.ans_classifier = nn.Sequential(nn.Linear(config.hidden_size, config.hidden_size*2),
                                        #nn.ReLU(),
                                        #nn.Linear(config.hidden_size*2, 3129)) # 3129 hard coded...
-        self.context_classifier = nn.Linear(config.hidden_size, 1) # each choice gets a single logit
+        self.context_classifier = nn.Linear(config.hidden_size, 2) # each choice gets a single logit
         #self.context_crit = nn.BCEWithLogitsLoss()
 
 
@@ -1614,15 +1614,25 @@ class BertForWebqa(PreTrainedBertModel):
             attention_mask = attention_mask.view(B*num_choices, -1, attention_mask.size(-1))
 
             def cross_entropy_with_logits_loss(prediction, target, logit_mask):
-                # prediction: batch_size x num_choices
-                # target: batch_size x num_choices. Targets with multiple flags look like: [0,0,1,1,1] (there is no need to normalize them)
-                lp = F.log_softmax(prediction+logit_mask, dim=-1)
-                num_flags = torch.sum(target, dim=-1)
-                num_flags = torch.max(num_flags, torch.ones_like(num_flags))
-                labels = target / num_flags.unsqueeze(-1).repeat(1, prediction.size(-1))
-                m = lp * labels
-                m = torch.where(torch.isnan(m), torch.zeros_like(m), m)
-                loss = torch.sum(- m, dim=-1) * num_flags
+                # prediction: batch_size x num_choices x 2
+                # target: batch_size x num_choices x 2. Targets with multiple flags look like [[0,1], [1,0], [0,1], [0,1], [0,1]] (there is no need to normalize them)
+                num_choices = prediction.size(1)
+                batch_size = prediction.size(0)
+                lp = F.log_softmax(prediction, dim=-1) # batch_size x num_choices x 2
+                #num_flags = torch.sum(target, dim=-1)
+                #num_flags = torch.max(num_flags, torch.ones_like(num_flags))
+                #labels = target / num_flags.unsqueeze(-1).repeat(1, prediction.size(-1))
+                #m = lp * labels
+                #m = torch.where(torch.isnan(m), torch.zeros_like(m), m)
+                #loss = torch.sum(- m, dim=-1) * num_flags
+                normalizer = torch.sum(logit_mask, dim=-1)
+                m = lp * target * logit_mask.view(-1, num_choices, 1).repeat(1,1,2) # target.transpose --> batch_size x num_choices x 2
+                
+                #print(normalizer)
+                #print(m)
+                #print(target)
+                loss = (-m).view(batch_size, -1).sum(dim=-1)/normalizer
+                #print(loss)
                 return torch.mean(loss)
             def filter_metric(prediction, target, logit_mask):
                 # prediction: batch_size x num_choices
@@ -1662,8 +1672,8 @@ class BertForWebqa(PreTrainedBertModel):
             # vqa2_embed = pooled_output
             cls_embed = sequence_output[:, 0] #*sequence_output[:, self.max_len_a+1] 
             # Don't do multiplication for not cuz cxt_meta wasn't padded to fixed length during preprocessing
-            cls_pred = self.context_classifier(cls_embed) # B*num_choices x 1 
-            cls_pred = cls_pred.view(-1, num_choices)
+            cls_pred = self.context_classifier(cls_embed) # B*num_choices x 2
+            cls_pred = cls_pred.view(-1, num_choices, 2)
             # cls_labels: B
             if do_inference:
                 loss, metric1, metric2 = filter_metric(cls_pred, filter_label, logit_mask)
@@ -1831,7 +1841,7 @@ class BertForWebqaDecoder(PreTrainedBertModel):
         batch_size = input_shape[0]
         input_length = input_shape[1]
         output_shape = list(token_type_ids.size())
-        output_length = output_shape[1]
+        output_length = min(output_shape[1], input_length+30)
 
         output_ids = []
         output_probs = []
@@ -1893,7 +1903,10 @@ class BertForWebqaDecoder(PreTrainedBertModel):
                                        for x in zip(prev_encoded_layers, new_encoded_layers)]
             curr_ids = max_ids
             next_pos += 1
-        return torch.cat(output_ids, dim=1), torch.cat(output_probs, dim=1)
+        #print(output_probs[-1].size())
+        #print(torch.cat(output_ids, dim=1).detach().cpu().numpy()[0])
+        return [{s.item():seq} for s, seq in zip(output_probs[-1].detach().cpu().numpy(), torch.cat(output_ids, dim=1).detach().cpu().numpy())]
+        #return torch.cat(output_ids, dim=1), torch.cat(output_probs, dim=1)
 
 
     def beam_search(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context_is_img, task_idx=None):
@@ -1902,7 +1915,7 @@ class BertForWebqaDecoder(PreTrainedBertModel):
         batch_size = input_shape[0]
         input_length = input_shape[1]
         output_shape = list(token_type_ids.size()) # batch_size x max_len_in_batch
-        output_length = output_shape[1]
+        output_length = min(output_shape[1], input_length+30)
 
         output_ids = []
         prev_embedding = None
@@ -2079,20 +2092,22 @@ class BertForWebqaDecoder(PreTrainedBertModel):
                         forbid_word_mask = None
             next_pos += 1
 
-        # [(batch, beam)]
+        # output_len x batch_size x K
         total_scores = [x.tolist() for x in total_scores] # each x: batch_size x K
         step_ids = [x.tolist() for x in step_ids]
         step_back_ptrs = [x.tolist() for x in step_back_ptrs]
         # back tracking
-        traces = {'pred_seq': [], 'scores': [], 'wids': [], 'ptrs': []}
+        #traces = {'pred_seq': [], 'scores': [], 'wids': [], 'ptrs': []}
+        traces = [] # list of dict {scores: pred_seq}. Will be sorted by score.
         for b in range(batch_size):
-            # [(beam,)]
+            traces.append({})
             scores = [x[b] for x in total_scores] # output_len x K 
             wids_list = [x[b] for x in step_ids]  # output_len x K 
             ptrs = [x[b] for x in step_back_ptrs] # output_len x K 
-            traces['scores'].append(scores) # 这个跟 total_scores, step_ids, step_back_ptrs有什么区别啊。。。又重新一个个append一遍。。。
-            traces['wids'].append(wids_list)
-            traces['ptrs'].append(ptrs)
+            #traces['scores'].append(scores) # 这些跟 total_scores, step_ids, step_back_ptrs有什么区别啊。。。又重新一个个append一遍。。。
+            #traces['wids'].append(wids_list)
+            #traces['ptrs'].append(ptrs)
+            
             # first we need to find the eos frame where all symbols are eos
             # any frames after the eos frame are invalid
             last_frame_id = len(scores) - 1 # last id within output_len
@@ -2101,27 +2116,45 @@ class BertForWebqaDecoder(PreTrainedBertModel):
                 if all(wid == self.eos_id for wid in wids):
                     last_frame_id = i
                     break
-            max_score = -math.inf
-            frame_id = -1
-            pos_in_frame = -1
+            #max_score = -math.inf
+            #frame_id = -1
+            #pos_in_frame = -1
 
+            score2pos = {}
+            used_pos = []
             for fid in range(last_frame_id + 1):
                 for i, wid in enumerate(wids_list[fid]):
-                    if wid == self.eos_id or fid == last_frame_id:
+                    if (wid == self.eos_id or fid == last_frame_id) and not i in used_pos:
                         s = scores[fid][i] + self.length_penalty * (fid + 1)
-                        if s > max_score:
-                            max_score = s
-                            frame_id = fid
-                            pos_in_frame = i
-            if frame_id == -1: # prediction is empty
-                traces['pred_seq'].append([0])
-            else:
+                        if s > -math.inf:
+                            score2pos[s] = (fid, i) # (frame_id, pos_in_frame)
+                            used_pos.append(i)
+                #if len(score2pos)>0: break
+                        #if s > max_score:
+                            #max_score = s
+                            #frame_id = fid
+                            #pos_in_frame = i
+            
+            for s in sorted(score2pos.keys(), reverse=True):
+                frame_id = score2pos[s][0]
+                pos_in_frame = score2pos[s][1]
                 seq = [wids_list[frame_id][pos_in_frame]]
                 for fid in range(frame_id, 0, -1):
                     pos_in_frame = ptrs[fid][pos_in_frame]
                     seq.append(wids_list[fid - 1][pos_in_frame])
                 seq.reverse()
-                traces['pred_seq'].append(seq)
+                traces[-1][s] = seq
+            if len(score2pos) < self.search_beam_size: # create placeholder so that #predictions = K
+                n_placeholder = self.search_beam_size-len(score2pos)
+                for s in range(-10000, -10000-n_placeholder, -1):
+                    traces[-1][s] = [0]
+
+                #seq = [wids_list[frame_id][pos_in_frame]]
+                #for fid in range(frame_id, 0, -1):
+                    #pos_in_frame = ptrs[fid][pos_in_frame]
+                    #seq.append(wids_list[fid - 1][pos_in_frame])
+                #seq.reverse()
+                #traces['pred_seq'].append(seq)
 
         def _pad_sequence(sequences, max_len, padding_value=0):
             # sequences: batch_size x output_len x K
@@ -2135,6 +2168,7 @@ class BertForWebqaDecoder(PreTrainedBertModel):
                 out_tensor[i, :length, ...] = tensor # ... is equivalent to :   ???
             return out_tensor
 
+        '''
         # convert to tensors for DataParallel
         for k in ('pred_seq', 'scores', 'wids', 'ptrs'):
             ts_list = traces[k]
@@ -2143,7 +2177,7 @@ class BertForWebqaDecoder(PreTrainedBertModel):
                 ts_list = [torch.tensor(it, dtype=dt) for it in ts_list]
             traces[k] = _pad_sequence(
                 ts_list, output_length, 0).to(input_ids.device)
-
+        '''
         return traces
 
 
