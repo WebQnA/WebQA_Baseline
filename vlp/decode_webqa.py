@@ -41,8 +41,16 @@ from pycocoevalcap.cider.cider import Cider
 
 from datetime import datetime
 from pytz import timezone
+from word2number import w2n
+import re
 
 # SPECIAL_TOKEN = ["[UNK]", "[PAD]", "[CLS]", "[MASK]"]
+def toNum(word):
+    try: return w2n.word_to_num(word)
+    except:
+        return word
+
+# Language eval
 class Evaluate(object):
     def __init__(self):
         self.scorers = [
@@ -67,14 +75,14 @@ class Evaluate(object):
         return final_scores
 
     def evaluate(self, return_scores=False, **kwargs):
-        ans = kwargs.pop('ref', {})
-        cand = kwargs.pop('cand', {})
+        ans = kwargs.pop('ref', {}) # only support one ans per sample
+        cand = kwargs.pop('cand', {}) # only support one cand per sample, but the input cand has size batch_size x K
 
         hypo = {}
         ref = {}
         i = 0
         for i in range(len(cand)):
-            hypo[i] = [cand[i]]
+            hypo[i] = [cand[i][0]]
             ref[i] = [ans[i]]
         
         final_scores = self.score(ref, hypo)
@@ -89,7 +97,29 @@ class Evaluate(object):
 
         if return_scores:
             return final_scores
-        
+
+# VQA Eval (SQuAD style EM, F1)
+def compute_vqa_metrics(cands, a):
+    if len(cands) == 0: return (0,0,0)
+    bow_a = re.sub(r'[^\w\s\']', '', a).lower().split()
+    bow_a = [str(toNum(w)) for w in bow_a]
+    F1 = []
+    EM = 0
+    for c in cands:
+        bow_c = re.sub(r'[^\w\s\']', '', c).lower().split()
+        bow_c = [str(toNum(w)) for w in bow_c]
+        if bow_c == bow_a:
+            EM = 1
+        #print(bow_a, bow_c)
+        overlap = float(len([w for w in bow_c if w in bow_a]))
+        precision = overlap/(len(bow_c) + 1e-5)
+        recall = overlap / (len(bow_a) + 1e-5)
+        f1 = 2*precision*recall / (precision + recall + 1e-5)
+        F1.append(f1)
+    
+    F1_avg = np.mean(F1)
+    F1_max = np.max(F1)
+    return (F1_avg, F1_max, EM)
 
 def detokenize(tk_list):
     r_list = []
@@ -139,11 +169,14 @@ def main():
                         default='',
                         type=str,
                         help="The output directory where the model predictions and ckpts will be written")
+    parser.add_argument("--output_suffix", default="", type=str)
     parser.add_argument("--log_file",
                         default="training.log",
                         type=str,
                         help="The output directory where the log will be written.")
-    parser.add_argument("--model_recover_path", default=None, type=str,
+    parser.add_argument("--model_recover_path", 
+                        default="/home/yingshac/CYS/WebQnA/cpts/cc_g8_lr1e-4_batch512_s0.75_b0.25/model.30.bin",
+                        type=str,
                         help="The file of fine-tuned pretraining model.")
     parser.add_argument('--from_scratch', action='store_true',
                         help="Initialize parameters with random values (i.e., training from scratch).")
@@ -173,7 +206,7 @@ def main():
                         help="Forbid the word during forbid_duplicate_ngrams")
     parser.add_argument("--min_len", default=None, type=int)
     parser.add_argument('--ngram_size', type=int, default=3)
-    parser.add_argument('--max_tgt_length', type=int, default=30,
+    parser.add_argument('--max_tgt_len', type=int, default=30,
                         help="maximum length of target sequence")
 
     # webqa dataset
@@ -254,7 +287,7 @@ def main():
     processor = webqa_loader.Preprocess4webqaDecoder(list(tokenizer.vocab.keys()), \
             tokenizer.convert_tokens_to_ids, max_len=args.max_seq_length, len_vis_input=args.len_vis_input, \
             max_len_a=args.max_len_a, max_len_Q=args.max_len_Q, max_len_img_cxt=args.max_len_img_cxt, \
-            new_segment_ids=args.new_segment_ids, \
+            max_tgt_len=args.max_tgt_len, new_segment_ids=args.new_segment_ids, \
             truncate_config={'trunc_seg': args.trunc_seg, 'always_truncate_tail': args.always_truncate_tail})
 
     infr_dataloaders = []
@@ -343,8 +376,8 @@ def main():
     if args.fp16:
         model.half()
     model.to(device)
-    if n_gpu > 1:
-        model = torch.nn.DataParallel(model)
+    #if n_gpu > 1:
+        #model = torch.nn.DataParallel(model)
 
     torch.cuda.empty_cache()
     model.eval()
@@ -354,6 +387,7 @@ def main():
     log_txt_content.append("use_num_samples = {}".format(args.use_num_samples))
     
     output_lines = []
+    output_confidence = []
     for infr_dataloader in infr_dataloaders:
         nbatches = len(infr_dataloader)
         
@@ -374,30 +408,33 @@ def main():
 
                 traces = model(conv_feats, vis_pe, input_ids, segment_ids, position_ids, input_mask, context_is_img, task_idx=task_idx)
                     
-                if args.beam_size > 1:
-                    traces = {k: v.tolist() for k, v in traces.items()}
-                    output_ids = traces['pred_seq']
-                else:
-                    output_ids = traces[0].tolist()
+                #if args.beam_size > 1:
+                    #traces = {k: v.tolist() for k, v in traces.items()}
+                    #output_ids = traces['pred_seq']
+                #else:
+                    #output_ids = traces[0].tolist()
 
                 for i in range(input_ids.size(0)):
-                    w_ids = output_ids[i]
-                    output_buf = tokenizer.convert_ids_to_tokens(w_ids)
-                    #output_buf = tokenizer.convert_ids_to_tokens([i for i in w_ids if i>0 and i!=102])
-                    output_tokens = []
-                    for t in output_buf:
-                        if t in ("[SEP]", "[PAD]"):
-                            break
-                        output_tokens.append(t)
-                    output_sequence = ' '.join(detokenize(output_tokens))
-                    output_lines.append(output_sequence)
+                    output_sequences = []
+                    output_confidence.append(str(list(traces[i].keys())))
+                    for w_ids in traces[i].values():
+                        output_buf = tokenizer.convert_ids_to_tokens(w_ids)
+                        #output_buf = tokenizer.convert_ids_to_tokens([i for i in w_ids if i>0 and i!=102])
+                        output_tokens = []
+                        for t in output_buf:
+                            if t in ("[SEP]", "[PAD]"):
+                                break
+                            output_tokens.append(t)
+                        output_sequences.append(' '.join(detokenize(output_tokens)))
+                    
+                    output_lines.append(output_sequences)
                     #print("\noutput_sequence for cur batch = ", output_sequence)
                     # buf_id[i] = img_idx (global idx across chunks)
                 iter_bar.set_description('Step = {}'.format(step))
 
         Q, A = infr_dataloader.dataset.get_QA_list()
         Q, A = [' '.join(detokenize(q)) for q in Q], [' '.join(detokenize(a)) for a in A]
-        assert len(Q) == len(A) == len(output_lines)
+        assert len(Q) == len(A) == len(output_lines) == len(output_confidence)
         
         predictions = zip(Q, A, output_lines)
         #for q, a, o in predictions:
@@ -407,16 +444,35 @@ def main():
         eval_f = Evaluate()
         scores = eval_f.evaluate(cand=output_lines, ref=A, return_scores=True)
 
-        with open(os.path.join(args.output_dir, 'qa_infr', args.split+"_qainfr_beam{}.txt".format(args.beam_size)), "w") as f:
-            f.write('\n\n' + datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
+        # SQuAD style vqa eval: EM, F1
+        F1_avg_scores = []
+        F1_max_scores = []
+        EM_scores = []
+        for cands, a in zip(output_lines, A):
+            assert len(cands)==args.beam_size
+            F1_avg, F1_max, EM = compute_vqa_metrics(cands, a)
+            F1_avg_scores.append(F1_avg)
+            F1_max_scores.append(F1_max)
+            EM_scores.append(EM)
+        F1_avg = np.mean(F1_avg_scores)
+        F1_max = np.mean(F1_max_scores)
+        EM = np.mean(EM_scores)
+        print("F1_avg = {}".format(F1_avg))
+        print("F1_max = {}".format(F1_max))
+        print("EM = {}".format(EM))
+
+        with open(os.path.join(args.output_dir, 'qa_infr', args.split+"_qainfr_beam{}_{}.txt".format(args.beam_size, args.output_suffix)), "w") as f:
+            f.write(datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
             f.write("\n".join(log_txt_content))
-            f.write('\n --------------------- results -----------------------\n')
+            f.write('\n --------------------- metrics -----------------------\n')
             f.write(str(scores))
-            f.write('\n')
+            f.write('\n\n')
+            f.write('\n'.join(["F1_avg = {}".format(F1_avg), "F1_max = {}".format(F1_max), "EM = {}".format(EM)]))
+            f.write('\n\n')
             f.write('-----Starting writing results:-----')
-            for q, a, o in zip(Q, A, output_lines):
+            for q, a, oc, o in zip(Q, A, output_confidence, output_lines):
                 f.write("\n\n")
-                f.write("\n".join([q, a, o]))
+                f.write("\n".join([q, a, oc, '\n'.join(o)]))
                 
 
 if __name__ == "__main__":

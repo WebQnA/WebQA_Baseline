@@ -686,7 +686,8 @@ def main():
             if args.world_size > 1:
                 torch.distributed.barrier()
         # cleanup
-        torch.distributed.destroy_process_group()
+        if args.local_rank == -1 or args.no_cuda: pass
+        else: torch.distributed.destroy_process_group()
     else: # inference mode
         print("-------------------- Inference mode ------------------------")
         log_txt_content.append("-------------------- Inference mode ------------------------")

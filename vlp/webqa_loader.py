@@ -347,7 +347,8 @@ class Preprocess4webqa(Pipeline):
                 assert len(all_choices_cxt_list) == filter_num_choices and len(all_choices_feature_paths) == filter_num_choices
                 all_choices_feature_paths = [all_choices_feature_paths[p] for p in perm]
                 all_choices_cxt_list = [all_choices_cxt_list[p] for p in perm]
-                label = [1. if p<num_gold else 0. for p in perm]
+                label = torch.tensor([1. if p<num_gold else 0. for p in perm])
+                label = torch.stack([label, 1-label], dim=0).transpose(1,0)
                 input_ids_list = []
                 segment_ids_list = []
                 input_mask_list = []
@@ -426,7 +427,7 @@ class Preprocess4webqa(Pipeline):
                     img_list.append(img)
                     vis_pe_list.append(vis_pe)
                 
-                logit_mask = [0.] * len(input_ids_list)
+                logit_mask = [1.] * len(input_ids_list)
                 if len(input_ids_list) < filter_max_choices:
                     num_placeholder = filter_max_choices - len(input_ids_list)
                     input_ids_list.extend([input_ids_list[-1]] * num_placeholder)
@@ -434,15 +435,14 @@ class Preprocess4webqa(Pipeline):
                     input_mask_list.extend([input_mask_list[-1]] * num_placeholder)
                     img_list.extend([img_list[-1]] * num_placeholder)
                     vis_pe_list.extend([vis_pe_list[-1]] * num_placeholder)
-                    logit_mask.extend([-float("Inf")] * num_placeholder)
-                    label.extend([0.] * num_placeholder)
+                    logit_mask.extend([0.] * num_placeholder)
+                    label = torch.cat([label, torch.tensor([[0., 0.]] * num_placeholder)], dim=0)
                 input_ids = torch.stack(input_ids_list, dim=0)
                 segment_ids = torch.stack(segment_ids_list, dim=0)
                 input_mask = torch.stack(input_mask_list, dim=0)
                 img = torch.stack(img_list, dim=0)
                 vis_pe = torch.stack(vis_pe_list, dim=0)
                 logit_mask = torch.tensor(logit_mask)
-                label = torch.tensor(label)
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img)
                 return (input_ids, segment_ids, input_mask,       None,       None,       None,       -1,       do_filter_task,       label,       logit_mask, self.task_idx, img, vis_pe, context_is_img)
 
@@ -781,7 +781,7 @@ class Preprocess4webqa(Pipeline):
 
 class Preprocess4webqaDecoder(Pipeline):
 
-    def __init__(self, vocab_words, indexer, max_len, len_vis_input, max_len_a, max_len_Q, max_len_img_cxt=200, new_segment_ids=True, truncate_config={}):
+    def __init__(self, vocab_words, indexer, max_len, len_vis_input, max_len_a, max_len_Q, max_len_img_cxt=200, max_tgt_len=30, new_segment_ids=True, truncate_config={}):
         super().__init__()
         self.task_idx = 3 # use task_idx for s2s in relaxed projection layer
         self.len_vis_input = len_vis_input
@@ -792,7 +792,7 @@ class Preprocess4webqaDecoder(Pipeline):
         self.always_truncate_tail = truncate_config.get('always_truncate_tail', False)
         self.max_len_Q = max_len_Q
         self.max_len_a = max_len_a
-        self.max_len = max_len
+        self.max_len = min(max_len, max_len_a + 2 + max_len_Q + max_tgt_len)
         self.trunc_seg = truncate_config.get('trunc_seg', None)
         assert max_len_a+max_len_Q <= max_len, "loader Processor: max_len_a + max_len_b > max_len"
         self.new_segment_ids = new_segment_ids
