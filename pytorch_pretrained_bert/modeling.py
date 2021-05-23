@@ -231,7 +231,8 @@ class BertEmbeddings(nn.Module):
         #print("\nposition_ids.size() = ", position_ids.size())
         #print("\nvis_feats.size() = ", vis_feats.size())
         #print("\nvis_pe.size() = ", vis_pe.size())
-        if context_is_img and prev_is_None: # hard coded! modify here when incorporating snippets as context!!!!
+        if context_is_img and prev_is_None: 
+            #print(vis_pe[0])
             words_embeddings = torch.cat((words_embeddings[:, :1], vis_feats,
                 words_embeddings[:, max_len_img_cxt+1:]), dim=1)
             assert max_len_img_cxt == 200, 'only support region attn!'
@@ -1580,7 +1581,7 @@ class BertForWebqa(PreTrainedBertModel):
         #self.context_crit = nn.BCEWithLogitsLoss()
 
 
-    def forward(self, vis_feats=None, vis_pe=None, input_ids=None, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=None, filter_label=None, logit_mask=None, context_is_img=None, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2, do_inference=False, tokenizer=None):
+    def forward(self, vis_feats=None, vis_pe=None, input_ids=None, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=None, filter_label=None, logit_mask=None, context_is_img=None, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2, filter_infr_th=None, tokenizer=None):
         #print("\n")
         #print(context_is_img)
         if context_is_img[0]: 
@@ -1631,15 +1632,26 @@ class BertForWebqa(PreTrainedBertModel):
                 #print(normalizer)
                 #print(m)
                 #print(target)
-                loss = (-m).view(batch_size, -1).sum(dim=-1)/normalizer
+                loss = (-m).view(batch_size, -1).sum(dim=-1)/(normalizer+1e-8)
                 #print(loss)
                 return torch.mean(loss)
-            def filter_metric(prediction, target, logit_mask):
-                # prediction: batch_size x num_choices
-                # target: batch_size x num_choices
+            def filter_metric(prediction, target, logit_mask, th):
+                # prediction: batch_size x num_choices x 2
+                # target: batch_size x num_choices x 2
+                # logit_mask: batch_size x num_choices
                 num_choices = prediction.size(1)
 
-                lp = torch.nn.functional.log_softmax(prediction+logit_mask, dim=-1)
+                pred = F.softmax(prediction, dim=-1).transpose(2,1)
+                #print(pred)
+                pred = pred[:, 0, :] #batch_size x num_choices
+                pred = (pred>th).float() * logit_mask
+                label = target.transpose(2,1)[:, 0, :] #batch_size x num_choices
+                overlap = torch.sum(pred * label, dim=-1) # batch_size
+                pr = overlap / (torch.sum(pred, dim=-1) + 1e-5) # batch_size
+                re = overlap / (torch.sum(label, dim=-1) + 1e-5) # batch_size
+                f1 = 2*pr*re / (pr+re+1e-5)
+                return torch.mean(pr), torch.mean(re), torch.mean(f1)
+                '''
                 num_flags = torch.sum(target, dim=-1)
                 num_flags = torch.max(num_flags, torch.ones_like(num_flags))
                 labels = target / num_flags.unsqueeze(-1).repeat(1, prediction.size(-1))
@@ -1664,6 +1676,7 @@ class BertForWebqa(PreTrainedBertModel):
                 m = torch.where(torch.isnan(m), torch.zeros_like(m), m)
                 metric2 = torch.sum(m, dim=-1)
                 return torch.mean(loss), torch.mean(metric1), torch.mean(metric2)
+                '''
 
             
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
@@ -1675,9 +1688,9 @@ class BertForWebqa(PreTrainedBertModel):
             cls_pred = self.context_classifier(cls_embed) # B*num_choices x 2
             cls_pred = cls_pred.view(-1, num_choices, 2)
             # cls_labels: B
-            if do_inference:
-                loss, metric1, metric2 = filter_metric(cls_pred, filter_label, logit_mask)
-                return loss, metric1, metric2
+            if filter_infr_th is not None:
+                pr, re, f1 = filter_metric(cls_pred, filter_label, logit_mask, filter_infr_th)
+                return pr, re, f1
             cls_loss = cross_entropy_with_logits_loss(cls_pred, filter_label, logit_mask)
             masked_lm_loss = cls_loss.new(1).fill_(0)
             return masked_lm_loss, cls_loss
