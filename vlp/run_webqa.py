@@ -55,11 +55,11 @@ def _get_max_epoch_model(output_dir):
 
 def _get_loader_from_dataset(train_dataset, world_size, train_batch_size, num_workers, collate_fn):
     if world_size == 1:
-        print("\nRandomSampler")
-        train_sampler = RandomSampler(train_dataset, replacement=False)
-        pass
-        #print("\nSequentialSampler")
-        #train_sampler = SequentialSampler(train_dataset)
+        #print("\nRandomSampler")
+        #train_sampler = RandomSampler(train_dataset, replacement=False)
+        #pass
+        print("\nSequentialSampler")
+        train_sampler = SequentialSampler(train_dataset)
     else:
         print("\nDistributedSampler")
         train_sampler = DistributedSampler(train_dataset)
@@ -196,9 +196,13 @@ def main():
 
     parser.add_argument('--txt_filter_max_choices', type=int, default=7)
     parser.add_argument('--img_filter_max_choices', type=int, default=10)
-    parser.add_argument('--log_txt', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/log.txt")
+    parser.add_argument('--filter_infr_log', type=str, default="filter_infr_log.txt")
     parser.add_argument("--recover_ori_ckpt", action='store_true',
                         help="Whether to load original VLP checkpoint.")
+
+    parser.add_argument('--no_img_meta', action='store_true')
+    parser.add_argument('--no_img_content', action='store_true')
+    parser.add_argument('--filter_infr_th', type=str, default="0.5")
     
     # Others for VLP
     parser.add_argument("--src_file", default=['/mnt/dat/COCO/annotations/dataset_coco.json'],
@@ -248,6 +252,8 @@ def main():
     print('global_rank: {}, local rank: {}'.format(args.global_rank, args.local_rank))
     args.max_seq_length = args.max_len_b + args.max_len_a + 3 # +3 for 2x[SEP] and [CLS]
     args.dist_url = args.dist_url.replace('[PT_OUTPUT_DIR]', args.output_dir)
+    args.use_img_meta = not args.no_img_meta
+    args.use_img_content = not args.no_img_content
     assert args.len_vis_input == 100, "run main: only support 100 region features per image"
     # output config
     os.makedirs(args.output_dir, exist_ok=True)
@@ -309,7 +315,7 @@ def main():
             len_vis_input=args.len_vis_input, max_len_a=args.max_len_a, max_len_b=args.max_len_b, \
             max_len_img_cxt=args.max_len_img_cxt, new_segment_ids=args.new_segment_ids, \
             truncate_config={'trunc_seg': args.trunc_seg, 'always_truncate_tail': args.always_truncate_tail}, \
-            local_rank=args.local_rank)
+            use_img_meta=args.use_img_meta, use_img_content=args.use_img_content)
     
     train_dataloaders = []
     train_samplers = []
@@ -506,6 +512,9 @@ def main():
 
     if args.do_train:
         print("start training")
+        print("use_img_meta = ", args.use_img_meta)
+        print("use_img_content = ", args.use_img_content)
+
         #for param_tensor in model.state_dict():
             #print(param_tensor, "\t", model.state_dict()[param_tensor].size())
         logger.info("***** Running training *****")
@@ -689,58 +698,70 @@ def main():
         if args.local_rank == -1 or args.no_cuda: pass
         else: torch.distributed.destroy_process_group()
     else: # inference mode
+
+        print(args.use_img_meta)
+        print(args.use_img_content)
         print("-------------------- Inference mode ------------------------")
         log_txt_content.append("-------------------- Inference mode ------------------------")
         log_txt_content.append("split = {}".format(args.split))
         log_txt_content.append("use_num_samples = {}".format(args.use_num_samples))
+        log_txt_content.append("\nFilter_max_choices: {}".format(args.img_filter_max_choices)) ## when txt is included, modify here!
+        print("\nFilter_max_choices: {}".format(args.img_filter_max_choices))
+        th_list = [float(i) for i in args.filter_infr_th.split("|")]
+        print("\nThresholds: ", str(th_list))
+        log_txt_content.append("\nThresholds: {}".format(str(th_list)))
         model.eval()
-        dataloader_iters = [iter(l) for l in train_dataloaders]
-        #if args.local_rank >= 0:
-            #train_sampler.set_epoch(i_epoch-1)
-        iter_bar = tqdm(train_dataloader_order, desc='Iter (loss=X.XXX), loader_idx=X') 
-        nbatches = sum(loader_lengths)
-            
-        loss_list = []
-        metric1_list = []
-        metric2_list = []
-        with torch.no_grad():
-            for step, loader_idx in enumerate(iter_bar):
-                batch = next(dataloader_iters[loader_idx])
-                for param_tensor in model.state_dict():
-                    if torch.isnan(model.state_dict()[param_tensor]).any().item():
-                        print("\n nan exists in ", param_tensor)
-                batch = [t.to(device) for t in batch]
-                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, task_idx, img, vis_pe, context_is_img = batch
-                if args.fp16:
-                    img = img.half()
-                    vis_pe = vis_pe.half()
-                    
-                conv_feats = img.data # Bx100x2048
-                vis_pe = vis_pe.data
 
-                # doesn't support scst training for not
-                metrics_tuple = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
-                        masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
-                        next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
-                        drop_worst_ratio=0, do_inference=True)
+        for th in th_list:
+            dataloader_iters = [iter(l) for l in train_dataloaders]
+            #if args.local_rank >= 0:
+                #train_sampler.set_epoch(i_epoch-1)
+            iter_bar = tqdm(train_dataloader_order, desc='Iter (loss=X.XXX), loader_idx=X') 
+            nbatches = sum(loader_lengths)
+                
+            pr_list = []
+            re_list = []
+            f1_list = []
+            with torch.no_grad():
+                for step, loader_idx in enumerate(iter_bar):
+                    batch = next(dataloader_iters[loader_idx])
+                    for param_tensor in model.state_dict():
+                        if torch.isnan(model.state_dict()[param_tensor]).any().item():
+                            print("\n nan exists in ", param_tensor)
+                    batch = [t.to(device) for t in batch]
+                    input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, task_idx, img, vis_pe, context_is_img = batch
+                    if args.fp16:
+                        img = img.half()
+                        vis_pe = vis_pe.half()
+                        
+                    conv_feats = img.data # Bx100x2048
+                    vis_pe = vis_pe.data
 
-                if "filter" in args.task_to_learn:
-                    loss, metric1, metric2 = metrics_tuple
-                    iter_bar.set_description('Iter (loss={:.3f}, metric1={:.3f}, metric2={:.3f}) loader_idx={}'.format(loss.item(), metric1.item(), metric2.item(), loader_idx))
-                    loss_list.append(loss.item())
-                    metric1_list.append(metric1.item())
-                    metric2_list.append(metric2.item())
-                else:
-                    raise ValueError("Currently don't support qa task in inference mode")
-            
-            print("loss.mean = ", np.mean(loss_list))
-            print("metric1.mean = ", np.mean(metric1_list))
-            print("metric2.mean = ", np.mean(metric2_list))
-            log_txt_content.append("loss.mean = {}".format(np.mean(loss_list)))
-            log_txt_content.append("metric1.mean = {}".format(np.mean(metric1_list)))
-            log_txt_content.append("metric2.mean = {}".format(np.mean(metric2_list)))
-        with open(args.log_txt, "a") as f:
-            f.write('\n\n' + datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
+                    # doesn't support scst training for not
+                    metrics_tuple = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
+                            masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
+                            next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
+                            drop_worst_ratio=0, filter_infr_th=th)
+
+                    if "filter" in args.task_to_learn:
+                        pr, re, f1 = metrics_tuple
+                        iter_bar.set_description('Iter (pr={:.3f}, re={:.3f}, f1={:.3f}) loader_idx={} th={}'.format(pr.item(), re.item(), f1.item(), loader_idx, th))
+                        pr_list.append(pr.item())
+                        re_list.append(re.item())
+                        f1_list.append(f1.item())
+                    else:
+                        raise ValueError("Currently don't support qa task in inference mode")
+                
+                print("\nth = {}".format(th))
+                print("pr.mean = ", np.mean(pr_list))
+                print("re.mean = ", np.mean(re_list))
+                print("f1.mean = ", np.mean(f1_list))
+                log_txt_content.append("\nth = {}".format(th))
+                log_txt_content.append("pr.mean = {}".format(np.mean(pr_list)))
+                log_txt_content.append("re.mean = {}".format(np.mean(re_list)))
+                log_txt_content.append("f1.mean = {}".format(np.mean(f1_list)))
+        with open(os.path.join(args.output_dir, args.filter_infr_log), "a") as f:
+            f.write(datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
             f.write("\n".join(log_txt_content))
         torch.cuda.empty_cache()
 

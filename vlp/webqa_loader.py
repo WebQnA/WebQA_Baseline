@@ -315,7 +315,7 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
 
 class Preprocess4webqa(Pipeline):
 
-    def __init__(self, max_pred, mask_prob, vocab_words, indexer, max_len, len_vis_input, max_len_a, max_len_b, max_len_img_cxt=200, new_segment_ids=True, truncate_config={}, local_rank=-1):
+    def __init__(self, max_pred, mask_prob, vocab_words, indexer, max_len, len_vis_input, max_len_a, max_len_b, max_len_img_cxt=200, new_segment_ids=True, truncate_config={}, use_img_meta=True, use_img_content=True):
         super().__init__()
         self.task_idx = 3 # use task_idx for s2s in relaxed projection layer
         self.max_pred = max_pred
@@ -331,6 +331,8 @@ class Preprocess4webqa(Pipeline):
         self.max_len = max_len
         self.trunc_seg = truncate_config.get('trunc_seg', None)
         self.new_segment_ids = new_segment_ids
+        self.use_img_meta = use_img_meta
+        self.use_img_content = use_img_content
         assert max_len_a+max_len_b <= max_len, "loader Processor: max_len_a + max_len_b > max_len"
 
     def __call__(self, instance, filter_max_choices=None, device=None):
@@ -362,7 +364,8 @@ class Preprocess4webqa(Pipeline):
                     tokens_b = Q+A
                     max_len_cxt_meta = self.max_len_a - self.max_len_img_cxt # 200
                     truncate_tokens_pair(cxt, tokens_b, max_len=max_len_cxt_meta + self.max_len_b, max_len_a=max_len_cxt_meta, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
-                    tokens_a += cxt
+                    if self.use_img_meta: tokens_a += cxt
+                    #print("{}\n{}: {}".format(Q, label[i], cxt))
                     # it seems that there is no need to pad cxt_meta to 200
                     #n_pad = self.max_len_a+1 - len(tokens_a) # +1 for the middle SEP
                     #tokens_a.extend(['[PAD]'] * n_pad)
@@ -424,6 +427,10 @@ class Preprocess4webqa(Pipeline):
                     input_ids_list.append(torch.tensor(input_ids))
                     segment_ids_list.append(torch.tensor(segment_ids))
                     input_mask_list.append(input_mask)
+                    if not self.use_img_content: 
+                        img = torch.zeros_like(img).float()
+                        vis_pe = torch.zeros_like(vis_pe).float()
+                        #print("zero placeholder for img content")
                     img_list.append(img)
                     vis_pe_list.append(vis_pe)
                 
