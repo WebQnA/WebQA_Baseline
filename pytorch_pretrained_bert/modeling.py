@@ -233,6 +233,7 @@ class BertEmbeddings(nn.Module):
         #print("\nvis_pe.size() = ", vis_pe.size())
         if context_is_img and prev_is_None: 
             #print(vis_pe[0])
+            #print(vis_feats[0])
             words_embeddings = torch.cat((words_embeddings[:, :1], vis_feats,
                 words_embeddings[:, max_len_img_cxt+1:]), dim=1)
             assert max_len_img_cxt == 200, 'only support region attn!'
@@ -850,10 +851,12 @@ class BertModel(PreTrainedBertModel):
 
         # hack to load vis feats
         embedding_output = self.embeddings(vis_feats, vis_pe, input_ids, token_type_ids, context_is_img=context_is_img, max_len_img_cxt=max_len_img_cxt)
+        print(embedding_output[0][0])
         encoded_layers = self.encoder(embedding_output,
                                       extended_attention_mask,
                                       output_all_encoded_layers=output_all_encoded_layers)
         sequence_output = encoded_layers[-1]
+        print(sequence_output[0][0])
         pooled_output = self.pooler(sequence_output)
         if not output_all_encoded_layers:
             encoded_layers = encoded_layers[-1]
@@ -874,6 +877,7 @@ class BertModelIncr(BertModel):
         #print(prev_is_None)
         embedding_output = self.embeddings(
             vis_feats, vis_pe, input_ids, token_type_ids, position_ids=position_ids, context_is_img=context_is_img, max_len_img_cxt=max_len_img_cxt, prev_is_None=prev_is_None)
+        
         encoded_layers = self.encoder(embedding_output,
                                       extended_attention_mask,
                                       prev_embedding=prev_embedding,
@@ -881,6 +885,11 @@ class BertModelIncr(BertModel):
                                       output_all_encoded_layers=output_all_encoded_layers)
         sequence_output = encoded_layers[-1]
         pooled_output = self.pooler(sequence_output)
+        if prev_is_None:
+            print(embedding_output[0][-1][:10])
+            print(encoded_layers[0][0][-1][:10])
+            print(encoded_layers[-1][0][-1][:10])
+            #print(pooled_output[0][0][:10])
         if not output_all_encoded_layers:
             encoded_layers = encoded_layers[-1]
         return embedding_output, encoded_layers, pooled_output
@@ -1879,8 +1888,9 @@ class BertForWebqaDecoder(PreTrainedBertModel):
 
             last_hidden = new_encoded_layers[-1][:, -1:, :]
             prediction_scores, _ = self.cls(
-                last_hidden, None, task_idx=task_idx)
-
+                last_hidden, None, task_idx=task_idx) # batch_size x vocab_size
+            if prev_is_None:
+                print("\nlast_hidden = ", last_hidden[0][:20])
             if tokenizer is not None:
 
                 ids = torch.argmax(prediction_scores[0], dim=-1).detach().cpu().numpy() # batch_size x 1 x 1
@@ -1964,6 +1974,8 @@ class BertForWebqaDecoder(PreTrainedBertModel):
 
             last_hidden = new_encoded_layers[-1][:, -1:, :] # batch_size(*K) x 1 x emb_dim
             prediction_scores, _ = self.cls(last_hidden, None, task_idx=task_idx) # batch_size(*K) x 1 x vocab_size
+            #if prev_embedding is None:
+                #print("\n", prediction_scores[0][:20])
             log_scores = torch.nn.functional.log_softmax(prediction_scores, dim=-1) # batch_size(*K) x 1 x vocab_size
             if forbid_word_mask is not None:
                 log_scores += (forbid_word_mask * -10000.0) 
