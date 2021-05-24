@@ -703,6 +703,8 @@ def main():
         print(args.use_img_content)
         print("-------------------- Inference mode ------------------------")
         log_txt_content.append("-------------------- Inference mode ------------------------")
+        log_txt_content.append("use_img_content = {}".format(args.use_img_content))
+        log_txt_content.append("use_img_meta = {}".format(args.use_img_meta))
         log_txt_content.append("split = {}".format(args.split))
         log_txt_content.append("use_num_samples = {}".format(args.use_num_samples))
         log_txt_content.append("\nFilter_max_choices: {}".format(args.img_filter_max_choices)) ## when txt is included, modify here!

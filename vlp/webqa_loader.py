@@ -788,7 +788,7 @@ class Preprocess4webqa(Pipeline):
 
 class Preprocess4webqaDecoder(Pipeline):
 
-    def __init__(self, vocab_words, indexer, max_len, len_vis_input, max_len_a, max_len_Q, max_len_img_cxt=200, max_tgt_len=30, new_segment_ids=True, truncate_config={}):
+    def __init__(self, vocab_words, indexer, max_len, len_vis_input, max_len_a, max_len_Q, max_len_img_cxt=200, max_tgt_len=30, new_segment_ids=True, truncate_config={}, use_img_meta=True, use_img_content=True):
         super().__init__()
         self.task_idx = 3 # use task_idx for s2s in relaxed projection layer
         self.len_vis_input = len_vis_input
@@ -803,6 +803,10 @@ class Preprocess4webqaDecoder(Pipeline):
         self.trunc_seg = truncate_config.get('trunc_seg', None)
         assert max_len_a+max_len_Q <= max_len, "loader Processor: max_len_a + max_len_b > max_len"
         self.new_segment_ids = new_segment_ids
+        self.use_img_meta = use_img_meta
+        self.use_img_content = use_img_content
+        print("loader.use_img_meta = ", use_img_meta)
+        print("loader.use_img_content = ", use_img_content)
 
     def __call__(self, instance, filter_max_choices=None, device=None):
         _, __, ___, ____, _____, ______, do_filter_task, context_is_img = instance
@@ -883,7 +887,9 @@ class Preprocess4webqaDecoder(Pipeline):
                     vis_pe = torch.cat((vis_pe[:, :4], rel_area.view(-1, 1), features['scores'].detach().cpu().view(-1, 1)), -1)
                     normalized_coord = F.normalize(vis_pe.data[:, :5] - 0.5, dim=-1)
                     vis_pe = torch.cat((F.layer_norm(vis_pe, [6]), F.layer_norm(cls_label, [1601])), dim=-1)
-
+                    if not self.use_img_content: 
+                        img = torch.zeros_like(img).float()
+                        vis_pe = torch.zeros_like(vis_pe).float()
                     img_list.append(img)
                     vis_pe_list.append(vis_pe)
 

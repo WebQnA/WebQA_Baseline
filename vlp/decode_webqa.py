@@ -221,6 +221,9 @@ def main():
     parser.add_argument("--recover_ori_ckpt", action='store_true',
                         help="Whether to load original VLP checkpoint.")
 
+    parser.add_argument('--no_img_meta', action='store_true')
+    parser.add_argument('--no_img_content', action='store_true')
+
     # Others for VLP
     parser.add_argument("--src_file", default='/mnt/dat/COCO/annotations/dataset_coco.json', type=str,		
                         help="The input data file name.")		
@@ -251,6 +254,8 @@ def main():
     parser.add_argument('--file_valid_jpgs', default='', type=str)
 
     args = parser.parse_args()
+    args.use_img_meta = not args.no_img_meta
+    args.use_img_content = not args.no_img_content
     log_txt_content = []
 
     device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
@@ -288,7 +293,8 @@ def main():
             tokenizer.convert_tokens_to_ids, max_len=args.max_seq_length, len_vis_input=args.len_vis_input, \
             max_len_a=args.max_len_a, max_len_Q=args.max_len_Q, max_len_img_cxt=args.max_len_img_cxt, \
             max_tgt_len=args.max_tgt_len, new_segment_ids=args.new_segment_ids, \
-            truncate_config={'trunc_seg': args.trunc_seg, 'always_truncate_tail': args.always_truncate_tail})
+            truncate_config={'trunc_seg': args.trunc_seg, 'always_truncate_tail': args.always_truncate_tail}, \
+            use_img_meta=args.use_img_meta, use_img_content=args.use_img_content)
 
     infr_dataloaders = []
     if 'txt' in args.answer_provided_by:
@@ -383,6 +389,10 @@ def main():
     model.eval()
     print("-------------------- QA Decoding ------------------------")
     log_txt_content.append("-------------------- QA Decoding ------------------------")
+    print(args.use_img_meta)
+    print(args.use_img_content)
+    log_txt_content.append("use_img_content = {}".format(args.use_img_content))
+    log_txt_content.append("use_img_meta = {}".format(args.use_img_meta))
     log_txt_content.append("split = {}".format(args.split))
     log_txt_content.append("use_num_samples = {}".format(args.use_num_samples))
     
@@ -461,7 +471,7 @@ def main():
         print("F1_max = {}".format(F1_max))
         print("EM = {}".format(EM))
 
-        with open(os.path.join(args.output_dir, 'qa_infr', args.split+"_qainfr_beam{}_{}.txt".format(args.beam_size, args.output_suffix)), "w") as f:
+        with open(os.path.join(args.output_dir, 'qa_infr', args.split+"_qainfr_beam{}_{}_{}_{}.txt".format(args.beam_size, args.use_img_content, args.use_img_meta, args.output_suffix)), "w") as f:
             f.write(datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
             f.write("\n".join(log_txt_content))
             f.write('\n --------------------- metrics -----------------------\n')
