@@ -55,11 +55,11 @@ def _get_max_epoch_model(output_dir):
 
 def _get_loader_from_dataset(train_dataset, world_size, train_batch_size, num_workers, collate_fn):
     if world_size == 1:
-        print("\nRandomSampler")
-        train_sampler = RandomSampler(train_dataset, replacement=False)
+        #print("\nRandomSampler")
+        #train_sampler = RandomSampler(train_dataset, replacement=False)
         #pass
-        #print("\nSequentialSampler")
-        #train_sampler = SequentialSampler(train_dataset)
+        print("\nSequentialSampler")
+        train_sampler = SequentialSampler(train_dataset)
     else:
         print("\nDistributedSampler")
         train_sampler = DistributedSampler(train_dataset)
@@ -185,7 +185,7 @@ def main():
                         help="max position embeddings")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/txt_json.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/tmp_jsons/Json_20210524.json")
     parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0501-Copy1.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
@@ -269,11 +269,11 @@ def main():
         level=logging.INFO)
     logger = logging.getLogger(__name__)
     
-    print("start sleeping")
-    logger.info("***** start sleeping *****")
-    time.sleep(3)
-    print("wake up!")
-    logger.info("***** wake up! *****")
+    #print("start sleeping")
+    #logger.info("***** start sleeping *****")
+    #time.sleep(7200)
+    #print("wake up!")
+    #logger.info("***** wake up! *****")
     if args.local_rank == -1 or args.no_cuda:
         device = torch.device(
             "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
@@ -459,7 +459,7 @@ def main():
                 "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
         model = DDP(model, device_ids = [args.local_rank], output_device = args.local_rank, find_unused_parameters=True)
     elif n_gpu > 1:
-        model = torch.nn.DataParallel(model, device_ids=[0,1])
+        model = torch.nn.DataParallel(model, device_ids=[1, 0])
         #pass
         print("\nn_gpu = ", n_gpu)
         #model = DataParallelImbalance(model, device_ids=[0,1])
@@ -576,7 +576,7 @@ def main():
                     masked_lm_loss = masked_lm_loss.mean()
                     cls_loss = cls_loss.mean()
                 loss = masked_lm_loss + cls_loss
-                #print("\n", loss.item())
+                #print("\nloss.item = ", loss.item())
                 # logging for each step (i.e., before normalization by args.gradient_accumulation_steps)
                 iter_bar.set_description('Iter (loss={:.3f}) loader_idx={}'.format(loss.item(), loader_idx))
                 qa_loss.append(masked_lm_loss.item())

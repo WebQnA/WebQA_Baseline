@@ -70,8 +70,8 @@ class webqaDataset_filter(torch.utils.data.Dataset):
             dataset_J = json.load(f)
         count = 0
         for i in dataset_J:
-            datum = i
-            if datum['split'] in split:
+            datum = dataset_J[i]
+            if True: # datum['split'] in split: # modify here after we create split!
                 if use_num_samples == -1 or count < use_num_samples:
                     Q = self.tokenizer.tokenize(datum['Q'])
                     A = self.tokenizer.tokenize(datum['A'])
@@ -130,8 +130,8 @@ class webqaDataset_qa(torch.utils.data.Dataset):
             dataset_J = json.load(f)
         count = 0
         for i in dataset_J:
-            datum = i
-            if datum['split'] in split:
+            datum = dataset_J[i]
+            if True: # datum['split'] in split: # modify here after we have split!!!!
                 if use_num_samples == -1 or count < use_num_samples:
                     Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
                     A = self.tokenizer.tokenize(datum['A'].replace('"', ""))
@@ -315,7 +315,7 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
 
 class Preprocess4webqa(Pipeline):
 
-    def __init__(self, max_pred, mask_prob, vocab_words, indexer, max_len, len_vis_input, max_len_a, max_len_b, max_len_img_cxt=200, new_segment_ids=True, truncate_config={}, use_img_meta=True, use_img_content=True):
+    def __init__(self, max_pred, mask_prob, vocab_words, indexer, max_len, len_vis_input, max_len_a, max_len_b, max_len_img_cxt=200, new_segment_ids=True, truncate_config={}, use_img_meta=True, use_img_content=True, use_txt_fact=True):
         super().__init__()
         self.task_idx = 3 # use task_idx for s2s in relaxed projection layer
         self.max_pred = max_pred
@@ -333,6 +333,7 @@ class Preprocess4webqa(Pipeline):
         self.new_segment_ids = new_segment_ids
         self.use_img_meta = use_img_meta
         self.use_img_content = use_img_content
+        self.use_txt_fact = use_txt_fact
         assert max_len_a+max_len_b <= max_len, "loader Processor: max_len_a + max_len_b > max_len"
 
     def __call__(self, instance, filter_max_choices=None, device=None):
@@ -388,7 +389,7 @@ class Preprocess4webqa(Pipeline):
                     input_mask[:, st:end].fill_(1)
                     #st, end = 2 + self.max_len_a, 2 + self.max_len_a + len(Q)
                     #input_mask[:, st:end].fill_(1)
-
+                    #if i==0: print(input_mask[230])
                     input_ids = self.indexer(tokens)
                     n_pad = self.max_len - len(input_ids)
                     input_ids.extend([0] * n_pad)
@@ -461,12 +462,13 @@ class Preprocess4webqa(Pipeline):
                 perm = np.random.permutation(filter_num_choices)
                 all_choices_facts = gold_facts + distractor_facts
                 all_choices_facts = [all_choices_facts[p] for p in perm]
-                label = [1. if p<num_gold else 0. for p in perm]
+                label = torch.tensor([1. if p<num_gold else 0. for p in perm])
+                label = torch.stack([label, 1-label], dim=0).transpose(1,0)
                 input_ids_list = []
                 segment_ids_list = []
                 input_mask_list = []
                 for i in range(filter_num_choices):
-                    tokens_a = all_choices_facts[i]
+                    tokens_a = all_choices_facts[i].copy()
                     tokens_b = Q+A
                     truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_b, max_len_a=self.max_len_a, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
                     tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
@@ -490,19 +492,18 @@ class Preprocess4webqa(Pipeline):
                     segment_ids_list.append(torch.tensor(segment_ids))
                     input_mask_list.append(input_mask)
 
-                logit_mask = [0.] * len(input_ids_list)
+                logit_mask = [1.] * len(input_ids_list)
                 if len(input_ids_list) < filter_max_choices:
                     num_placeholder = filter_max_choices - len(input_ids_list)
                     input_ids_list.extend([input_ids_list[-1]] * num_placeholder)
                     segment_ids_list.extend([segment_ids_list[-1]] * num_placeholder)
                     input_mask_list.extend([input_mask_list[-1]] * num_placeholder)
-                    logit_mask.extend([-float("Inf")] * num_placeholder)
-                    label.extend([0.] * num_placeholder)
+                    logit_mask.extend([0.] * num_placeholder)
+                    label = torch.cat([label, torch.tensor([[0., 0.]] * num_placeholder)], dim=0)
                 input_ids = torch.stack(input_ids_list, dim=0) # 不确定，stack可能需要在collator里面操作
                 segment_ids = torch.stack(segment_ids_list, dim=0)
                 input_mask = torch.stack(input_mask_list, dim=0)
                 logit_mask = torch.tensor(logit_mask)
-                label = torch.tensor(label)
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img)
                 return (input_ids, segment_ids, input_mask,       None,        None,        None,         -1,         do_filter_task,        label, logit_mask, self.task_idx, None, None, context_is_img)
                 raise NotImplementedError
@@ -915,7 +916,7 @@ class Preprocess4webqaDecoder(Pipeline):
                 
             
             else: # qa task, context is txt
-                raise NotImplementedError
+                #raise NotImplementedError
                 gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
                 tokens_a = sum(gold_facts, [])
                 tokens_b = Q+A
