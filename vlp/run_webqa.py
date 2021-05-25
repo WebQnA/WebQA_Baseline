@@ -55,11 +55,11 @@ def _get_max_epoch_model(output_dir):
 
 def _get_loader_from_dataset(train_dataset, world_size, train_batch_size, num_workers, collate_fn):
     if world_size == 1:
-        #print("\nRandomSampler")
-        #train_sampler = RandomSampler(train_dataset, replacement=False)
+        print("\nRandomSampler")
+        train_sampler = RandomSampler(train_dataset, replacement=False)
         #pass
-        print("\nSequentialSampler")
-        train_sampler = SequentialSampler(train_dataset)
+        #print("\nSequentialSampler")
+        #train_sampler = SequentialSampler(train_dataset)
     else:
         print("\nDistributedSampler")
         train_sampler = DistributedSampler(train_dataset)
@@ -215,7 +215,7 @@ def main():
     parser.add_argument('--image_root', type=str, default='/mnt/dat/COCO/images')
     parser.add_argument('--dataset', default='coco', type=str,
                         help='coco | flickr30k | cc')
-    parser.add_argument('--split', type=str, nargs='+', default=['train', 'restval'])
+    parser.add_argument('--split', type=str, nargs='+', default=['train', 'val', 'ind_test', 'ood_test'])
 
     parser.add_argument('--world_size', default = 1, type = int,
                         help = 'number of distributed processes')
@@ -268,7 +268,12 @@ def main():
         datefmt='%m/%d/%Y %H:%M:%S',
         level=logging.INFO)
     logger = logging.getLogger(__name__)
-
+    
+    print("start sleeping")
+    logger.info("***** start sleeping *****")
+    time.sleep(3)
+    print("wake up!")
+    logger.info("***** wake up! *****")
     if args.local_rank == -1 or args.no_cuda:
         device = torch.device(
             "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
@@ -558,7 +563,6 @@ def main():
                 
                 conv_feats = img.data # Bx100x2048
                 vis_pe = vis_pe.data
-
                 # doesn't support scst training for not
                 loss_tuple = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
                     masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \

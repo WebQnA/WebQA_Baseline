@@ -370,6 +370,7 @@ class Preprocess4webqa(Pipeline):
                     #n_pad = self.max_len_a+1 - len(tokens_a) # +1 for the middle SEP
                     #tokens_a.extend(['[PAD]'] * n_pad)
                     tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
+                    #if i==0: print(tokens)
                     #print(tokens)
                     if self.new_segment_ids:
                         segment_ids = [4] * (len(tokens_a)+2) + [5] * (len(tokens_b)+1)
@@ -382,7 +383,7 @@ class Preprocess4webqa(Pipeline):
                     input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
                     # everyone can attend to img, cxt_meta and Q. Nobody cares attention to A for filter task
                     img_end_pos = 1+self.len_vis_input
-                    input_mask[:, img_end_pos].fill_(1)
+                    if self.use_img_content: input_mask[:, :img_end_pos].fill_(1)
                     st, end = 1 + self.max_len_img_cxt, len(tokens_a) + 2 + len(Q)
                     input_mask[:, st:end].fill_(1)
                     #st, end = 2 + self.max_len_a, 2 + self.max_len_a + len(Q)
@@ -511,9 +512,12 @@ class Preprocess4webqa(Pipeline):
                 gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
                 tokens_b = Q+A
-                truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_img_cxt + self.max_len_b, max_len_a=self.max_len_img_cxt, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
-                tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
+                cxt = sum(gold_cxt_list, [])
 
+                truncate_tokens_pair(cxt, tokens_b, max_len=self.max_len_a - self.max_len_img_cxt + self.max_len_b, max_len_a=self.max_len_a - self.max_len_img_cxt, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
+                if self.use_img_meta: tokens_a += cxt
+                tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
+                #print(tokens)
                 #time.sleep(2)
                 if self.new_segment_ids:
                     segment_ids = [4] * (len(tokens_a)+2) + [5] * (len(tokens_b)+1)
@@ -556,14 +560,14 @@ class Preprocess4webqa(Pipeline):
                 input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
 
                 img_end_pos = 1 + self.len_vis_input*num_img
-                input_mask[:, img_end_pos].fill_(1)
+                if self.use_img_content: input_mask[:, :img_end_pos].fill_(1)
                 st, end = 1 + self.max_len_img_cxt, 2 + len(tokens_a) + len(Q)
                 input_mask[:, st:end].fill_(1)
                 # Tokens in A can attend to previous tokens in A
                 pred_st, pred_end = 2 + len(tokens_a) + len(Q), len(tokens)
                 input_mask[pred_st:pred_end, pred_st:pred_end].copy_(self._tril_matrix[:pred_end-pred_st, :pred_end-pred_st])
-
                 # Zero padding for masked target
+                
                 if self.max_pred > n_pred:
                     n_pad = self.max_pred - n_pred
                     masked_ids.extend([0] * n_pad)
@@ -816,11 +820,14 @@ class Preprocess4webqaDecoder(Pipeline):
             if context_is_img:
                 gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, _, do_filter_task, context_is_img = instance # '_' as a placeholder for 'A'
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
+                cxt = sum(gold_cxt_list, [])
+
+               
                 tokens_b = Q.copy() # without copy Q will change as we modify tokens_b during padding!!!!!
-                truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_img_cxt + self.max_len_Q, max_len_a=self.max_len_img_cxt, max_len_b=self.max_len_Q, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
+                truncate_tokens_pair(cxt, tokens_b, max_len=self.max_len_a - self.max_len_img_cxt + self.max_len_Q, max_len_a=self.max_len_a - self.max_len_img_cxt, max_len_b=self.max_len_Q, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
+                if self.use_img_meta: tokens_a += cxt                
                 
-                # Pad tokens_b to max_len_Q
-                n_pad = self.max_len_Q - len(tokens_b)
+                n_pad = self.max_len_Q + self.max_len_a - len(tokens_a) - len(tokens_b)
                 tokens_b += ['[PAD]'] * n_pad
 
                 tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b # + ['[SEP]'] # start generating right after Q
@@ -853,7 +860,7 @@ class Preprocess4webqaDecoder(Pipeline):
                 input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
 
                 img_end_pos = 1 + self.len_vis_input*num_img
-                input_mask[:, img_end_pos].fill_(1)
+                if self.use_img_content: input_mask[:, :img_end_pos].fill_(1)
                 st, end = 1 + self.max_len_img_cxt, len(tokens_a) + 2 + len(Q) # paddings at the end of tokens_b don't need attention
                 input_mask[:, st:end].fill_(1)
                 # Tokens in A can attend to previous tokens in A
@@ -887,9 +894,9 @@ class Preprocess4webqaDecoder(Pipeline):
                     vis_pe = torch.cat((vis_pe[:, :4], rel_area.view(-1, 1), features['scores'].detach().cpu().view(-1, 1)), -1)
                     normalized_coord = F.normalize(vis_pe.data[:, :5] - 0.5, dim=-1)
                     vis_pe = torch.cat((F.layer_norm(vis_pe, [6]), F.layer_norm(cls_label, [1601])), dim=-1)
-                    if not self.use_img_content: 
-                        img = torch.zeros_like(img).float()
-                        vis_pe = torch.zeros_like(vis_pe).float()
+                    #if not self.use_img_content: 
+                        #img = torch.zeros_like(img).float()
+                        #vis_pe = torch.zeros_like(vis_pe).float()
                     img_list.append(img)
                     vis_pe_list.append(vis_pe)
 
