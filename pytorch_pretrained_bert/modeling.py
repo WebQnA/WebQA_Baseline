@@ -1760,6 +1760,8 @@ class BertForWebqa(PreTrainedBertModel):
                 return (loss*filter_mask).mean()
             '''
             # masked lm
+            #print("\n", attention_mask[0][107])
+            #print(attention_mask[0][10])
             if torch.isnan(sequence_output).any().item(): print("\nsequence_output is nan !!")
             sequence_output_masked = gather_seq_out_by_pos(sequence_output, masked_pos) # B x max_pred x hidden
             prediction_scores_masked, _ = self.cls(
@@ -1778,11 +1780,11 @@ class BertForWebqa(PreTrainedBertModel):
             #print("\n ----------------- before returning from forward(), masked_lm_loss = --------------------")
             if tokenizer is not None:
                 ids = torch.argmax(prediction_scores_masked[0], dim=-1).detach().cpu().numpy() # max_pred x 1
-                sequence = tokenizer.convert_ids_to_tokens([i for i in list(ids) if i>0 and i!=102])
+                sequence = tokenizer.convert_ids_to_tokens([i for i in list(ids) if i>0])
                 print(sequence)
                 #print(masked_lm_loss.item())
-                print(tokenizer.convert_ids_to_tokens([i for i in list(input_ids.detach().cpu().numpy()[0][202:]) if i>0 and i!=102]))
-                print(tokenizer.convert_ids_to_tokens([i for i in list(masked_lm_labels.detach().cpu().numpy()[0]) if i>0 and i!=102]))
+                print(tokenizer.convert_ids_to_tokens([i for i in list(input_ids.detach().cpu().numpy()[0][:]) if i>0]))
+                print(tokenizer.convert_ids_to_tokens([i for i in list(masked_lm_labels.detach().cpu().numpy()[0]) if i>0]))
                 #print("\n")
                 time.sleep(2)
             return masked_lm_loss, cls_loss
@@ -1884,8 +1886,9 @@ class BertForWebqaDecoder(PreTrainedBertModel):
         curr_ids = input_ids
         mask_ids = input_ids[:, :1] * 0 + self.mask_word_id # same size as input_ids[:, :1], filled with mask_word_id # batch_size x 1
         next_pos = input_length
-
+        #print(next_pos, output_length)
         while next_pos < output_length:
+            
             curr_length = list(curr_ids.size())[1]
             start_pos = next_pos - curr_length
             x_input_ids = torch.cat((curr_ids, mask_ids), dim=1)
@@ -1938,6 +1941,7 @@ class BertForWebqaDecoder(PreTrainedBertModel):
             next_pos += 1
         #print(output_probs[-1].size())
         #print(torch.cat(output_ids, dim=1).detach().cpu().numpy()[0])
+        #print(output_probs[-1].size())
         return [{s.item():seq} for s, seq in zip(output_probs[-1].detach().cpu().numpy(), torch.cat(output_ids, dim=1).detach().cpu().numpy())]
         #return torch.cat(output_ids, dim=1), torch.cat(output_probs, dim=1)
 
