@@ -622,7 +622,8 @@ class Preprocess4webqa(Pipeline):
             
             else: # qa task, context is txt
                 gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
-                tokens_a = sum(gold_facts, [])
+                tokens_a = []
+                if self.use_txt_fact: tokens_a = sum(gold_facts, [])
                 tokens_b = Q+A
                 truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_b, max_len_a=self.max_len_a, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
                 tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
@@ -658,7 +659,7 @@ class Preprocess4webqa(Pipeline):
                 segment_ids.extend([0] * n_pad)
 
                 input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
-                input_mask[:, len(tokens_a)+2+len(Q)].fill_(1)
+                input_mask[:, :len(tokens_a)+2+len(Q)].fill_(1)
                 pred_st, pred_end = 2 + len(tokens_a) + len(Q), len(tokens)
                 input_mask[pred_st:pred_end, pred_st:pred_end].copy_(self._tril_matrix[:pred_end-pred_st, :pred_end-pred_st])
 
@@ -793,7 +794,7 @@ class Preprocess4webqa(Pipeline):
 
 class Preprocess4webqaDecoder(Pipeline):
 
-    def __init__(self, vocab_words, indexer, max_len, len_vis_input, max_len_a, max_len_Q, max_len_img_cxt=200, max_tgt_len=30, new_segment_ids=True, truncate_config={}, use_img_meta=True, use_img_content=True):
+    def __init__(self, vocab_words, indexer, max_len, len_vis_input, max_len_a, max_len_Q, max_len_img_cxt=200, max_tgt_len=30, new_segment_ids=True, truncate_config={}, use_img_meta=True, use_img_content=True, use_txt_fact=True):
         super().__init__()
         self.task_idx = 3 # use task_idx for s2s in relaxed projection layer
         self.len_vis_input = len_vis_input
@@ -810,6 +811,7 @@ class Preprocess4webqaDecoder(Pipeline):
         self.new_segment_ids = new_segment_ids
         self.use_img_meta = use_img_meta
         self.use_img_content = use_img_content
+        self.use_txt_fact = use_txt_fact
         print("loader.use_img_meta = ", use_img_meta)
         print("loader.use_img_content = ", use_img_content)
 
@@ -918,55 +920,39 @@ class Preprocess4webqaDecoder(Pipeline):
             else: # qa task, context is txt
                 #raise NotImplementedError
                 gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
-                tokens_a = sum(gold_facts, [])
-                tokens_b = Q+A
-                truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_b, max_len_a=self.max_len_a, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
-                tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
+                tokens_a = []
+                if self.use_txt_fact: tokens_a = sum(gold_facts, [])
+                tokens_b = Q.copy()
+                truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_Q, max_len_a=self.max_len_a, max_len_b=self.max_len_Q, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
+                
+                n_pad  = self.max_len_Q + self.max_len_a - len(tokens_a) - len(tokens_b)
+                tokens_b += ['[PAD]'] * n_pad
+
+                tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b
                 #print("\n", tokens)
                 if self.new_segment_ids:
-                    segment_ids = [4] * (len(tokens_a)+2) + [5] * (len(tokens_b)+1)
+                    segment_ids = [4] * (len(tokens_a)+2) + [5] * len(tokens_b) + [5] * (self.max_len - len(tokens))
                 else:
-                    segment_ids = [0] * (len(tokens_a)+2) + [1] * (len(tokens_b)+1)
+                    segment_ids = [0] * (len(tokens_a)+2) + [1] * len(tokens_b) + [5] * (self.max_len - len(tokens))
 
-                effective_len_A = len(A)
-                n_pred = min(self.max_pred, max(1, int(round(effective_len_A * self.mask_prob))))
-                cand_pos = []
-                for i, tk in enumerate(tokens):
-                    # only mask tk in A
-                    if (i >= len(tokens_a)+2+len(Q)) and tk!='[SEP]':
-                        cand_pos.append(i)
-                
-                shuffle(cand_pos)
-                masked_pos = cand_pos[:n_pred]
-                masked_tokens = [tokens[pos] for pos in masked_pos] # gth token in masked_pos
-                for pos in masked_pos:
-                    if rand() < 0.8:
-                        tokens[pos] = '[MASK]'
-                    elif rand() < 0.5:
-                        tokens[pos] = get_random_word(self.vocab_words)
-
-                masked_weights = [1] * len(masked_tokens)
-                masked_ids = self.indexer(masked_tokens)
+                ori_Q_len = min(len(Q), self.max_len_Q)
+                position_ids = []
+                for i in range(len(tokens_a) + 2 + ori_Q_len):
+                    position_ids.append(i)
+                for i in range(len(tokens_a) + 2 + ori_Q_len, len(tokens)):
+                    position_ids.append(0)
+                for i in range(len(tokens), self.max_len):
+                    position_ids.append(i - len(tokens) + len(tokens_a) + 2 + ori_Q_len)
 
                 input_ids = self.indexer(tokens)
-                n_pad = self.max_len - len(input_ids)
-                input_ids.extend([0] * n_pad)
-                segment_ids.extend([0] * n_pad)
 
                 input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
-                input_mask[:, len(tokens_a)+2+len(Q)].fill_(1)
-                pred_st, pred_end = 2 + len(tokens_a) + len(Q), len(tokens)
+                input_mask[:, len(tokens_a)+2+ori_Q_len].fill_(1)
+                pred_st, pred_end = len(tokens), self.max_len
                 input_mask[pred_st:pred_end, pred_st:pred_end].copy_(self._tril_matrix[:pred_end-pred_st, :pred_end-pred_st])
-
-                # Zero padding for masked target
-                if self.max_pred > n_pred:
-                    n_pad = self.max_pred - n_pred
-                    masked_ids.extend([0] * n_pad)
-                    masked_pos.extend([0] * n_pad)
-                    masked_weights.extend([0] * n_pad)
                 
-                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img)
-                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,       -1,      do_filter_task,      None,      None,       self.task_idx, None, None, context_is_img)
+                # schema: (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context_is_img)
+                return (input_ids, segment_ids, position_ids, input_mask, self.task_idx, None, None, context_is_img)
                 raise NotImplementedError
 
 

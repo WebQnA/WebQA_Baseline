@@ -55,11 +55,11 @@ def _get_max_epoch_model(output_dir):
 
 def _get_loader_from_dataset(train_dataset, world_size, train_batch_size, num_workers, collate_fn):
     if world_size == 1:
-        #print("\nRandomSampler")
-        #train_sampler = RandomSampler(train_dataset, replacement=False)
+        print("\nRandomSampler")
+        train_sampler = RandomSampler(train_dataset, replacement=False)
         #pass
-        print("\nSequentialSampler")
-        train_sampler = SequentialSampler(train_dataset)
+        #print("\nSequentialSampler")
+        #train_sampler = SequentialSampler(train_dataset)
     else:
         print("\nDistributedSampler")
         train_sampler = DistributedSampler(train_dataset)
@@ -567,7 +567,7 @@ def main():
                 loss_tuple = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
                     masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
                         next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
-                            drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0)
+                            drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0, tokenizer=tokenizer)
                 mean_reward = loss_tuple[0].new(1).fill_(0)
 
                 # disable pretext_loss_deprecated for now
