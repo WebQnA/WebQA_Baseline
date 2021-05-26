@@ -481,7 +481,7 @@ class Preprocess4webqa(Pipeline):
                     # self-attention mask
                     input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
                     # everyone can attend to cxt and Q. Nobody cares attention to A for filter task
-                    input_mask[:len(tokens_a)+2+len(Q)].fill_(1)
+                    input_mask[:, :len(tokens_a)+2+len(Q)].fill_(1)
 
                     input_ids = self.indexer(tokens)
                     n_pad = self.max_len - len(input_ids)
@@ -943,11 +943,13 @@ class Preprocess4webqaDecoder(Pipeline):
                     position_ids.append(0)
                 for i in range(len(tokens), self.max_len):
                     position_ids.append(i - len(tokens) + len(tokens_a) + 2 + ori_Q_len)
+                #print(position_ids)
+                #time.sleep(2)
 
                 input_ids = self.indexer(tokens)
 
                 input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
-                input_mask[:, len(tokens_a)+2+ori_Q_len].fill_(1)
+                input_mask[:, :len(tokens_a)+2+ori_Q_len].fill_(1)
                 pred_st, pred_end = len(tokens), self.max_len
                 input_mask[pred_st:pred_end, pred_st:pred_end].copy_(self._tril_matrix[:pred_end-pred_st, :pred_end-pred_st])
                 
