@@ -1656,22 +1656,30 @@ class BertForWebqa(PreTrainedBertModel):
                 loss = (-m).view(batch_size, -1).sum(dim=-1)/(normalizer+1e-8)
                 #print(loss)
                 return torch.mean(loss)
-            def filter_metric(prediction, target, logit_mask, th):
+            def filter_metric(prediction, target, logit_mask, th_list):
                 # prediction: batch_size x num_choices x 2
                 # target: batch_size x num_choices x 2
                 # logit_mask: batch_size x num_choices
-                num_choices = prediction.size(1)
 
                 pred = F.softmax(prediction, dim=-1).transpose(2,1)
                 #print(pred)
-                pred = pred[:, 0, :] #batch_size x num_choices
-                pred = (pred>th).float() * logit_mask
                 label = target.transpose(2,1)[:, 0, :] #batch_size x num_choices
-                overlap = torch.sum(pred * label, dim=-1) # batch_size
-                pr = overlap / (torch.sum(pred, dim=-1) + 1e-5) # batch_size
-                re = overlap / (torch.sum(label, dim=-1) + 1e-5) # batch_size
-                f1 = 2*pr*re / (pr+re+1e-5)
-                return torch.mean(pr), torch.mean(re), torch.mean(f1)
+                pred = pred[:, 0, :] #batch_size x num_choices
+                th_dict = {}
+                
+                for th in th_list:
+                    #time.sleep(1)
+                    #print("\nth = ", th)
+                    cur_pred = (pred>th).float() * logit_mask
+                    overlap = torch.sum(cur_pred * label, dim=-1) # batch_size
+                    #print(overlap[0])
+                    pr = overlap / (torch.sum(cur_pred, dim=-1) + 1e-5) # batch_size
+                    #print(torch.sum(cur_pred, dim=-1)[0])
+                    re = overlap / (torch.sum(label, dim=-1) + 1e-5) # batch_size
+                    #print(torch.sum(label, dim=-1)[0])
+                    f1 = 2*pr*re / (pr+re+1e-5)
+                    th_dict[th] = [torch.mean(pr).item(), torch.mean(re).item(), torch.mean(f1).item()]
+                return th_dict, pred.detach().cpu()
                 '''
                 num_flags = torch.sum(target, dim=-1)
                 num_flags = torch.max(num_flags, torch.ones_like(num_flags))
@@ -1710,8 +1718,9 @@ class BertForWebqa(PreTrainedBertModel):
             cls_pred = cls_pred.view(-1, num_choices, 2)
             # cls_labels: B
             if filter_infr_th is not None:
-                pr, re, f1 = filter_metric(cls_pred, filter_label, logit_mask, filter_infr_th)
-                return pr, re, f1
+                #assert ori_choices is not None, "In inference mode, must provide ori_choices"
+                th_dict, pred = filter_metric(cls_pred, filter_label, logit_mask, filter_infr_th)
+                return th_dict, pred
             cls_loss = cross_entropy_with_logits_loss(cls_pred, filter_label, logit_mask)
             masked_lm_loss = cls_loss.new(1).fill_(0)
             return masked_lm_loss, cls_loss
