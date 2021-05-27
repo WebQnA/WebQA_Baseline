@@ -19,21 +19,23 @@ def batch_list_to_batch_tensors(batch):
     for x in zip(*batch):
         if x[0] is None:
             batch_tensors.append(torch.zeros(1))
+        
         elif isinstance(x[0], torch.Tensor):
             try:
                 batch_tensors.append(torch.stack(x))
             except:
                 print([i.size() for i in x])
-            
+        elif isinstance(x[0], str):
+            batch_tensors.append(x)
         else:
             try:
                 batch_tensors.append(torch.tensor(x, dtype=torch.long))
             except:
-                #print(x)
-                print(len(x))
+                #print(len(x))
+                batch_tensors.append(x)
                 #print("-------------batch-----------")
                 #print(batch)
-                raise
+                #raise
     return batch_tensors
 
 

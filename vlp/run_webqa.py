@@ -12,7 +12,7 @@ sys.path.append("/home/yingshac/CYS/WebQnA/VLP")
 import logging
 import glob
 import math, time
-import json
+import json, pickle
 import argparse
 from tqdm import tqdm, trange
 from pathlib import Path
@@ -186,7 +186,7 @@ def main():
 
     # webqa dataset
     parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/tmp_jsons/Json_20210524.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0501-Copy1.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0526-Copy1.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
     parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
@@ -202,7 +202,9 @@ def main():
 
     parser.add_argument('--no_img_meta', action='store_true')
     parser.add_argument('--no_img_content', action='store_true')
+    parser.add_argument('--no_txt_fact', action='store_true')
     parser.add_argument('--filter_infr_th', type=str, default="0.5")
+
     
     # Others for VLP
     parser.add_argument("--src_file", default=['/mnt/dat/COCO/annotations/dataset_coco.json'],
@@ -254,6 +256,7 @@ def main():
     args.dist_url = args.dist_url.replace('[PT_OUTPUT_DIR]', args.output_dir)
     args.use_img_meta = not args.no_img_meta
     args.use_img_content = not args.no_img_content
+    args.use_txt_fact= not args.no_txt_fact
     assert args.len_vis_input == 100, "run main: only support 100 region features per image"
     # output config
     os.makedirs(args.output_dir, exist_ok=True)
@@ -555,8 +558,8 @@ def main():
                 for param_tensor in model.state_dict():
                     if torch.isnan(model.state_dict()[param_tensor]).any().item():
                         print("\n nan exists in ", param_tensor)
-                batch = [t.to(device) for t in batch]
-                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, task_idx, img, vis_pe, context_is_img = batch
+                batch = [t.to(device) if not isinstance(t, list) else t for t in batch ]
+                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, ori_choices, task_idx, img, vis_pe, context_is_img, example_ids = batch
                 if args.fp16:
                     img = img.half()
                     vis_pe = vis_pe.half()
@@ -702,7 +705,7 @@ def main():
         if args.local_rank == -1 or args.no_cuda: pass
         else: torch.distributed.destroy_process_group()
     else: # inference mode
-
+        
         print(args.use_img_meta)
         print(args.use_img_content)
         print("-------------------- Inference mode ------------------------")
@@ -714,58 +717,80 @@ def main():
         log_txt_content.append("\nFilter_max_choices: {}".format(args.img_filter_max_choices)) ## when txt is included, modify here!
         print("\nFilter_max_choices: {}".format(args.img_filter_max_choices))
         th_list = [float(i) for i in args.filter_infr_th.split("|")]
+        if not 0.7 in th_list: th_list.append(0.7)
         print("\nThresholds: ", str(th_list))
         log_txt_content.append("\nThresholds: {}".format(str(th_list)))
         model.eval()
 
-        for th in th_list:
-            dataloader_iters = [iter(l) for l in train_dataloaders]
-            #if args.local_rank >= 0:
-                #train_sampler.set_epoch(i_epoch-1)
-            iter_bar = tqdm(train_dataloader_order, desc='Iter (loss=X.XXX), loader_idx=X') 
-            nbatches = sum(loader_lengths)
+        score_dict = dict([(th, {'pr':[], 're':[], 'f1':[]}) for th in th_list])
+        #for th in th_list:
+        dataloader_iters = [iter(l) for l in train_dataloaders]
+           
+        iter_bar = tqdm(train_dataloader_order, desc='Iter (loss=X.XXX), loader_idx=X') 
+        nbatches = sum(loader_lengths)
                 
-            pr_list = []
-            re_list = []
-            f1_list = []
-            with torch.no_grad():
-                for step, loader_idx in enumerate(iter_bar):
-                    batch = next(dataloader_iters[loader_idx])
-                    for param_tensor in model.state_dict():
-                        if torch.isnan(model.state_dict()[param_tensor]).any().item():
-                            print("\n nan exists in ", param_tensor)
-                    batch = [t.to(device) for t in batch]
-                    input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, task_idx, img, vis_pe, context_is_img = batch
-                    if args.fp16:
-                        img = img.half()
-                        vis_pe = vis_pe.half()
+        Pred = []
+        Choices = []
+        Example_ids = []
+        with torch.no_grad():
+            for step, loader_idx in enumerate(iter_bar):
+                batch = next(dataloader_iters[loader_idx])
+                for param_tensor in model.state_dict():
+                    if torch.isnan(model.state_dict()[param_tensor]).any().item():
+                        print("\n nan exists in ", param_tensor)
+                batch = [t.to(device) if not isinstance(t, list) else t for t in batch ]
+                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, ori_choices, task_idx, img, vis_pe, context_is_img, example_ids = batch
+                if args.fp16:
+                    img = img.half()
+                    vis_pe = vis_pe.half()
                         
-                    conv_feats = img.data # Bx100x2048
-                    vis_pe = vis_pe.data
+                conv_feats = img.data # Bx100x2048
+                vis_pe = vis_pe.data
 
-                    # doesn't support scst training for not
-                    metrics_tuple = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
-                            masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
-                            next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
-                            drop_worst_ratio=0, filter_infr_th=th)
-
-                    if "filter" in args.task_to_learn:
-                        pr, re, f1 = metrics_tuple
-                        iter_bar.set_description('Iter (pr={:.3f}, re={:.3f}, f1={:.3f}) loader_idx={} th={}'.format(pr.item(), re.item(), f1.item(), loader_idx, th))
-                        pr_list.append(pr.item())
-                        re_list.append(re.item())
-                        f1_list.append(f1.item())
-                    else:
-                        raise ValueError("Currently don't support qa task in inference mode")
-                
+                # doesn't support scst training for not
+                cur_batch_score, pred = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
+                        masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
+                        next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
+                        drop_worst_ratio=0, filter_infr_th=th_list)
+                assert len(cur_batch_score) == len(th_list)
+                Pred.append(pred)
+                Choices.extend(ori_choices)
+                Example_ids.extend(example_ids)
+                if "filter" in args.task_to_learn:
+                    for th in cur_batch_score:
+                        score_dict[th]['pr'].append(cur_batch_score[th][0])
+                        score_dict[th]['re'].append(cur_batch_score[th][1])
+                        score_dict[th]['f1'].append(cur_batch_score[th][2])
+                    iter_bar.set_description('Iter={} loader_idx={} '.format(step, loader_idx))
+                else:
+                    raise ValueError("Currently don't support qa task in inference mode")
+            
+            Pred = torch.cat(Pred, dim=0)
+            Pred = Pred.numpy()
+            Pred = [["{0:.4f}".format(s) for s in p] for p in Pred]
+            for th in th_list:
+                score_dict[th]['pr'] = np.mean(score_dict[th]['pr'])
+                score_dict[th]['re'] = np.mean(score_dict[th]['re'])
+                score_dict[th]['f1'] = np.mean(score_dict[th]['f1'])
                 print("\nth = {}".format(th))
-                print("pr.mean = ", np.mean(pr_list))
-                print("re.mean = ", np.mean(re_list))
-                print("f1.mean = ", np.mean(f1_list))
+                print("pr.mean = ", score_dict[th]['pr'])
+                print("re.mean = ", score_dict[th]['re'])
+                print("f1.mean = ", score_dict[th]['f1'])
                 log_txt_content.append("\nth = {}".format(th))
-                log_txt_content.append("pr.mean = {}".format(np.mean(pr_list)))
-                log_txt_content.append("re.mean = {}".format(np.mean(re_list)))
-                log_txt_content.append("f1.mean = {}".format(np.mean(f1_list)))
+                log_txt_content.append("pr.mean = {}".format(score_dict[th]['pr']))
+                log_txt_content.append("re.mean = {}".format(score_dict[th]['re']))
+                log_txt_content.append("f1.mean = {}".format(score_dict[th]['f1']))
+        output_pkl = {}
+        for e, c, p in zip(Example_ids, Choices, Pred):
+            output_pkl[e] = {"choices": c, "pred_scores": p}
+        pkl_filename = "{}_{}".format("&".join(args.split), args.use_num_samples)
+        if "img" in args.answer_provided_by:
+            pkl_filename += "_{}_{}_{}_{}".format("img", args.img_filter_max_choices, args.use_img_content, args.use_img_meta)
+        if "txt" in args.answer_provided_by:
+            pkl_filename += "_{}_{}_{}".format("txt", args.txt_filter_max_choices, args.use_txt_fact)
+        
+        with open(os.path.join(args.output_dir, "{}.json".format(pkl_filename)), "w") as f:
+            json.dump(output_pkl, f, indent=4)
         with open(os.path.join(args.output_dir, args.filter_infr_log), "a") as f:
             f.write(datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
             f.write("\n".join(log_txt_content))
