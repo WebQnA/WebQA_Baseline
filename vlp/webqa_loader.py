@@ -351,6 +351,15 @@ class Preprocess4webqa(Pipeline):
         self.use_txt_fact = use_txt_fact
         assert max_len_a+max_len_b <= max_len, "loader Processor: max_len_a + max_len_b > max_len"
 
+    def detokenize(self, tk_list):
+        r_list = []
+        for tk in tk_list:
+            if tk.startswith('##') and len(r_list) > 0:
+                r_list[-1] = r_list[-1] + tk[2:]
+            else:
+                r_list.append(tk)
+        return r_list
+
     def __call__(self, instance, filter_max_choices=None, device=None):
         _, __, ___, ____, _____, ______, do_filter_task, context_is_img, example_id = instance
         if do_filter_task:
@@ -478,6 +487,7 @@ class Preprocess4webqa(Pipeline):
                 perm = np.random.permutation(filter_num_choices)
                 all_choices_facts = gold_facts + distractor_facts
                 all_choices_facts = [all_choices_facts[p] for p in perm]
+                #print(all_choices_facts)
                 label = torch.tensor([1. if p<num_gold else 0. for p in perm])
                 label = torch.stack([label, 1-label], dim=0).transpose(1,0)
                 input_ids_list = []
@@ -521,8 +531,9 @@ class Preprocess4webqa(Pipeline):
                 segment_ids = torch.stack(segment_ids_list, dim=0)
                 input_mask = torch.stack(input_mask_list, dim=0)
                 logit_mask = torch.tensor(logit_mask)
+                ori_choices = [' '.join(self.detokenize(c)) for c in all_choices_facts]
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context_is_img, example_id)
-                return (input_ids, segment_ids, input_mask,       None,        None,        None,         -1,         do_filter_task, label, logit_mask, all_choices_facts, self.task_idx, None, None, context_is_img, example_id)
+                return (input_ids, segment_ids, input_mask,       None,        None,        None,         -1,         do_filter_task,        label, logit_mask, ori_choices, self.task_idx, None, None, context_is_img, example_id)
                 raise NotImplementedError
         
         else:
