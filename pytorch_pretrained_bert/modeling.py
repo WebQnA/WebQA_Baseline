@@ -1729,7 +1729,8 @@ class BertForWebqa(PreTrainedBertModel):
             assert masked_lm_labels is not None
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
                                             attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
-            
+            #print("\n", attention_mask[0][10])
+            #print("\n", attention_mask[0][107])
             def gather_seq_out_by_pos(seq, pos):
                 return torch.gather(seq, 1, pos.unsqueeze(2).expand(-1, -1, seq.size(-1)))
 
