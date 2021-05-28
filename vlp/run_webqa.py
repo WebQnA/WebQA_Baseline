@@ -185,7 +185,7 @@ def main():
                         help="max position embeddings")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/tmp_jsons/Json_20210524.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/tmp_jsons/txt_Json_20210526.json")
     parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0526-Copy1.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
@@ -323,7 +323,7 @@ def main():
             len_vis_input=args.len_vis_input, max_len_a=args.max_len_a, max_len_b=args.max_len_b, \
             max_len_img_cxt=args.max_len_img_cxt, new_segment_ids=args.new_segment_ids, \
             truncate_config={'trunc_seg': args.trunc_seg, 'always_truncate_tail': args.always_truncate_tail}, \
-            use_img_meta=args.use_img_meta, use_img_content=args.use_img_content)
+            use_img_meta=args.use_img_meta, use_img_content=args.use_img_content, use_txt_fact=args.use_txt_fact)
     
     train_dataloaders = []
     train_samplers = []
@@ -384,6 +384,7 @@ def main():
 
     # Prepare model
     recover_step = _get_max_epoch_model(args.output_dir)
+    #recover_step = 3
     if args.recover_ori_ckpt or args.from_scratch: recover_step = None
     if args.from_scratch: args.model_recover_path = None
     cls_num_labels = 2
@@ -520,8 +521,11 @@ def main():
 
     if args.do_train:
         print("start training")
-        print("use_img_meta = ", args.use_img_meta)
-        print("use_img_content = ", args.use_img_content)
+        if "img" in args.answer_provided_by:
+            print("use_img_meta = ", args.use_img_meta)
+            print("use_img_content = ", args.use_img_content)
+        if "txt" in args.answer_provided_by:
+            print("use_txt_fact = ", args.use_txt_fact)
 
         #for param_tensor in model.state_dict():
             #print(param_tensor, "\t", model.state_dict()[param_tensor].size())
@@ -732,6 +736,7 @@ def main():
         Pred = []
         Choices = []
         Example_ids = []
+        Filter_labels = []
         with torch.no_grad():
             for step, loader_idx in enumerate(iter_bar):
                 batch = next(dataloader_iters[loader_idx])
@@ -754,6 +759,7 @@ def main():
                         drop_worst_ratio=0, filter_infr_th=th_list)
                 assert len(cur_batch_score) == len(th_list)
                 Pred.append(pred)
+                Filter_labels.append(filter_label.detach().cpu())
                 Choices.extend(ori_choices)
                 Example_ids.extend(example_ids)
                 if "filter" in args.task_to_learn:
@@ -768,6 +774,9 @@ def main():
             Pred = torch.cat(Pred, dim=0)
             Pred = Pred.numpy()
             Pred = [["{0:.4f}".format(s) for s in p] for p in Pred]
+            Filter_labels = torch.cat(Filter_labels, dim=0)
+            Filter_labels = Filter_labels.numpy()
+            Filter_labels = [[int(i[0]) for i in b] for b in Filter_labels]
             for th in th_list:
                 score_dict[th]['pr'] = np.mean(score_dict[th]['pr'])
                 score_dict[th]['re'] = np.mean(score_dict[th]['re'])
@@ -781,8 +790,8 @@ def main():
                 log_txt_content.append("re.mean = {}".format(score_dict[th]['re']))
                 log_txt_content.append("f1.mean = {}".format(score_dict[th]['f1']))
         output_pkl = {}
-        for e, c, p in zip(Example_ids, Choices, Pred):
-            output_pkl[e] = {"choices": c, "pred_scores": p}
+        for e, c, l, p in zip(Example_ids, Choices, Filter_labels, Pred):
+            output_pkl[e] = {"choices": c, "labels": l, "pred_scores": p}
         pkl_filename = "{}_{}".format("&".join(args.split), args.use_num_samples)
         if "img" in args.answer_provided_by:
             pkl_filename += "_{}_{}_{}_{}".format("img", args.img_filter_max_choices, args.use_img_content, args.use_img_meta)

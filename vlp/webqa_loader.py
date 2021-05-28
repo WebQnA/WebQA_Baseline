@@ -71,7 +71,7 @@ class webqaDataset_filter(torch.utils.data.Dataset):
         count = 0
         for i in dataset_J:
             datum = dataset_J[i]
-            if True: # datum['split'] in split: # modify here after we create split!
+            if datum['split'] in split: # modify here after we create split!
                 if use_num_samples == -1 or count < use_num_samples:
                     Q = self.tokenizer.tokenize(datum['Q'])
                     A = self.tokenizer.tokenize(datum['A'])
@@ -97,9 +97,9 @@ class webqaDataset_filter(torch.utils.data.Dataset):
         sample_size = self.filter_max_choices - len(gold_facts)
         
         if len(distractor_facts) < sample_size: sample_size = len(distractor_facts)
-        dis_idx_list = random.sample(range(len(distractor_facts)), sample_size)
-        distractor_facts = [distractor_facts[i] for i in dis_idx_list]
-
+        #dis_idx_list = random.sample(range(len(distractor_facts)), sample_size)
+        #distractor_facts = [distractor_facts[i] for i in dis_idx_list]
+        distractor_facts = distractor_facts[:sample_size]
         instance = (gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img, example_id)
         instance = self.processor(instance, self.filter_max_choices, self.device)
         # Processor returns:
@@ -131,7 +131,7 @@ class webqaDataset_qa(torch.utils.data.Dataset):
         count = 0
         for i in dataset_J:
             datum = dataset_J[i]
-            if True: # datum['split'] in split: # modify here after we have split!!!!
+            if datum['split'] in split: # modify here after we have split!!!!
                 if use_num_samples == -1 or count < use_num_samples:
                     Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
                     A = self.tokenizer.tokenize(datum['A'].replace('"', ""))
@@ -199,8 +199,11 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                     gold_cxt_list = []
                     distractor_cxt_list = []
                     for im in datum['GoldIds']:
-                        image_feature_path = os.path.join(gold_feature_folder, str(im)+'.pkl')
-                        assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(im)
+                        if int(im) < 10000000:
+                            image_feature_path = os.path.join(gold_feature_folder, str(im)+'.pkl')
+                            assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(im)
+                        else:
+                            image_feature_path = os.path.join(distractor_feature_folder, str(im)+'.pkl')
                         gold_feature_paths.append(image_feature_path)
                         img_meta_key = str(int(im))
                         cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
@@ -208,8 +211,15 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                         gold_cxt_list.append(cxt)
 
                     for im in datum['DistractorIds']:
-                        image_feature_path = os.path.join(distractor_feature_folder, str(im)+'.pkl')
-                        if os.path.exists(image_feature_path):
+                        if os.path.exists(os.path.join(distractor_feature_folder, str(im)+'.pkl')):
+                            image_feature_path = os.path.join(distractor_feature_folder, str(im)+'.pkl')
+                            img_meta_key = str(int(im))
+                            cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
+                            cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
+                            distractor_feature_paths.append(image_feature_path)
+                            distractor_cxt_list.append(cxt)
+                        elif os.path.exists(os.path.join(gold_feature_folder, str(im)+'.pkl')):
+                            image_feature_path = os.path.join(gold_feature_folder, str(im)+'.pkl')
                             img_meta_key = str(int(im))
                             cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
                             cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
@@ -281,8 +291,11 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
                     gold_feature_paths = []
                     gold_cxt_list = []
                     for im in datum['GoldIds']:
-                        image_feature_path = os.path.join(gold_feature_folder, str(im)+'.pkl')
-                        assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(im)
+                        if int(im) < 10000000:
+                            image_feature_path = os.path.join(gold_feature_folder, str(im)+'.pkl')
+                            assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(im)
+                        else:
+                            image_feature_path = os.path.join(distractor_feature_folder, str(im)+'.pkl')
                         gold_feature_paths.append(image_feature_path)
                         img_meta_key = str(int(im))
                         cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
@@ -471,7 +484,8 @@ class Preprocess4webqa(Pipeline):
                 segment_ids_list = []
                 input_mask_list = []
                 for i in range(filter_num_choices):
-                    tokens_a = all_choices_facts[i].copy()
+                    tokens_a = []
+                    if self.use_txt_fact: tokens_a = all_choices_facts[i].copy()
                     tokens_b = Q+A
                     truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_b, max_len_a=self.max_len_a, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
                     tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
@@ -507,8 +521,8 @@ class Preprocess4webqa(Pipeline):
                 segment_ids = torch.stack(segment_ids_list, dim=0)
                 input_mask = torch.stack(input_mask_list, dim=0)
                 logit_mask = torch.tensor(logit_mask)
-                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img, example_id)
-                return (input_ids, segment_ids, input_mask,       None,        None,        None,         -1,         do_filter_task,        label, logit_mask, self.task_idx, None, None, context_is_img, example_id)
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context_is_img, example_id)
+                return (input_ids, segment_ids, input_mask,       None,        None,        None,         -1,         do_filter_task, label, logit_mask, all_choices_facts, self.task_idx, None, None, context_is_img, example_id)
                 raise NotImplementedError
         
         else:
@@ -619,8 +633,8 @@ class Preprocess4webqa(Pipeline):
                 assert vis_pe.size(0) == self.max_len_img_cxt
                 assert img.size(0) == self.max_len_img_cxt
 
-                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img, example_id)
-                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,      -1,      do_filter_task,        None,        None, self.task_idx, img, vis_pe, context_is_img, example_id)
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context_is_img, example_id)
+                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,      -1,      do_filter_task,        None,        None,        None, self.task_idx, img, vis_pe, context_is_img, example_id)
             
             
             else: # qa task, context is txt
@@ -673,8 +687,8 @@ class Preprocess4webqa(Pipeline):
                     masked_pos.extend([0] * n_pad)
                     masked_weights.extend([0] * n_pad)
                 
-                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, self.task_idx, img, vis_pe, context_is_img, example_id)
-                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,       -1,      do_filter_task,      None,      None,       self.task_idx, None, None, context_is_img, example_id)
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context_is_img, example_id)
+                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,       -1,      do_filter_task,      None,      None,       None,       self.task_idx, None, None, context_is_img, example_id)
                 raise NotImplementedError
         '''
         if context_is_img:
@@ -819,7 +833,7 @@ class Preprocess4webqaDecoder(Pipeline):
         print("loader.use_img_content = ", use_img_content)
 
     def __call__(self, instance, filter_max_choices=None, device=None):
-        _, __, ___, ____, _____, ______, do_filter_task, context_is_img = instance
+        _, __, ___, ____, _____, ______, do_filter_task, context_is_img, example_id = instance
         if do_filter_task:
             raise ValueError("Processor for decoder does not support filter task. \nFor filter task inference, please use run_webqa.py by setting args.do_train=False")
         else:
@@ -867,7 +881,7 @@ class Preprocess4webqaDecoder(Pipeline):
 
                 img_end_pos = 1 + self.len_vis_input*num_img
                 if self.use_img_content: input_mask[:, :img_end_pos].fill_(1)
-                st, end = 1 + self.max_len_img_cxt, len(tokens_a) + 2 + len(Q) # paddings at the end of tokens_b don't need attention
+                st, end = 1 + self.max_len_img_cxt, len(tokens_a) + 2 + ori_Q_len # paddings at the end of tokens_b don't need attention
                 input_mask[:, st:end].fill_(1)
                 # Tokens in A can attend to previous tokens in A
                 pred_st, pred_end = len(tokens), self.max_len
@@ -905,24 +919,30 @@ class Preprocess4webqaDecoder(Pipeline):
                         #vis_pe = torch.zeros_like(vis_pe).float()
                     img_list.append(img)
                     vis_pe_list.append(vis_pe)
+                    if len(img_list) >= 2: break # harded coded, doesn't allow more than 2 imgs
 
-                img = torch.cat(img_list, dim=0)
-                vis_pe = torch.cat(vis_pe_list, dim=0)
-                assert img.size(0) == vis_pe.size(0), "img features and vis_pe should have the same token length!"
-                vis_pad = torch.zeros((self.max_len_img_cxt - img.size(0), img.size(-1)))#.to(device)
-                img = torch.cat((img, vis_pad), dim=0)
-                vis_pad = torch.zeros((self.max_len_img_cxt - vis_pe.size(0), vis_pe.size(-1)))#.to(device)
-                vis_pe = torch.cat((vis_pe, vis_pad), dim=0)
+                if len(img_list) == 0:
+                    assert len(vis_pe_list) == 0
+                    img = torch.zeros((self.max_len_img_cxt, 2048)) # 2048 is hard-coded
+                    vis_pe = torch.zeros((self.max_len_img_cxt, 1607)) # 1607 is hard-coded
+                else:
+                    img = torch.cat(img_list, dim=0)
+                    vis_pe = torch.cat(vis_pe_list, dim=0)
+                    assert img.size(0) == vis_pe.size(0), "img features and vis_pe should have the same token length!"
+                    vis_pad = torch.zeros((self.max_len_img_cxt - img.size(0), img.size(-1)))#.to(device)
+                    img = torch.cat((img, vis_pad), dim=0)
+                    vis_pad = torch.zeros((self.max_len_img_cxt - vis_pe.size(0), vis_pe.size(-1)))#.to(device)
+                    vis_pe = torch.cat((vis_pe, vis_pad), dim=0)
                 assert vis_pe.size(0) == self.max_len_img_cxt
                 assert img.size(0) == self.max_len_img_cxt
 
                 # schema: (input_ids, segment_ids, input_mask, self.task_idx, img, vis_pe, context_is_img)
-                return (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context_is_img)
+                return (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context_is_img, example_id)
                 
             
             else: # qa task, context is txt
                 #raise NotImplementedError
-                gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img = instance
+                gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img, example_id = instance
                 tokens_a = []
                 if self.use_txt_fact: tokens_a = sum(gold_facts, [])
                 tokens_b = Q.copy()

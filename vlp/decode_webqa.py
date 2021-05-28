@@ -50,7 +50,26 @@ def toNum(word):
     except:
         return word
 
-# Language eval
+def normalize_text(s):
+    import string, re
+    def remove_articles(text):
+        regex = re.compile(r"\b(a|an|the)\b", re.UNICODE)
+        return re.sub(regex, " ", text)
+
+    def white_space_fix(text): # additional: converting numbers to digit form
+        return " ".join([str(toNum(w)) for w in text.split()])
+        #return " ".join(text.split())
+
+    def remove_punc(text):
+        exclude = set(string.punctuation)
+        return "".join(ch for ch in text if ch not in exclude)
+
+    def lower(text):
+        return text.lower()
+
+    return white_space_fix(remove_articles(remove_punc(lower(s))))
+
+# Language eval with Caption metrics
 class Evaluate(object):
     def __init__(self):
         self.scorers = [
@@ -98,16 +117,24 @@ class Evaluate(object):
         if return_scores:
             return final_scores
 
+# BertScore
+from datasets import load_metric
+METRIC = load_metric("bertscore")
+def compute_bertscore(cands, a):
+    METRIC.add_batch(predictions = cands, references = [a]*len(cands))
+    score = METRIC.compute(lang='en')
+    return np.mean(score['f1']), np.max(score['f1'])
+
 # VQA Eval (SQuAD style EM, F1)
 def compute_vqa_metrics(cands, a):
     if len(cands) == 0: return (0,0,0)
-    bow_a = re.sub(r'[^\w\s\']', '', a).lower().split()
-    bow_a = [str(toNum(w)) for w in bow_a]
+    bow_a = a.split()
+    #bow_a = [str(toNum(w)) for w in bow_a]
     F1 = []
     EM = 0
     for c in cands:
-        bow_c = re.sub(r'[^\w\s\']', '', c).lower().split()
-        bow_c = [str(toNum(w)) for w in bow_c]
+        bow_c = c.split()
+        #bow_c = [str(toNum(w)) for w in bow_c]
         if bow_c == bow_a:
             EM = 1
         #print(bow_a, bow_c)
@@ -120,6 +147,7 @@ def compute_vqa_metrics(cands, a):
     F1_avg = np.mean(F1)
     F1_max = np.max(F1)
     return (F1_avg, F1_max, EM)
+
 
 def detokenize(tk_list):
     r_list = []
@@ -210,7 +238,7 @@ def main():
                         help="maximum length of target sequence")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/tmp_jsons/Json_20210524.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/tmp_jsons/txt_Json_20210526.json")
     parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0501-Copy1.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
@@ -223,6 +251,7 @@ def main():
 
     parser.add_argument('--no_img_meta', action='store_true')
     parser.add_argument('--no_img_content', action='store_true')
+    parser.add_argument('--no_txt_fact', action='store_true')
 
     # Others for VLP
     parser.add_argument("--src_file", default='/mnt/dat/COCO/annotations/dataset_coco.json', type=str,		
@@ -256,6 +285,7 @@ def main():
     args = parser.parse_args()
     args.use_img_meta = not args.no_img_meta
     args.use_img_content = not args.no_img_content
+    args.use_txt_fact= not args.no_txt_fact
     log_txt_content = []
 
     device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
@@ -294,10 +324,11 @@ def main():
             max_len_a=args.max_len_a, max_len_Q=args.max_len_Q, max_len_img_cxt=args.max_len_img_cxt, \
             max_tgt_len=args.max_tgt_len, new_segment_ids=args.new_segment_ids, \
             truncate_config={'trunc_seg': args.trunc_seg, 'always_truncate_tail': args.always_truncate_tail}, \
-            use_img_meta=args.use_img_meta, use_img_content=args.use_img_content)
+            use_img_meta=args.use_img_meta, use_img_content=args.use_img_content, use_txt_fact=args.use_txt_fact)
 
     infr_dataloaders = []
     if 'txt' in args.answer_provided_by:
+        args.output_suffix =  args.txt_dataset_json_path.split('/')[-1].replace(".json", "") + args.output_suffix
         train_dataset = webqa_loader.webqaDataset_qa(dataset_json_path=args.txt_dataset_json_path, split=args.split, \
                 batch_size=args.batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
                 processor=processor, device=device)
@@ -306,6 +337,7 @@ def main():
         infr_dataloaders.append(infr_dataloader)
 
     if "img" in args.answer_provided_by:
+        args.output_suffix = args.img_dataset_json_path.split('/')[-1].replace(".json", "") + args.output_suffix
         train_dataset = webqa_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, \
                 batch_size=args.batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
                 distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
@@ -389,10 +421,15 @@ def main():
     model.eval()
     print("-------------------- QA Decoding ------------------------")
     log_txt_content.append("-------------------- QA Decoding ------------------------")
-    print(args.use_img_meta)
-    print(args.use_img_content)
-    log_txt_content.append("use_img_content = {}".format(args.use_img_content))
-    log_txt_content.append("use_img_meta = {}".format(args.use_img_meta))
+    if "img" in args.answer_provided_by:
+        print("use_img_meta = ", args.use_img_meta)
+        print("use_img_content = ", args.use_img_content)
+        log_txt_content.append("use_img_content = {}".format(args.use_img_content))
+        log_txt_content.append("use_img_meta = {}".format(args.use_img_meta))
+    if "txt" in args.answer_provided_by:
+        print("use_txt_fact = ", args.use_txt_fact)
+        log_txt_content.append("use_txt_fact = {}".format(args.use_txt_fact))
+    
     log_txt_content.append("split = {}".format(args.split))
     log_txt_content.append("use_num_samples = {}".format(args.use_num_samples))
     
@@ -405,8 +442,8 @@ def main():
         for step, batch in enumerate(iter_bar):
             #if step<834: continue
             with torch.no_grad():
-                batch = [t.to(device) for t in batch]
-                input_ids, segment_ids, position_ids, input_mask, task_idx, img, vis_pe, context_is_img = batch
+                batch = [t.to(device) if not isinstance(t, list) else t for t in batch ]
+                input_ids, segment_ids, position_ids, input_mask, task_idx, img, vis_pe, context_is_img, example_ids = batch
                 #print(tokenizer.convert_ids_to_tokens([i for i in list(input_ids.detach().cpu().numpy()[0][202:]) if i>0 and i!=102]))
                 time.sleep(2)
                 if args.fp16:
@@ -435,7 +472,7 @@ def main():
                             if t in ("[SEP]", "[PAD]"):
                                 break
                             output_tokens.append(t)
-                        output_sequences.append(' '.join(detokenize(output_tokens)))
+                        output_sequences.append(normalize_text(' '.join(detokenize(output_tokens))))
                     
                     output_lines.append(output_sequences)
                     #print("\noutput_sequence for cur batch = ", output_sequence)
@@ -443,41 +480,60 @@ def main():
                 iter_bar.set_description('Step = {}'.format(step))
 
         Q, A = infr_dataloader.dataset.get_QA_list()
-        Q, A = [' '.join(detokenize(q)) for q in Q], [' '.join(detokenize(a)) for a in A]
+        Q, A = [' '.join(detokenize(q)) for q in Q], [normalize_text(' '.join(detokenize(a))) for a in A]
         assert len(Q) == len(A) == len(output_lines) == len(output_confidence)
         
-        predictions = zip(Q, A, output_lines)
+        #predictions = zip(Q, A, output_lines)
         #for q, a, o in predictions:
             #print(q)
             #print(a)
             #print(o)
         eval_f = Evaluate()
         scores = eval_f.evaluate(cand=output_lines, ref=A, return_scores=True)
-
+        
         # SQuAD style vqa eval: EM, F1
         F1_avg_scores = []
         F1_max_scores = []
         EM_scores = []
+        F1_avg_bertscores = []
+        F1_max_bertscores = []
         for cands, a in zip(output_lines, A):
             assert len(cands)==args.beam_size
             F1_avg, F1_max, EM = compute_vqa_metrics(cands, a)
             F1_avg_scores.append(F1_avg)
             F1_max_scores.append(F1_max)
             EM_scores.append(EM)
+            F1_avg_bertscore, F1_max_bertscore = compute_bertscore(cands, a)
+            F1_avg_bertscores.append(F1_avg_bertscore)
+            F1_max_bertscores.append(F1_max_bertscore)
         F1_avg = np.mean(F1_avg_scores)
         F1_max = np.mean(F1_max_scores)
         EM = np.mean(EM_scores)
+        F1_avg_bertscore = np.mean(F1_avg_bertscores)
+        F1_max_bertscore = np.mean(F1_max_bertscores)
         print("F1_avg = {}".format(F1_avg))
         print("F1_max = {}".format(F1_max))
         print("EM = {}".format(EM))
+        print("F1_avg_bertscore = {}".format(F1_avg_bertscore))
+        print("F1_max_bertscore = {}".format(F1_max_bertscore))
 
-        with open(os.path.join(args.output_dir, 'qa_infr', args.split+"_qainfr_beam{}_{}_{}_{}.txt".format(args.beam_size, args.use_img_content, args.use_img_meta, args.output_suffix)), "w") as f:
+        filename = "{}_qainfr_{}_beam{}".format(args.split, args.use_num_samples, args.beam_size)
+        if "img" in args.answer_provided_by:
+            filename += "_{}_{}_{}".format("img", args.use_img_content, args.use_img_meta)
+        if "txt" in args.answer_provided_by:
+            filename += "_{}_{}".format("txt", args.use_txt_fact)
+        filename += "_{}".format(args.output_suffix)
+
+
+        with open(os.path.join(args.output_dir, 'qa_infr', "{}.txt".format(filename)), "w") as f:
             f.write(datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
             f.write("\n".join(log_txt_content))
             f.write('\n --------------------- metrics -----------------------\n')
             f.write(str(scores))
             f.write('\n\n')
             f.write('\n'.join(["F1_avg = {}".format(F1_avg), "F1_max = {}".format(F1_max), "EM = {}".format(EM)]))
+            f.write('\n\n')
+            f.write('\n'.join(["F1_avg_bertscore = {}".format(F1_avg_bertscore), "F1_max_bertscore = {}".format(F1_max_bertscore)]))
             f.write('\n\n')
             f.write('-----Starting writing results:-----')
             for q, a, oc, o in zip(Q, A, output_confidence, output_lines):
