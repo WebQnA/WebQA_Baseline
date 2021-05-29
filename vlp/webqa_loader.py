@@ -541,9 +541,10 @@ class Preprocess4webqa(Pipeline):
                 gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img, example_id = instance
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
                 tokens_b = Q+A
+                
                 cxt = sum(gold_cxt_list, [])
 
-                truncate_tokens_pair(cxt, tokens_b, max_len=self.max_len_a - self.max_len_img_cxt + self.max_len_b, max_len_a=self.max_len_a - self.max_len_img_cxt, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
+                num_truncated_a, num_truncated_b = truncate_tokens_pair(cxt, tokens_b, max_len=self.max_len_a - self.max_len_img_cxt + self.max_len_b, max_len_a=self.max_len_a - self.max_len_img_cxt, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
                 if self.use_img_meta: tokens_a += cxt
                 tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
                 #print(tokens)
@@ -553,12 +554,12 @@ class Preprocess4webqa(Pipeline):
                 else:
                     segment_ids = [0] * (len(tokens_a)+2) + [1] * (len(tokens_b)+1)
 
-                effective_len_A = len(A) +1
+                effective_len_A = len(A) +1 - num_truncated_b[1]
                 n_pred = min(self.max_pred, max(1, int(round(effective_len_A * self.mask_prob))))
                 cand_pos = []
                 for i, tk in enumerate(tokens):
                     # only mask tk in A
-                    if (i >= len(tokens_a)+2+len(Q)):
+                    if (i >= len(tokens_a)+2+len(Q)- num_truncated_b[0]):
                         cand_pos.append(i)
                 
                 shuffle(cand_pos)
@@ -643,7 +644,16 @@ class Preprocess4webqa(Pipeline):
                 vis_pe = torch.cat((vis_pe, vis_pad), dim=0)
                 assert vis_pe.size(0) == self.max_len_img_cxt
                 assert img.size(0) == self.max_len_img_cxt
-
+                if len(masked_pos) < self.max_pred: 
+                    print("num_truncated_b = ", num_truncated_b)
+                    print(masked_pos)
+                    print(n_pred)
+                    print(self.max_pred)
+                    print("effective_len_A = ", effective_len_A)
+                    print("len(A) = ", len(A))
+                    print("len(Q) = ", len(Q))
+                    print("--------------")
+                    print(tokens)
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context_is_img, example_id)
                 return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,      -1,      do_filter_task,        None,        None,        None, self.task_idx, img, vis_pe, context_is_img, example_id)
             
@@ -653,7 +663,7 @@ class Preprocess4webqa(Pipeline):
                 tokens_a = []
                 if self.use_txt_fact: tokens_a = sum(gold_facts, [])
                 tokens_b = Q+A
-                truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_b, max_len_a=self.max_len_a, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
+                num_truncated_a, num_truncated_b = truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_b, max_len_a=self.max_len_a, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
                 tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
                 #print("\n", tokens)
                 if self.new_segment_ids:
@@ -661,12 +671,12 @@ class Preprocess4webqa(Pipeline):
                 else:
                     segment_ids = [0] * (len(tokens_a)+2) + [1] * (len(tokens_b)+1)
 
-                effective_len_A = len(A)+1
+                effective_len_A = len(A)+1 - num_truncated_b[1]
                 n_pred = min(self.max_pred, max(1, int(round(effective_len_A * self.mask_prob))))
                 cand_pos = []
                 for i, tk in enumerate(tokens):
                     # only mask tk in A
-                    if (i >= len(tokens_a)+2+len(Q)):
+                    if (i >= len(tokens_a)+2+len(Q)- num_truncated_b[0]):
                         cand_pos.append(i)
                 
                 shuffle(cand_pos)

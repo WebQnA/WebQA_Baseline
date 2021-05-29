@@ -185,7 +185,7 @@ def main():
                         help="max position embeddings")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/tmp_jsons/txt_Json_20210526.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_J.json")
     parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0526-Copy1.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
@@ -194,8 +194,8 @@ def main():
     parser.add_argument('--answer_provided_by', type=str, default="img|txt")
     parser.add_argument('--task_to_learn', type=str, default="filter|qa")
 
-    parser.add_argument('--txt_filter_max_choices', type=int, default=7)
-    parser.add_argument('--img_filter_max_choices', type=int, default=10)
+    parser.add_argument('--txt_filter_max_choices', type=int, default=20)
+    parser.add_argument('--img_filter_max_choices', type=int, default=20)
     parser.add_argument('--filter_infr_log', type=str, default="filter_infr_log.txt")
     parser.add_argument("--recover_ori_ckpt", action='store_true',
                         help="Whether to load original VLP checkpoint.")
@@ -555,12 +555,9 @@ def main():
             loss_dict = [[],[],[],[]]
             scst_reward = []
             for step, loader_idx in enumerate(iter_bar):
+                
                 batch = next(dataloader_iters[loader_idx])
-                #print("\nlr = ", optimizer.get_lr())
-                #print("\noptimizer.state_dict() = ", optimizer.state_dict())
-                #print("\n")
-                #if step < 2743: 
-                    #continue
+
                 for param_tensor in model.state_dict():
                     if torch.isnan(model.state_dict()[param_tensor]).any().item():
                         print("\n nan exists in ", param_tensor)
