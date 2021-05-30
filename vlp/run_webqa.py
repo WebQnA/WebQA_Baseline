@@ -186,7 +186,7 @@ def main():
 
     # webqa dataset
     parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_J.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0526-Copy1.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_dataset_J_0529-Copy1.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
     parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
@@ -384,7 +384,6 @@ def main():
 
     # Prepare model
     recover_step = _get_max_epoch_model(args.output_dir)
-    #recover_step = 3
     if args.recover_ori_ckpt or args.from_scratch: recover_step = None
     if args.from_scratch: args.model_recover_path = None
     cls_num_labels = 2

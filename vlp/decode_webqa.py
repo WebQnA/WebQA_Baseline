@@ -66,6 +66,9 @@ def normalize_text(s):
 
     def lower(text):
         return text.lower()
+    
+    if len(s.strip().split()) == 1:
+        return white_space_fix(lower(s))
 
     return white_space_fix(remove_articles(remove_punc(lower(s))))
 
@@ -238,8 +241,8 @@ def main():
                         help="maximum length of target sequence")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/VLP/vlp/tmp/tmp_jsons/txt_Json_20210526.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/dataset_J0501-Copy1.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_J.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_dataset_J_0529-Copy1.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
     parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
@@ -375,7 +378,6 @@ def main():
         print("detect output_dir, recover_step = ", recover_step)
     if args.from_scratch or args.recover_ori_ckpt: recover_step = None
     if args.from_scratch: args.model_recover_path = None
-
     if (recover_step is None) and (args.model_recover_path is None):
         print("Decoding ... ----------------------- nothing to recover -------------------------")
         log_txt_content.append("Decoding ... ----------------------- nothing to recover -------------------------")
@@ -499,11 +501,11 @@ def main():
         F1_max_bertscores = []
         for cands, a in zip(output_lines, A):
             assert len(cands)==args.beam_size
-            F1_avg, F1_max, EM = compute_vqa_metrics(cands, a)
+            F1_avg, F1_max, EM = compute_vqa_metrics([cands[0]], a)
             F1_avg_scores.append(F1_avg)
             F1_max_scores.append(F1_max)
             EM_scores.append(EM)
-            F1_avg_bertscore, F1_max_bertscore = compute_bertscore(cands, a)
+            F1_avg_bertscore, F1_max_bertscore = compute_bertscore([cands[0]], a)
             F1_avg_bertscores.append(F1_avg_bertscore)
             F1_max_bertscores.append(F1_max_bertscore)
         F1_avg = np.mean(F1_avg_scores)
@@ -531,9 +533,9 @@ def main():
             f.write('\n --------------------- metrics -----------------------\n')
             f.write(str(scores))
             f.write('\n\n')
-            f.write('\n'.join(["F1_avg = {}".format(F1_avg), "F1_max = {}".format(F1_max), "EM = {}".format(EM)]))
+            f.write('\n'.join(["F1_avg = {}".format(F1_avg), "EM = {}".format(EM)]))
             f.write('\n\n')
-            f.write('\n'.join(["F1_avg_bertscore = {}".format(F1_avg_bertscore), "F1_max_bertscore = {}".format(F1_max_bertscore)]))
+            f.write('\n'.join(["F1_avg_bertscore = {}".format(F1_avg_bertscore)]))
             f.write('\n\n')
             f.write('-----Starting writing results:-----')
             for q, a, oc, o in zip(Q, A, output_confidence, output_lines):
