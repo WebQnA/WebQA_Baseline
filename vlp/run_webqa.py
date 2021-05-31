@@ -199,11 +199,13 @@ def main():
     parser.add_argument('--filter_infr_log', type=str, default="filter_infr_log.txt")
     parser.add_argument("--recover_ori_ckpt", action='store_true',
                         help="Whether to load original VLP checkpoint.")
+    parser.add_argument("--recover_step", type=int, default=None)
+    parser.add_argument("--val_loss", action='store_true')
 
     parser.add_argument('--no_img_meta', action='store_true')
     parser.add_argument('--no_img_content', action='store_true')
     parser.add_argument('--no_txt_fact', action='store_true')
-    parser.add_argument('--filter_infr_th', type=str, default="0.5")
+    parser.add_argument('--filter_infr_th', type=str, default="0.05|0.1|0.15|0.2|0.25|0.3|0.35|0.4|0.45|0.5|0.55|0.6|0.65|0.7|0.75|0.8|0.85|0.9|0.95")
 
     
     # Others for VLP
@@ -217,7 +219,7 @@ def main():
     parser.add_argument('--image_root', type=str, default='/mnt/dat/COCO/images')
     parser.add_argument('--dataset', default='coco', type=str,
                         help='coco | flickr30k | cc')
-    parser.add_argument('--split', type=str, nargs='+', default=['train', 'val', 'ind_test', 'ood_test'])
+    parser.add_argument('--split', type=str, default=['train', 'val', 'ind_test', 'ood_test'])
 
     parser.add_argument('--world_size', default = 1, type = int,
                         help = 'number of distributed processes')
@@ -384,8 +386,11 @@ def main():
 
     # Prepare model
     recover_step = _get_max_epoch_model(args.output_dir)
+    if args.recover_step: recover_step = args.recover_step
     if args.recover_ori_ckpt or args.from_scratch: recover_step = None
     if args.from_scratch: args.model_recover_path = None
+
+
     cls_num_labels = 2
     type_vocab_size = 6 if args.new_segment_ids else 2
     relax_projection = 4 if args.relax_projection else 0
@@ -706,18 +711,109 @@ def main():
         # cleanup
         if args.local_rank == -1 or args.no_cuda: pass
         else: torch.distributed.destroy_process_group()
-    else: # inference mode
+    elif args.val_loss:
+        print("--------------- Compute loss without grad ------------------")
+        assert args.split == "val"
+        if "img" in args.answer_provided_by:
+            print("use_img_meta = ", args.use_img_meta)
+            print("use_img_content = ", args.use_img_content)
+            print("\nimg Filter_max_choices: {}".format(args.img_filter_max_choices))
+        if "txt" in args.answer_provided_by:
+            print("use_txt_fact = ", args.use_txt_fact)
+            print("\ntxt Filter_max_choices: {}".format(args.txt_filter_max_choices))
+
+        logger.info("***** Compute loss without grad *****")
+        logger.info("  Batch size = %d", args.train_batch_size)
+        logger.info("  Num steps = %d", t_total)
+        logger.info("  Loader length = %d", len(train_dataloader))
+
+        model.eval()
         
-        print(args.use_img_meta)
-        print(args.use_img_content)
-        print("-------------------- Inference mode ------------------------")
-        log_txt_content.append("-------------------- Inference mode ------------------------")
-        log_txt_content.append("use_img_content = {}".format(args.use_img_content))
-        log_txt_content.append("use_img_meta = {}".format(args.use_img_meta))
+        with torch.no_grad():
+            dataloader_iters = [iter(l) for l in train_dataloaders]
+            
+            iter_bar = tqdm(train_dataloader_order, desc='Iter (loss=X.XXX), loader_idx=X') 
+            nbatches = sum(loader_lengths)
+            
+            qa_loss = []
+            filter_loss = []
+            loss_dict = [[],[],[],[]]
+            scst_reward = []
+            for step, loader_idx in enumerate(iter_bar):
+                
+                batch = next(dataloader_iters[loader_idx])
+
+                for param_tensor in model.state_dict():
+                    if torch.isnan(model.state_dict()[param_tensor]).any().item():
+                        print("\n nan exists in ", param_tensor)
+                batch = [t.to(device) if not isinstance(t, list) else t for t in batch ]
+                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, ori_choices, task_idx, img, vis_pe, context_is_img, example_ids = batch
+                if args.fp16:
+                    img = img.half()
+                    vis_pe = vis_pe.half()
+                
+                conv_feats = img.data # Bx100x2048
+                vis_pe = vis_pe.data
+                # doesn't support scst training for not
+                loss_tuple = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
+                    masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
+                        next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
+                            drop_worst_ratio=0)
+                mean_reward = loss_tuple[0].new(1).fill_(0)
+
+                # disable pretext_loss_deprecated for now
+                masked_lm_loss, cls_loss = loss_tuple
+                if n_gpu > 1:    # mean() to average on multi-gpu. For dist, this is done through gradient addition.
+                    masked_lm_loss = masked_lm_loss.mean()
+                    cls_loss = cls_loss.mean()
+                loss = masked_lm_loss + cls_loss
+                # logging for each step (i.e., before normalization by args.gradient_accumulation_steps)
+                iter_bar.set_description('Iter (loss={:.3f}) loader_idx={}'.format(loss.item(), loader_idx))
+                qa_loss.append(masked_lm_loss.item())
+                filter_loss.append(cls_loss.item())
+                loss_dict[loader_idx].append(loss.item())
+                scst_reward.append(mean_reward.item())
+                
+                if step%100 == 0:
+                    logger.info("Iter {}, Loss {:.2f}, Filter {:.2f}, Mean R {:.3f}\n".format(step, np.mean(qa_loss), np.mean(filter_loss), np.mean(scst_reward)))
+
+                # ensure that accumlated gradients are normalized
+                if args.gradient_accumulation_steps > 1:
+                    loss = loss / args.gradient_accumulation_steps
+
+                
+            print(qa_loss)
+            print(filter_loss)
+            print(loss_dict)
+            print("Mean loss = ", np.mean([l for L in loss_dict for l in L]))
+            
+            logger.info("***** CUDA.empty_cache() *****")
+            torch.cuda.empty_cache()
+
+            with open(os.path.join(args.output_dir, "val_loss.txt"), "a") as f:
+                f.write("\nrecover_step = {}, use_num_samples = {}, answer_provided_by = {}, task = {}\n".format(recover_step, args.use_num_samples, args.answer_provided_by, args.task_to_learn))
+                f.write(str(np.mean([l for L in loss_dict for l in L])))
+
+            
+    else: # inference mode
+        if "img" in args.answer_provided_by:
+            print(args.use_img_meta)
+            print(args.use_img_content)
+            log_txt_content.append("use_img_content = {}".format(args.use_img_content))
+            log_txt_content.append("use_img_meta = {}".format(args.use_img_meta))
+            log_txt_content.append("\nimg Filter_max_choices: {}".format(args.img_filter_max_choices)) ## when txt is included, modify here!
+            print("\nimg Filter_max_choices: {}".format(args.img_filter_max_choices))
+        if "txt" in args.answer_provided_by:
+            print(args.use_txt_fact)
+            log_txt_content.append("use_txt_fact = {}".format(args.use_txt_fact))
+            log_txt_content.append("\ntxt Filter_max_choices: {}".format(args.txt_filter_max_choices)) ## when txt is included, modify here!
+            print("\ntxt Filter_max_choices: {}".format(args.txt_filter_max_choices))
+        print("-------------------- Filter Inference mode ------------------------")
+        log_txt_content.append("-------------------- Filter Inference mode ------------------------")
+        
         log_txt_content.append("split = {}".format(args.split))
         log_txt_content.append("use_num_samples = {}".format(args.use_num_samples))
-        log_txt_content.append("\nFilter_max_choices: {}".format(args.img_filter_max_choices)) ## when txt is included, modify here!
-        print("\nFilter_max_choices: {}".format(args.img_filter_max_choices))
+        
         th_list = [float(i) for i in args.filter_infr_th.split("|")]
         if not 0.7 in th_list: th_list.append(0.7)
         print("\nThresholds: ", str(th_list))
@@ -790,7 +886,7 @@ def main():
         output_pkl = {}
         for e, c, l, p in zip(Example_ids, Choices, Filter_labels, Pred):
             output_pkl[e] = {"choices": c, "labels": l, "pred_scores": p}
-        pkl_filename = "{}_{}".format("&".join(args.split), args.use_num_samples)
+        pkl_filename = "{}_{}".format(str(args.split), args.use_num_samples)
         if "img" in args.answer_provided_by:
             pkl_filename += "_{}_{}_{}_{}".format("img", args.img_filter_max_choices, args.use_img_content, args.use_img_meta)
         if "txt" in args.answer_provided_by:

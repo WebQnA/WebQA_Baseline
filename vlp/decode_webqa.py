@@ -251,6 +251,7 @@ def main():
 
     parser.add_argument("--recover_ori_ckpt", action='store_true',
                         help="Whether to load original VLP checkpoint.")
+    parser.add_argument("--recover_step", type=int, default=None)
 
     parser.add_argument('--no_img_meta', action='store_true')
     parser.add_argument('--no_img_content', action='store_true')
@@ -375,6 +376,7 @@ def main():
     recover_step = None
     if len(args.output_dir)>0:
         recover_step = _get_max_epoch_model(args.output_dir)
+        if args.recover_step: recover_step = args.recover_step
         print("detect output_dir, recover_step = ", recover_step)
     if args.from_scratch or args.recover_ori_ckpt: recover_step = None
     if args.from_scratch: args.model_recover_path = None
@@ -437,6 +439,8 @@ def main():
     
     output_lines = []
     output_confidence = []
+    output_Q = []
+    output_A = []
     for infr_dataloader in infr_dataloaders:
         nbatches = len(infr_dataloader)
         
@@ -483,64 +487,65 @@ def main():
 
         Q, A = infr_dataloader.dataset.get_QA_list()
         Q, A = [' '.join(detokenize(q)) for q in Q], [normalize_text(' '.join(detokenize(a))) for a in A]
-        assert len(Q) == len(A) == len(output_lines) == len(output_confidence)
+        assert len(Q) == len(A)
         
-        #predictions = zip(Q, A, output_lines)
-        #for q, a, o in predictions:
-            #print(q)
-            #print(a)
-            #print(o)
-        eval_f = Evaluate()
-        scores = eval_f.evaluate(cand=output_lines, ref=A, return_scores=True)
+        output_Q.extend(Q)
+        output_A.extend(A)
+        assert len(output_lines) == len(output_confidence) == len(output_Q) == len(output_A)
+
+
+    eval_f = Evaluate()
+    scores = eval_f.evaluate(cand=output_lines, ref=output_A, return_scores=True)
         
-        # SQuAD style vqa eval: EM, F1
-        F1_avg_scores = []
-        F1_max_scores = []
-        EM_scores = []
-        F1_avg_bertscores = []
-        F1_max_bertscores = []
-        for cands, a in zip(output_lines, A):
-            assert len(cands)==args.beam_size
-            F1_avg, F1_max, EM = compute_vqa_metrics([cands[0]], a)
-            F1_avg_scores.append(F1_avg)
-            F1_max_scores.append(F1_max)
-            EM_scores.append(EM)
-            F1_avg_bertscore, F1_max_bertscore = compute_bertscore([cands[0]], a)
-            F1_avg_bertscores.append(F1_avg_bertscore)
-            F1_max_bertscores.append(F1_max_bertscore)
-        F1_avg = np.mean(F1_avg_scores)
-        F1_max = np.mean(F1_max_scores)
-        EM = np.mean(EM_scores)
-        F1_avg_bertscore = np.mean(F1_avg_bertscores)
-        F1_max_bertscore = np.mean(F1_max_bertscores)
-        print("F1_avg = {}".format(F1_avg))
-        print("F1_max = {}".format(F1_max))
-        print("EM = {}".format(EM))
-        print("F1_avg_bertscore = {}".format(F1_avg_bertscore))
-        print("F1_max_bertscore = {}".format(F1_max_bertscore))
+    # SQuAD style vqa eval: EM, F1
+    F1_avg_scores = []
+    F1_max_scores = []
+    EM_scores = []
+    F1_avg_bertscores = []
+    F1_max_bertscores = []
+    for cands, a in zip(output_lines, output_A):
+        assert len(cands)==args.beam_size
+        F1_avg, F1_max, EM = compute_vqa_metrics([cands[0]], a)
+        F1_avg_scores.append(F1_avg)
+        F1_max_scores.append(F1_max)
+        EM_scores.append(EM)
+        F1_avg_bertscore, F1_max_bertscore = compute_bertscore([cands[0]], a)
+        F1_avg_bertscores.append(F1_avg_bertscore)
+        F1_max_bertscores.append(F1_max_bertscore)
 
-        filename = "{}_qainfr_{}_beam{}".format(args.split, args.use_num_samples, args.beam_size)
-        if "img" in args.answer_provided_by:
-            filename += "_{}_{}_{}".format("img", args.use_img_content, args.use_img_meta)
-        if "txt" in args.answer_provided_by:
-            filename += "_{}_{}".format("txt", args.use_txt_fact)
-        filename += "_{}".format(args.output_suffix)
+    F1_avg = np.mean(F1_avg_scores)
+    F1_max = np.mean(F1_max_scores)
+    EM = np.mean(EM_scores)
+    F1_avg_bertscore = np.mean(F1_avg_bertscores)
+    F1_max_bertscore = np.mean(F1_max_bertscores)
+    print("F1_avg = {}".format(F1_avg))
+    print("F1_max = {}".format(F1_max))
+    print("EM = {}".format(EM))
+    print("F1_avg_bertscore = {}".format(F1_avg_bertscore))
+    print("F1_max_bertscore = {}".format(F1_max_bertscore))
+
+    filename = "{}_qainfr_{}_beam{}".format(args.split, args.use_num_samples, args.beam_size)
+    if "img" in args.answer_provided_by:
+        filename += "_{}_{}_{}".format("img", args.use_img_content, args.use_img_meta)
+    if "txt" in args.answer_provided_by:
+        filename += "_{}_{}".format("txt", args.use_txt_fact)
+    filename += "_step{}_{}".format(recover_step, args.output_suffix)
 
 
-        with open(os.path.join(args.output_dir, 'qa_infr', "{}.txt".format(filename)), "w") as f:
-            f.write(datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
-            f.write("\n".join(log_txt_content))
-            f.write('\n --------------------- metrics -----------------------\n')
-            f.write(str(scores))
-            f.write('\n\n')
-            f.write('\n'.join(["F1_avg = {}".format(F1_avg), "EM = {}".format(EM)]))
-            f.write('\n\n')
-            f.write('\n'.join(["F1_avg_bertscore = {}".format(F1_avg_bertscore)]))
-            f.write('\n\n')
-            f.write('-----Starting writing results:-----')
-            for q, a, oc, o in zip(Q, A, output_confidence, output_lines):
-                f.write("\n\n")
-                f.write("\n".join([q, a, oc, '\n'.join(o)]))
+    with open(os.path.join(args.output_dir, 'qa_infr', "{}.txt".format(filename)), "w") as f:
+        f.write(datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
+        f.write("\n".join(log_txt_content))
+        f.write('\n --------------------- metrics -----------------------\n')
+        f.write(str(scores))
+        f.write('\n\n')
+        f.write('\n'.join(["F1_avg = {}".format(F1_avg), "EM = {}".format(EM)]))
+        f.write('\n\n')
+        f.write('\n'.join(["F1_avg_bertscore = {}".format(F1_avg_bertscore)]))
+        f.write('\n\n')
+        f.write('-----Starting writing results:-----')
+        for q, a, oc, o in zip(output_Q, output_A, output_confidence, output_lines):
+            f.write("\n\n")
+            f.write("\n".join([q, a, oc, '\n'.join(o)]))
                 
 
 if __name__ == "__main__":
