@@ -886,7 +886,7 @@ def main():
         output_pkl = {}
         for e, c, l, p in zip(Example_ids, Choices, Filter_labels, Pred):
             output_pkl[e] = {"choices": c, "labels": l, "pred_scores": p}
-        pkl_filename = "{}_{}".format(str(args.split), args.use_num_samples)
+        pkl_filename = "{}_{}_step{}".format(str(args.split), args.use_num_samples, recover_step)
         if "img" in args.answer_provided_by:
             pkl_filename += "_{}_{}_{}_{}".format("img", args.img_filter_max_choices, args.use_img_content, args.use_img_meta)
         if "txt" in args.answer_provided_by:

@@ -1,0 +1,4 @@
+CUDA_VISIBLE_DEVICES=0 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "txt" --beam_size 5 --split "val" --output_dir tmp/qa_alone_txt_0528data  --num_workers 4 --recover_step 13 &&
+CUDA_VISIBLE_DEVICES=0 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "txt" --beam_size 5 --split "val" --output_dir tmp/qa_alone_txt_0528data  --num_workers 4 --recover_step 14 &&
+CUDA_VISIBLE_DEVICES=0 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "txt" --beam_size 5 --split "val" --output_dir tmp/qa_alone_txt_0528data  --num_workers 4 --recover_step 19 &&
+CUDA_VISIBLE_DEVICES=0 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "txt" --beam_size 5 --split "val" --output_dir tmp/qa_alone_txt_0528data  --num_workers 4 --recover_step 20
