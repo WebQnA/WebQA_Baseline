@@ -207,6 +207,7 @@ def main():
     parser.add_argument('--no_txt_fact', action='store_true')
     parser.add_argument('--filter_infr_th', type=str, default="0.05|0.1|0.15|0.2|0.25|0.3|0.35|0.4|0.45|0.5|0.55|0.6|0.65|0.7|0.75|0.8|0.85|0.9|0.95")
 
+    parser.add_argument("--output_suffix", default="", type=str)
     
     # Others for VLP
     parser.add_argument("--src_file", default=['/mnt/dat/COCO/annotations/dataset_coco.json'],
@@ -823,7 +824,8 @@ def main():
         score_dict = dict([(th, {'pr':[], 're':[], 'f1':[]}) for th in th_list])
         #for th in th_list:
         dataloader_iters = [iter(l) for l in train_dataloaders]
-           
+        total_samples = sum([len(l.dataset) for l in train_dataloaders])
+        print("\ntotal_samples = ", total_samples)
         iter_bar = tqdm(train_dataloader_order, desc='Iter (loss=X.XXX), loader_idx=X') 
         nbatches = sum(loader_lengths)
                 
@@ -872,9 +874,9 @@ def main():
             Filter_labels = Filter_labels.numpy()
             Filter_labels = [[int(i[0]) for i in b] for b in Filter_labels]
             for th in th_list:
-                score_dict[th]['pr'] = np.mean(score_dict[th]['pr'])
-                score_dict[th]['re'] = np.mean(score_dict[th]['re'])
-                score_dict[th]['f1'] = np.mean(score_dict[th]['f1'])
+                score_dict[th]['pr'] = np.sum(score_dict[th]['pr']) / float(total_samples)
+                score_dict[th]['re'] = np.sum(score_dict[th]['re']) / float(total_samples)
+                score_dict[th]['f1'] = np.sum(score_dict[th]['f1']) / float(total_samples)
                 print("\nth = {}".format(th))
                 print("pr.mean = ", score_dict[th]['pr'])
                 print("re.mean = ", score_dict[th]['re'])
@@ -888,14 +890,19 @@ def main():
             output_pkl[e] = {"choices": c, "labels": l, "pred_scores": p}
         pkl_filename = "{}_{}_step{}".format(str(args.split), args.use_num_samples, recover_step)
         if "img" in args.answer_provided_by:
-            pkl_filename += "_{}_{}_{}_{}".format("img", args.img_filter_max_choices, args.use_img_content, args.use_img_meta)
+            args.output_suffix = args.img_dataset_json_path.split('/')[-1].replace(".json", "") + args.output_suffix
+            pkl_filename += "_{}_{}_{}_{}_".format("img", args.img_filter_max_choices, args.use_img_content, args.use_img_meta)
         if "txt" in args.answer_provided_by:
-            pkl_filename += "_{}_{}_{}".format("txt", args.txt_filter_max_choices, args.use_txt_fact)
-        
+            args.output_suffix =  args.txt_dataset_json_path.split('/')[-1].replace(".json", "") + args.output_suffix
+            pkl_filename += "_{}_{}_{}_".format("txt", args.txt_filter_max_choices, args.use_txt_fact)
+        pkl_filename += args.output_suffix
         with open(os.path.join(args.output_dir, "{}.json".format(pkl_filename)), "w") as f:
             json.dump(output_pkl, f, indent=4)
-        with open(os.path.join(args.output_dir, args.filter_infr_log), "a") as f:
+        with open(os.path.join(args.output_dir, "{}.txt".format(pkl_filename)), "w") as f:
+            f.write("\n")
             f.write(datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
+            f.write(pkl_filename)
+            f.write("\n")
             f.write("\n".join(log_txt_content))
         torch.cuda.empty_cache()
 
