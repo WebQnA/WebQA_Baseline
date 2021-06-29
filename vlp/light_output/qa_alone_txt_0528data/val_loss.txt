@@ -1,0 +1,47 @@
+
+recover_step = 18, use_num_samples = 16, answer_provided_by = txt, task = qa
+
+recover_step = 18, use_num_samples = 16, answer_provided_by = txt, task = qa
+5.938003063201904
+recover_step = 1, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.536045532226563
+recover_step = 2, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.272768716812134
+recover_step = 3, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.1237661743164065
+recover_step = 4, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.018100318908691
+recover_step = 5, use_num_samples = -1, answer_provided_by = txt, task = qa
+4.959281044006348
+recover_step = 6, use_num_samples = -1, answer_provided_by = txt, task = qa
+4.920977525711059
+recover_step = 7, use_num_samples = -1, answer_provided_by = txt, task = qa
+4.898287148475647
+recover_step = 8, use_num_samples = -1, answer_provided_by = txt, task = qa
+4.970681266784668
+recover_step = 9, use_num_samples = -1, answer_provided_by = txt, task = qa
+4.996300477981567
+recover_step = 10, use_num_samples = -1, answer_provided_by = txt, task = qa
+4.9152058982849125
+recover_step = 11, use_num_samples = -1, answer_provided_by = txt, task = qa
+4.942044339179993
+recover_step = 12, use_num_samples = -1, answer_provided_by = txt, task = qa
+4.949598727226257
+recover_step = 13, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.086754817962646
+recover_step = 14, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.195948343276978
+recover_step = 15, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.283177089691162
+recover_step = 16, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.456173791885376
+recover_step = 17, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.201634039878845
+recover_step = 18, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.235958495140076
+recover_step = 19, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.387965750694275
+recover_step = 20, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.4865384292602535
+recover_step = 21, use_num_samples = -1, answer_provided_by = txt, task = qa
+5.469697513580322

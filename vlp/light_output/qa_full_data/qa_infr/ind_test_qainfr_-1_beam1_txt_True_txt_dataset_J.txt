@@ -1,0 +1,4022 @@
+21-05-29 09:06:44
+Decoding ... -------------------- recover from step 12 -----------------------
+-------------------- QA Decoding ------------------------
+use_txt_fact = True
+split = ind_test
+use_num_samples = -1
+ --------------------- metrics -----------------------
+{'Bleu_1': 0.15076579451178193, 'Bleu_2': 0.08258624784143774, 'Bleu_3': 0.04332020000992015, 'Bleu_4': 0.023000843584854058, 'METEOR': 0.0725373393766329, 'ROUGE_L': 0.17966209819549112}
+
+F1_avg = 0.26820886302318736
+F1_max = 0.26820886302318736
+EM = 0.052434456928838954
+
+F1_avg_bertscore = 0.8217837080526887
+F1_max_bertscore = 0.8217837080526887
+
+-----Starting writing results:-----
+
+Did the same person direct both the Secrets and Starboy video , or did different people direct them ?
+different people
+[19.39346694946289]
+different people direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct direct
+
+How many years after the first railway station in Kharkiv was built did the metro station there open ?
+metro station opened106 years later
+[10.951269149780273]
+it was 1 years later
+
+Do Ariana and Aryanah belong to the same country ?
+no they do not
+[13.64877986907959]
+they belong to same country they belong to same country as aryana they belong to same country they belong to
+
+Do tension headaches and migraines both affect only one side of the head ?
+no while migraines typically affect 1 side of head tension headaches typically affect both sides of head
+[9.490341186523438]
+no 10 can sometimes be caused by heavy headaches no but sometimes it can sometimes be caused by heavy headaches
+
+Is the diet of the Metopidius indicus and the chimney swift the same ?
+no metopidius indicus feeds on vegetation while chimney swift feeds on insects
+[12.129776000976562]
+no metopidius is short lived indicus is short lived indicus is short lived iniusius
+
+What is the largest village on the Isle of Arran ?
+lamlash is largest village
+[10.57300090789795]
+brodick castle is
+
+Does the glaucous gull or the black - headed gull have a longer scientific name ?
+black headed gull has longer scientific name
+[21.291242599487305]
+black headed gull is black headed gull black headed gull is black headed gull black
+
+Between the USS Aspro and the USS Strength , which one was designed to go underwater ?
+uss aspro
+[12.046058654785156]
+uss strenter
+
+Who governs the Belgian team has been called the Red Devils for a very long time ?
+uefa governs this team
+[10.841011047363281]
+red devils
+
+Does the expansion of the universe fit the Wythoff construction definition of expansion ?
+no
+[12.578369140625]
+no
+
+Were the names Harley and Harriet derived from the same language origins or different language origins ?
+different language origins
+[9.956790924072266]
+they are different languages they are both different languages
+
+The number of fillies that have won the Prix de Diane is the same number as the amount of Entertainer of the Year awards which 2009 honoree has won ?
+taylor swift
+[11.147899627685547]
+number of fillies
+
+What category are assault helicopters and fixed wing transport aeroplanes
+assault helicopters and fixed wing transport airoplanes are military transport types
+[15.033961296081543]
+aerocons aerocons aerocons are aerocons aerocons are aerocons
+
+Does the 51st Combat Communications Squadron use the AFSC code ?
+yes afsc code is code used by u s airforce and 51st combat communications squadron is part of airforce
+[8.770401954650879]
+51st squadron is 3d unit 51st squadron is 3d unit 51st unit 51st squadron is
+
+Which direction or handedness describes conservatism and opposition to socialism and social democracy ?
+right or right wing describes conservatives who are against social democracy
+[13.113176345825195]
+right wing political system right wing political system is conservative political system
+
+Were the German Africa Corps formed during the same war that the Battle of the Bulge took place in ?
+yes battle of bulge and formation of german africa corps took place during world war ii
+[16.313846588134766]
+no b
+
+How many awards was Judy Davis nominated for for her portrayal of Sally Simmons ?
+davis was nominated for 4 awards for her portrayal of sally simmons
+[13.45779800415039]
+sally
+
+How many years were between Daniel Talia and Sam Walsh winning the AFL Rising Star Award ?
+7 years were between 2 winning award
+[14.455870628356934]
+9
+
+Who won the 39th edition of the Sugar Bowl ?
+oklahoma won but was forced forfeit but penn state refused to accept win
+[10.380495071411133]
+sugar college university of sugar bowls
+
+Were the British more successful in the Battle of Atbara or the Battle of Sangshak ?
+battle of atbara
+[13.432623863220215]
+battle of sangshak
+
+What prompts fire season in the Western United States and how is the season classified as finished ?
+fire season in western united states is prompted by drought and is considered finished after first significant rainstorm in autumn
+[11.438369750976562]
+wildfire burns in
+
+Which former Smash Mouth member had multiple songs featured on the TV series Scrubs ?
+leroy miller
+[14.769197463989258]
+leroy miller
+
+Who is older : Joel Coen or Oliver Charles Cotton ?
+oliver charles cotton
+[9.31934642791748]
+joel coen
+
+What word comes from a Latin language word meaning how many ? and is also the name of an international service that provides basic needs to women , children , the deaf , and hard of hearing ?
+quota
+[8.379255294799805]
+quota international word meaning
+
+Was the spouse of Rudolf Höss alive when the locomotive General was stopped at Big Shanty , Georgia ?
+no she was born in 1908
+[8.649989128112793]
+no first train was stopped
+
+What was Switzerland ' s best performance in alpine skiing during the second time that Italy hosted the Winter Games ?
+best performance was martina schild s silver in women s downhill
+[10.578965187072754]
+it was in second place in competition in competition
+
+How many layers are used for the most popular transmission protocol used by the internet ?
+4
+[13.452520370483398]
+2 layers
+
+Do france and Israel follow similar systems in scouting ?
+yes they do
+[17.09334373474121]
+they follow each other they follow each other in groups they follow each other in groups they follow each other in groups in groups they follow
+
+How do both the Russian Vine and Wild Buckwheat plants grow larger ?
+they climb nearby surfaces
+[13.656608581542969]
+they both grow faster and faster faster they both grow faster and their speed faster faster faster faster faster faster faster faster faster faster faster faster faster faster faster
+
+Was Evariste Kimba older or younger when he died than Patrice Lumumba ?
+older
+[12.529777526855469]
+older
+
+Which football team had more wins : The 1954 Florida A & M Rattlers or the 1955 Army Cadets ?
+florida m rattlers
+[16.00052261352539]
+1954 army cadets were more points 1954 army cadets were more points 1954 army cadets cadets were more points
+
+Hidden Hills and Fresno are both cities in what state ?
+california
+[13.3438081741333]
+fresno
+
+What directional geographic area of India are Gujarat and Uttar Pradesh located in ?
+north
+[11.590344429016113]
+they are located in northern regions they are located in northern regions jammu and northern regions jammu and northern regions jammu and
+
+How many years apart are the birthdays of Michael Arroyo and Miguel Ibarra ?
+3
+[10.004737854003906]
+they are 2 years old
+
+Why does a web cache system store copies of documents that pass through it ?
+later requests may be filled more quickly using data from cache
+[12.687779426574707]
+it can deliver copies of large amount of copies of copies deliver copies of copies of copies caches of copies caches of copies
+
+Which antibacterial agents are produced by bacteriophages ?
+lysins are antibacterial agents that are produced by bacteriophages
+[12.425182342529297]
+lysins
+
+Is Lake Sfânta Ana located farther or closer to the Black sea than Lake Razelm ?
+farther
+[12.228099822998047]
+closerr
+
+What did the the Amalgamated Association of Iron , Steel , and Tin Workers do in the same year that the U . S . Open was held June 14 – 17 at Myopia Hunt Club ?
+went on strike
+[9.759054183959961]
+they were both both in 1902 s steel steel steel
+
+Who first managed the Watford , Gianluca Vialli or Walter Mazzarri ?
+gianluca vialli
+[15.98531723022461]
+walter mazzarri viallica viallica viallica viallica viallica viallica viallica via walter mazzaca
+
+What gives rise to the receptors that are located in the cilia and synapses of olfactory sensory neurons ?
+olfactory receptors arise from basal cells of olfactory epithelium
+[12.159636497497559]
+olfactory receptors and olfactory receptors olfactory receptors receptors are called olfactory receptors and o
+
+Which came first , Barry Geoffrey Butler playing for Chester City , or Bob Chapman ' s time with Nottingham Forest ?
+bob chapman at nottingham forest
+[10.862106323242188]
+barry butler
+
+Who was younger when the started singing , Rossa or Jesus Alberto Navarro Rosas ?
+at 6 years old jesus alberto navarro rosas was younger
+[10.411641120910645]
+ross alberto
+
+Which religion connect both Terma and Tara ?
+both terma and tara are associated with buddism
+[11.254152297973633]
+buddhism
+
+What is the difference between acoustic beats and filmmaking beats ?
+in acoustics beat is interference pattern between 2 sounds of slightly different frequencies while in filmmaking beat is small amount of action resulting in pause in dialogue
+[16.86396026611328]
+
+
+Was 8 Grand Ma released before or after Project Mercury was completed ?
+after
+[10.049400329589844]
+before
+
+What type of plant are both Trifolium angustifolium and Trifolium gracilentum ?
+trifolium angustifolium and trifolium gracilentum are clovers
+[10.182634353637695]
+they are both found in wild they are found in trifolium flracile flormed clover they are found in
+
+What military rank did the tv characters played by Joe Murray and Clive Dunn share ?
+corporal
+[13.641510963439941]
+they both played with both of them they both played by chef
+
+Did Nigel d ' Aubigny die before or after Richard d ' Aubigny , Abbot of St . Alban ' s ?
+nigel d aubigny died in 1129 after richard d aubigny died in 1119 d
+[11.440762519836426]
+after
+
+Between Pathway and Kamala Khan who first appeared in a comic book ?
+pathway pathway first appeared in 1987 and kamala khan first appeared in 2014
+[12.373719215393066]
+both
+
+Is the southern masked weaver part of the family Ploceidae ?
+yes weavers are included in that family
+[14.58352279663086]
+no eastern masked speceidaedaedaedaedaedaedaedaedaedaedaedaedaedaedaedaedaedaedaedaedaedae
+
+Which river separates the Loess Hills that has much of its landscape held in private ownership ?
+big sioux river
+[11.291901588439941]
+
+
+Who is older , Ron James the comedian or LeBron James ?
+ron james
+[10.128145217895508]
+ron james
+
+What is both a self absorbed and oblivious faun like shaman wanderer and a being who is a powerful mutant telepath who can read and control the minds of others .
+xavier is both oblivious faun like shaman and mutant telepath who controls others
+[11.122288703918457]
+xavier is apathic reader xavier is member of human being xavier help him xavier
+
+Which was built first , the Kinsman - Salsman house or the Cornwallis Reformed Presbyterian Covenanter Church ?
+kinsman salsman house
+[12.917254447937012]
+kinsman salsman house
+
+Would a undecet group of musicians be classified as a chamber music ensemble based on Western classical music ?
+it is unlikely that it would as these chamber music ensembles are smaller and undecet includes 11 musicians
+[12.269438743591309]
+yes clarinet is member of clarinet clarinet is member of clarinet clarinet is clarinet is clarinet is
+
+How old was Alan Jackson ( footballer ) when Thomas Jackson ( footballer ) was born ?
+alan jackson was 8
+[11.515213966369629]
+alan jackson jackson was 16 when he was 16
+
+What song was particularly associated with the religion that originated from an anti - materialist reform movement within the Bogomil churches of the Balkans ?
+lo boièr
+[8.714457511901855]
+song by oxheral movement
+
+What modern day municipality does the city that was attacked by a Spartan king in 218 BCE belong to ?
+it belongs to tripoli municipality
+[10.60305404663086]
+village
+
+Are there more or less major professional sports leagues in the United States than there are current Olympic equestrian disciplines ?
+more as former has 4 and latter has 3
+[13.911116600036621]
+there are more equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian equestrian
+
+Which river flows through the birthplace of the person the SI unit of electric charge is named after ?
+charente is river that flows through angoulême birthplace of charles augustin de coulomb person si unit of electric charge coulomb is named after
+[12.582083702087402]
+river
+
+How old was Corey Gaines when he became head coach of the Mercury ?
+42
+[11.739171981811523]
+corey was 24 years old corey
+
+What animal do Boston Butt and pork loin come from ?
+boston butt is pork as is pork loin and pork is from pig
+[13.0960111618042]
+pig s meat
+
+Which venue in the University Endowment Lands was used during Canada ' s third Olympics ?
+ubc doug mitchell thunderbird sports centre was used in this olympics
+[16.132293701171875]
+vancouver olympics
+
+What does the Japanese names Yuri and Yuriko translate ?
+word yuri translates to lily and yuriko could mean lily child
+[10.044146537780762]
+they are both both characters characters
+
+Does commander and Chief of Naval operations belong to the same branch of army ?
+yes they do
+[12.792767524719238]
+they belong to navy
+
+How many years passed between Infante Luis of Spain taking over the lordship of Boadilla and the year of his morganatic marriage with María Teresa de Vallabriga ?
+15
+[12.328868865966797]
+13 years
+
+Which was recorded more simply , using less commercial studio time for all parts ; Livin ' Thing or Jesus Christ Superstar , original Australian Cast Recording ?
+livn thing
+[13.407937049865723]
+jesus christ superstar
+
+Which is something useful in preparing a breakfast beverage ; Bending or Blender ?
+blender
+[14.254661560058594]
+blender
+
+What is the ratio called that takes place during the Otto cycle and typically is seen in the idealized thermodynamic cycle of an automobile ?
+it is called explosion ratio which forms as increased high pressure exerts force on piston and pushes it towards bdc
+[12.033354759216309]
+it is not always defined by same speed as same speed as same speed as same speed as same speed as they are defined by
+
+Did Giannis Gaitatzis and Julian Dicks manage teams before they played football ?
+no they both played football first and then managed teams
+[20.528432846069336]
+no gaitaitaitaitaitaitaitaitaitaitaitaitaitaitaitaitaitaitaitaitaitaitaitaitaitaitait
+
+Does the highway that connects Gerik , Perak to Jeli , Kelantan have the same or different orientation compared to US 20 ?
+it has same as both are east to west highways
+[14.502151489257812]
+different orientations
+
+Which show might be more likely to feature singing ; Neptune ' s Daughter or Clay Pigeon ?
+neptune s daughter
+[17.284297943115234]
+neptune s daughter
+
+Are there more novels in the Twilight Saga or are there more current locations of the Twilight Zone Tower of Terror theme park ride ?
+there are 4 novels in twilight saga and 3 current locations of twilight zone tower of terror
+[9.686837196350098]
+there are more current locations in twilight zone twilight zone tower zone tower zone tower zone tower zone tower
+
+How many more state legislative assembly constituencies does Tamil Nadu state in India have than Kerala state ?
+tamil nadu has 94 more assembly constituencies
+[12.455636978149414]
+there are more states with more states with state legislativeities there are more states with state legislativeities with state legislativeities there are states with state
+
+Was the score historically determined by dividing a person ' s mental age score , obtained by administering an intelligence test , by the person ' s chronological age , both expressed in terms of years and months and multiplying by 100 , relatively stable after a person reaches maturity ?
+yes
+[12.928128242492676]
+yes
+
+How does the Large Igneous Province in western Canada differ from other Large Igneous provinces ?
+rocks comprising mackenzie large igneous province were not formed by normal plate tectonics
+[22.386796951293945]
+large igneous provincegneous province is formed in western province formed in western province large igneous province large igne
+
+The cursive - joining alphabet used for writing the variety of Old Turkic that was the ancestor of the modern Western Yugur language was used during what time period ?
+old uyghur script was used between 8th and 17th centuries
+[19.931283950805664]
+old tayghur script
+
+In which decade were both Natasha Rastogi and Natasha Jane Richardson born ?
+they were both born in early 1960s
+[11.882226943969727]
+natasha were both in same decade natasha were both in decade natasha were both in decade natasha were both in decade natasha
+
+Which River comes from more frozen sources ; Whitewater River or White river ?
+white river s source is glacier
+[10.967192649841309]
+white river river
+
+How many years passed between the deaths of Rajkuman Amrit Kaur and Jagadguru Swami Sri Bharati Krishna Tirthaji Maharaja ?
+jagadguru swami sri bharati krishna tirthaji maharaja died 4 years earlier
+[11.239544868469238]
+4
+
+Was the safety pin invented before or after in the invention of modern billiard chalk ?
+before
+[11.969730377197266]
+inventor invented first invented first known game of golf
+
+What type of birds are Columba palumbus and Columba livia ?
+pigeons
+[16.80620002746582]
+pigumba livumbus
+
+How long has Lucius Septimius Severus been a Roman emperor for when Maecius Laetus became governor of Roman Egypt ?
+lucius septimius severus was roman emperor for 7 years when maecius laetus became governor of roman egypt
+[9.260326385498047]
+he lived
+
+Is wellhead a component in production tubing ?
+it is not
+[18.947309494018555]
+it is not
+
+In which state do the Greeks have a community of 14 , 000 inhabitants and had an important role in the political and cultural life during the Ottoman domination ?
+romania
+[10.737325668334961]
+romania
+
+Where did Mithridates VI Eupator and Mithridates I ' s wife come from ?
+pontus
+[10.888155937194824]
+they were from armenia
+
+When the bank Blink 182 was on hiatus from 2005 to 2009 , was their drummer the original one from the beginning of the group ?
+no
+[9.832555770874023]
+no
+
+Do Remote terminal units control vacuum interrupters ?
+no they do not
+[16.768522262573242]
+no
+
+Is the Jefferson County city Port Arthur found near the Monongahela River that helps form the Ohio River ?
+no it is part of texas
+[14.433403015136719]
+no jefferson county port arthur is located in pittsburgh it is located in pittsburgh county port arthur located in jefferson county county port arthur
+
+Which two groups have invaded Anatolia ?
+sasanian empire and goths have both invaded anatolia
+[16.301639556884766]
+sasan family
+
+Was the Naval Aviation Photographic Unit at the Battle of the Somme ?
+battle of somme took place in world war i which is before naval aviation photographic unit was created
+[16.47506332397461]
+no battle of somme battle of somme of sommental battle of sommental battle of sommental
+
+The Socialist Propaganda League of America ( SPLA ) was established how long before the establishment of The Party for Socialism and Liberation ( PSL ) ?
+spla was established 94 years earlier
+[9.253360748291016]
+socialist propaganda was established in 1916
+
+What creates convolute beddings and cross - laminae ripple ?
+environmental deposits
+[8.975204467773438]
+horizontal line of water flow
+
+Did the 17th Baron Strange and the 16th Baroness Strange both use the suffix of Megginch ?
+no
+[11.110189437866211]
+no baroness was born in 16th baroness no baroness was
+
+In what year was the American band Chicago ' s drummer Danny Seraphine dismissed after the release of their 1989 Greatest Hits 1982 - 1989 album ?
+he was released following year in 1990
+[10.873275756835938]
+1990
+
+Between the Lewis gun and Maxim ' s first main design of a recoil - powered machine gun , which one weighed more ?
+lewis gun weighed 1 more pound
+[10.436668395996094]
+lewis gun gun gun was used to fire machine gun gun lewis gun used to fire artillery
+
+What type of land mass is the Caribbean Sea ' s Lesser Antilles and the Los Martires that looked like suffering men from a distance ?
+they are islands
+[18.174543380737305]
+they were both made up of sand
+
+Who was the first Deputy Director for the organization that is in charge of the Reagan - Udall Foundation ?
+emilio espinosa was first deputy director
+[9.871121406555176]
+fda was hired to provide fda
+
+Which is longer = Australia highway 1 or the Pacific Motorway ( Brisbane – Brunswick Heads ) ?
+pacific motorway brisbane – brunswick heads
+[11.295199394226074]
+queensland queensland motorway
+
+What was the title of the ones in Brandenburg who were in control of such an important area that is distinguished apart from marquis ?
+margrave
+[13.224233627319336]
+markartraverquis
+
+What type of god is Ares who was on the losing side of the Trojan War , and Sarutahiko that is associated with bloodshed ?
+they are war gods
+[19.715452194213867]
+sarutah
+
+What is a sort of passivation process in steel and can be something done with acid directly or placing metal parts in a sealed cabinet with moisture source ?
+bluing can be done with acid directly or placing in moist cabinet or passivation
+[10.961292266845703]
+it is done in container
+
+Do the Heald Square Monument and the Virginia Washington Monument depict the same person ?
+they both depict george washington
+[9.835442543029785]
+no washington monument washington monument is depicted in monument they monument both represent washington monument washington monument washington washington monument washington monument monument washington
+
+Can the malachite sunbird and the Marico sunbird both be found on the same continent ?
+they can both be found in africa
+[18.92963981628418]
+no maricolachite is found in africa and maricolachite is found in africa and maricolachite
+
+In which part of the body is it possible to find nerves ?
+face thighs legs
+[10.216904640197754]
+medial part of head and neck
+
+How old was Alpana Banerjee when she received best singer award for the film Shubhada in 1952 ?
+she was 18 years old
+[12.159990310668945]
+12
+
+Which team had a more successful season , the Rangers F . C . during their 25th season of football or the Celtics during their 99th season of football ?
+rangers f c had more successful season
+[17.710037231445312]
+celtics f c c c c c c c c c c c c c
+
+Who had coached their team for longer as of the 1941 season : Charlie Bachman or Fritz Crisler ?
+charlie bachman had coached longer
+[11.772218704223633]
+charlie bachman
+
+What types of habitats can be found along the western seaboard of South America , from southwestern Colombia to far northern Chile ?
+subtropical or tropical dry shrubland subtropical or tropical moist shrubland swamps sandy shores and heavily degraded former forest
+[13.893898010253906]
+tropical forests and coastal habitats
+
+What cities would have the LSWR X2 class express passenger 4 - 4 - 0 steam locomotives have visited ?
+they would have visited london plymouth salisbury exeter ilfracombe padstow southampton bournemouth and weymouth
+[7.288410663604736]
+london and lswr had been different from lswr
+
+What types of objects serve as symbols in Christianity ?
+pectoral cross christological plants and christogram all serve different symbolic functions within church
+[10.428400039672852]
+palm symbols and symbols of cross
+
+Is panambur on the coast of the Panambur beach ?
+it is
+[14.453658103942871]
+
+
+Did Donald , Lord of the Isles die more than 200 years after the passing of Aonghus mac Somhairle ?
+yes his death occurred 213 years later
+[15.00161361694336]
+no he died 200 years after 200 years after 200 years after 200 years after 200 after 200 years he died 200 years after 200 years after 200
+
+Is the mastoid notch for the attachment of the digastric muscle part of the occipital bone ?
+no
+[15.417157173156738]
+no basilar is medial surface no medial surface is usually bone no medial surface is medial surface
+
+The character of Marita Covarrubias was a replacement for what character who shares a name with the first letter of the show Jeffrey Frank Spender is a character on ?
+x
+[9.380086898803711]
+x
+
+What type of data is physically transferred in data signaling rate and is what data - transfer measures the average number of ?
+bitrate
+[9.87929630279541]
+it is transferred to digital communication digital communication between bits between bits per unit is transferred to bits per unit unit of bits per unit of unit
+
+Which colors are shared by both The Azerbaijan Republic flag and the Thai flag ?
+red white and blue are on both azerbaijan s flag and thai 1
+[13.073272705078125]
+they are both nationalities
+
+Do the parallel defines part of the border between Libya and Sudan and the meridian 60 degrees west of Greenwich traverse any of the same oceans ?
+yes they both cross atlantic ocean
+[9.98613166809082]
+no oceans of ocean no ocean and ocean no oceans and oceans and oceans of oceans
+
+During The Bronze Age emerging with complex state societies , when was production of bronze common in locales where the necessary materials could be assembled for smelting ?
+at around 2700 bce
+[8.771076202392578]
+it was first time in early 1900 s
+
+The person whose victory in the Spanish Civil War had a regressive effect on gender roles failed to impose what culture in a manner consistent with other exclusionary cultural , and historical sources often termed traditionalist , authoritarian and dictatorial to describe it ?
+totalitarian culture
+[8.773704528808594]
+spain
+
+Which came first : The 25th Ne York State Legislature meetings in Albany , New York , or the 1802 U . S . Senate special election in New York ?
+meetings
+[18.079811096191406]
+1802 u s s s s s s s s s s s s s
+
+In relationship to the pitch of a pure tone in the temporal theory of hearing , what is that pitch determined by ?
+it is theorized to be determined by period of neuron firing patterns as well as corresponding to difference between adjacent gaps
+[10.047584533691406]
+theory is used to determine structure of sound of sound theory
+
+Did the song ' If I Ain ' t Got You ' by Alicia Keys win the Best R & B Video accolade at the MTV Video Music Awards in the same or a different year as when her song ' My Boo ' was released to US contemporary hit radio ?
+same year
+[9.719071388244629]
+same year
+
+Which process of the ulna has a triangular shape , the styloid process or the process that projects forward from the anterior proximal of the ulna ?
+coronoid process has triangular shape
+[15.046676635742188]
+styloid process is called styloid process styloid process styloidtyid process
+
+What year in common were the films The Witches or Witchcraft Through the Ages and Blood and Sand released ?
+1922
+[12.391633987426758]
+both witches were both both in 1922 witch and blood blood blood blood blood blood blood blood blood blood blood blood blood blood blood blood blood blood blood
+
+Is the Tetrix ornata part of the Herennia multipuncta ' s diet ?
+tetrix ornata and herennia multipuncta are native to different continents so they do not interact in wild
+[8.785991668701172]
+tetrix is grasshopper tetrix is grasshopper tetrix is grasshopper is
+
+What element is combined with non - metallic carbon or silicon to produce the substance used in conjunction with flint in a classic flint and steel system ?
+elemental iron
+[11.865913391113281]
+metallic element
+
+Which Summer Olympics were held further East 1928 or 1988 ?
+1988
+[10.658345222473145]
+women s track and field events in women s track women s track women s track and field events were held
+
+Which language uses A to represent a contraction of the feminine singular definate article A with the preposition A and which referres to Profanities as profanidades , or improperios ?
+portuguese uses to represent contraction of feminine singular and includes profanities called profanidades
+[8.968059539794922]
+feminine
+
+Line beam scanning and Industrial computed tomography ( CT ) scanning both use what to scan ?
+x rays
+[8.811067581176758]
+x raygraphy
+
+What structure was built first , the Tudor House or the Deva Vitrix .
+deva vitrix it was built in 70s ad while tudor house was built around 1603
+[13.445847511291504]
+
+
+What was the name of the album released on October 9 , 2020 by the rapper who ' s real name is Robert Lee Gill , Jr . ?
+new beginnings
+[10.61745834350586]
+b
+
+Did Ron McLarty or Peter Thomas have a longer middle name ?
+peter thomas had longer middle name
+[14.363314628601074]
+peter thomas
+
+How many letters does the name of the fictional television network featured in Animalympics share with the network that the film was made for in real life ?
+0
+[9.7059965133667]
+they are 2 of characters
+
+Is the ratio of a building ' s total floor area to the size of the piece of land upon which it is built allowed to be higher in Mumbai or Dharavi ?
+dharavi
+[14.605074882507324]
+dharavita is city
+
+In which Texas county can you find an unincorporated community that has a similar name as the longest river that has a mouth and source in this state ?
+you can find this community in bastrop county
+[13.759891510009766]
+colorado
+
+Where did the monk who made the collection of ascetic maxims that was later published by Michel Aubineau live ?
+he lived at saint catherine s monastery on mount sinai
+[10.51842975616455]
+his father sinai was born in sinai his father sinai
+
+Which continents are the Cape Fold Mountains and the Apennine Mountains found on ?
+cape fold mountains are found in africa while apennine mountains are found in europe
+[16.61004066467285]
+cape fold mountains and cape fold mountains both are located in south and cape fold fold mountains
+
+On which continent can you find , as natives , Ziziphus oenoplia and Z . mauritiana ?
+both ziziphus oenoplia and z mauritiana are found on asia
+[14.080150604248047]
+ziziphus oenoplia and ziziphus oenoplia and zizjubeformal pae ziziphus
+
+Was the sport that Shaun White participates in part of the first Winter Olympics ?
+no it wasn t
+[15.62501335144043]
+no shaun white white white white white white white white white white white white white white white white white white white white white white white white white white white
+
+After embryological development of the vomeronasal organ , what lines the two tubes that are created to form the organ ?
+nasal mucosa lines cavities that are created
+[22.932296752929688]
+nasal nasal mucucucucucucucucucucucucucucucucucucucucucus nasal nasal muc
+
+Who do an equerry and a lady - in - waiting work for ?
+high ranking person
+[8.930609703063965]
+lady in royal court is royal lady both have duties
+
+What is the commonality between PPE and diving equipment ?
+being air tight is important in both
+[11.692314147949219]
+both are both both protect and protect themselves from heat and heat both protect themselves from heat and heat
+
+Who carried out the massacres at both Babi Yar and Monte Sol ?
+nazi forces
+[9.891805648803711]
+russian army
+
+USS St . Lo , Ommaney Bay and Bismarck Sea ' s operations would have included what for embarked aircraft ?
+launch and recovery cycle
+[10.434768676757812]
+destroyers
+
+What connects Bagabag and San Nicolas towns ?
+bagabag is located in northeastern part of nueva vizcaya while san nicolas borders nueva vizcaya
+[13.541413307189941]
+agacaya is municipality agacaya is municipality that connects bagacaya agacaya agacaya
+
+Were soldiers from the 6th division from Australia involved in Operation Parsnip just after they were first formed ?
+no
+[18.8821964263916]
+operation parsnipppp operation parsnipppppppppppppprsnip
+
+Which countries code is the official compilation and codification of permanent federal statutory law ?
+united states law is it s federal statutory law
+[14.92724895477295]
+united states
+
+Who was the individual who had an equation showing that the static pressure is highest when the velocity is zero and said that gases consist of great numbers of molecules moving in all directions ?
+bernoulli
+[8.467360496520996]
+bern
+
+Which contains statues that are usually applied over a larger area , state reception statues or the United States Statutes at Large ?
+latter as they are acts of congress while former are enacted at state level
+[10.967663764953613]
+state of united states
+
+Of the fiancées of the Wodehouse character whose valet is Jeeves , which one appears in the most novels ?
+bertie wooster wodehouse character whose valet is jeeves had several fiancées of whom madeline bassett appeared in most novels at 5
+[14.938020706176758]
+bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie
+
+Are the North – South and East – West Corridor and National Highway 66 in India comparable lengths ?
+no national highway 66 is significantly shorter at only 1 608 km as opposed to north – south and east – west corridor s 7 142 km
+[16.822641372680664]
+yes north west west west west west west west west west west west west west west west west west west west west west west west west west west
+
+Was the Coldplay song Us Against the World featured in Mary - Kate and Ashley Olsen ' s Holiday in the Sun movie ?
+no
+[9.344962120056152]
+no song was released in song by song by sun s holiday no us s holiday s us
+
+Which is more likely to be something inspiring humming or singing in youth in America today ; The Life of Pablo or Martin of Tours ?
+life of pablo
+[11.312575340270996]
+martin of tours
+
+What sort of animals are Smooth machete savane , Chironius exoletus , and machete savane ?
+savanes or chironius are all snakes
+[13.357828140258789]
+smooth machete machete machetete machete machehe mache mache machete machehe mac
+
+What state that Lisa Welch Semler lives in did Fran Cavendar die in ?
+california
+[18.632217407226562]
+fran
+
+What language family do the Central Malayo - Polynesian languages , Western Malayo - Polynesian , and Malayo - Polynesian languages belong to ?
+they all belong to austronesian language family
+[12.730767250061035]
+malayo polynesian family
+
+Who died in mysterious circumstances in 204 BC that has the namesake of the one who married his older sister , Cleopatra ?
+ptolemy iv
+[10.051218032836914]
+ptolemy iv died in 2040 ptolemy died in 2040 ptolemy iv died in 2040 ptolemy iv iv died iv died in 2040
+
+How many years passed between the the first NCAA ice hockey championship , and the first season of Division II men ' s hockey ?
+17 years 81 82 seasons was 35th in which and ncaa ice hockey championship was held and 18th season of division ii hockey
+[10.805493354797363]
+first time in game in game in game in year in year
+
+Who would be more likely to be accepting of what Jesus had to say , Simon Peter or Ayn Rand ?
+simon peter
+[14.266064643859863]
+ayn rand
+
+What burial place are decorated with Egyptian mythology and even when robbed give an idea of the opulence of those buried there and have 3 main parts , including the Hongsalmun gate ?
+royal tombs are egyptian burial places with 3 main parts displaying opulence of buried
+[13.670387268066406]
+tombstone
+
+Does the founder of the Ford Foundation and its current Chairman have the same first name or different first names ?
+different first names
+[8.834907531738281]
+different
+
+Why wouldn ' t Come On Come On chart in the same genre as Come On , Come In ?
+come on come on is country and come on come in is hot mainstream rock
+[10.697587966918945]
+come on come on
+
+What type of heavenly being originating in Ancient Judaism is mentioned in the Second Book of Enoch ?
+seraphim
+[16.121044158935547]
+celestial
+
+Do any of the administrative districts in the city of Manila share a name with any of the four district centers of the Metro Manila region ?
+no
+[9.56849479675293]
+yes
+
+Can Mekong giant catfish and bearded catfish be found in salt or fresh water ?
+they both can be found in fresh water
+[10.890713691711426]
+can
+
+Why didn ' t John Madden try to get Cora Urquhart to star in his 1997 movie Mrs . Brown ?
+she died in 1933
+[10.437638282775879]
+he was born in same as cora urquhartart
+
+What kind of group is the Organisation of African Unity ?
+organisation of african unity is continental union
+[15.090410232543945]
+continental union is continental union
+
+Which two items in your saliva break down polymeric macromolecules into their smaller building blocks ?
+amylase and lingual lipase accomplish this task
+[7.759206771850586]
+nervouscules
+
+Was Weird Al Yankovic in 3 - D released before or after Weird - Al Yankovic ' s Greatest Hits ?
+it was release before
+[9.778656005859375]
+after
+
+The unit that is commonly used to specify the pressure to which a CPAP machine is also the first word in what type of scanner used in whole body - imaging ?
+millimeter wave scanner
+[13.728214263916016]
+millimeter wave
+
+What state in common did John Thomas The Bomb Tracy and Sulaiman The Bomb Ismail play college football ?
+texas
+[13.110143661499023]
+they both played football
+
+The ACLS is composed of 13 of what , considered to be the basis from which lifelong learning can take place ?
+learning societies
+[11.297938346862793]
+framework of framework of framework of framework of framework of framework of framework of framework of framework of framework of
+
+The Grogan Morgan Range , Challenger Mountains and the United States Range are all among the most extreme examples of what ?
+northern most mountain ranges
+[10.697473526000977]
+grogan morgan
+
+What sect of Muslims often use the name Fatimah - Zahra and which popular person in history bore that name ?
+muhammad s daughter s name was fatimah zahra name is often used by shi muslims
+[17.172008514404297]
+fatah
+
+Are there any ecclesiastical jurisdictions in Israel from the church that shared communion with the Roman Catholic church until the schism that separated them in 1054 ?
+there are 2 eastern orthodox ecclesiastical jurisdictions on territory of israel greek orthodox church of jerusalem and greek orthodox church of antioch
+[10.405936241149902]
+no church is church is in eastern orthodox church no
+
+How many years after the visit of Lord Curzon was the inauguration of the new capitol ?
+28 years
+[10.901350975036621]
+first years
+
+Was Nassau Castle founded during the times of Count Henry ?
+no
+[11.006753921508789]
+no nassau was founded in 1084
+
+What type of pressure forms during both the Otto cycle and in an air compressor ?
+both otto cycle and air compressor deal with high pressure
+[17.362516403198242]
+gas compressor is used to produce gas gas compressor
+
+The Channel Islands are the last remaining part of the former Duchy of Normandy to be held by which of the combatants in the battle of Verneuil ?
+england
+[9.938398361206055]
+channel of normandy
+
+What is the name of the region that has a range of mountains running from immediately south of Aberdeen westward , and is contained within all or part of the electoral districts of Buninyong ?
+grampians
+[12.330256462097168]
+name of cuninyong is derived from geographic geographic geographic geographic geographic geographic geographic geographic geographic geographic geographic geographic geographic geographic geographic geographic geographic geographic
+
+What type of weapons did Italy and Germany both use on boats during World War II ?
+they used torpedoes
+[14.222286224365234]
+they were both used in both torpedo boats
+
+Which trait is shared by Parvati and Juno ?
+both parvati and juno involve fertility or pregnancy
+[12.21292495727539]
+juno fertility both fertility
+
+Can Shallow Inlet and Tuluk Mahkota be found on the same island or different islands ?
+different islands
+[12.601394653320312]
+different islands
+
+Can Body psychotherapy help with self esteem issues ?
+yes
+[10.69675350189209]
+body they can be defined by body s body s behavior and not be defined by body
+
+What kind of animal are the main characters drawn to in both Ready to Run and Flash ?
+they re both drawn to horses
+[12.148669242858887]
+horse
+
+Was north america experiencing an unusually warm winter when the North superleague was suspended ?
+warm winter preceded suspension by whole year
+[20.890954971313477]
+north american football game in november
+
+How many whole firkins could a container the size of a beer hogshead hold at most ?
+5 whole firkins
+[10.086858749389648]
+4
+
+What name is shared by a fictional English band played by the real American band Eight Bucks Experiment in the movie SLC Punk and is a physical punishment given by a parent ?
+corporal punishment
+[11.455348014831543]
+bucks bucks
+
+What golfer taught by Barry Lee McDonnell won the Players Championship ?
+rickie fowler
+[9.199655532836914]
+rickie fowler
+
+What is the common sizing between Chicoreus Cervicornis and Chicoreus Miyokoae ?
+chicoreus cervicornis and chicoreus miyokoae both grow to be between 45 75mm
+[15.925752639770508]
+they are both both both both of crab and murex murexphurelphurelphurelphurelphure
+
+How many years passed between the start of the Italian Radical Party and start of the the Italian Socialist party ?
+117 years
+[10.382063865661621]
+years passed between 2 of current events between current events between current events between current current events between current events between between
+
+Is Ben Nevis taller than the North York Moors ?
+ben nevis at its highest 0 is 1345 metres which is taller than 454 metre maximum height of north york moors
+[18.83892822265625]
+ben nevis is higher than north york moors ben nevis is taller than north york moors ben nevis
+
+What is the difference in height between the tallest building in Jackonsville , FL and the tallest building in Miami , FL ?
+tallest building in miami is 261 ft taller than tallest building in jacksonville
+[15.062646865844727]
+crosswalk is tallest building in miami crosswalk is tallest building in miami
+
+During the war that the Boot Monument is a memorial for soldiers serving in , what killed more civilians than died in all battles of the war combined ?
+intentional neglect while being prisoners of war on british ships
+[9.127379417419434]
+major
+
+Were the only fatalities in the 18 November 1982 and 29 March 1984 bombings in New Zealand the attackers ?
+18 november 1982 bombing fatality was attacker while 29 march 1984 fatality was innocent building caretaker
+[10.222983360290527]
+no incident occurred in 18 november 1982
+
+Is Meteor Crater in Arizona closer to the San Francisco Volcanic Field or to the city of Flagstaff ?
+it is closer to city of flagstaff
+[10.17553997039795]
+san francisco volcanompic field
+
+Was Operation Harpoon or Battle of Pantelleria considered a part of the Battle of the Atlantic in the Arctic Circle ?
+no because pantelleria took place in mediterranean sea not arctic circle
+[9.380223274230957]
+operation harpoon harpoon
+
+The Romanesque style and The Gothic style both came to England from territory within what modern country ?
+france
+[11.134061813354492]
+england
+
+On what continent is the near threatened spotted eagle ray and the thornback ray both found in ?
+they can be found in africa
+[15.673308372497559]
+africa
+
+What is the name of the type of sport that has individuals born into a family of players , and consists of 3 tercios including the matador ?
+it is called bullfighting
+[15.257184982299805]
+bullfighting
+
+In the Tenure of Office Act of 1820 , what can Congress have the right to do regarding incoming presidents ?
+they have right to remove officers to create blank slate
+[15.048612594604492]
+they have responsibility to remove bill of immigration
+
+What color is in the Flag of Myanmar , the Flag of Spain and the Flag of Gabon ?
+yellow is in all 3 flags
+[10.233147621154785]
+flag of myanmar flag is flag that is national flag of myanmar flag of myanmar flag of myanmar myanmar myanmar myanmar
+
+Was Monks Mound built during the time period where the Mississippian culture flourished ?
+mississippian culture flourished from 800 1600 ce so monks mound was built within this time period
+[9.176762580871582]
+monks mound
+
+The London Midland and Scottish Railway ( LMS ) Fowler Class 4F has how many leading wheels on one axle ?
+it has none
+[15.162787437438965]
+0
+
+Where can the ranoidea myola and ranoidea chloris frogs be found ?
+they can be found in australia
+[10.197725296020508]
+both are found in forests and forests of queensland and forests of queensland irrigated forests both in queensland forests in queensland forests in queensland
+
+Was Puyi still in power when the last legitimate monarch of China had a photograph taken of him ?
+no puyi was abdicated 11 years before picture
+[15.45543098449707]
+general yuan shi yuan shi yuan yuan shi yuan yuan yuan yuan yuan yuan yuan yuan yuan yuan shi yuan yuan yuan yuan shi yuan yuan yuan yuan yuan yuan
+
+What is the membrane component that minimizes the degree of interaction between the plasma membrane of a cell ' s nucleus and water molecules ?
+phospholipid bilayers
+[12.406160354614258]
+protein rich cell
+
+A Medieval period besieging army might have had what type of division charged with operating equipment like battering rams and siege towers ?
+battaile
+[12.251818656921387]
+medieval cannon
+
+Which formal system establishes that each Italian region is an autonomous entity with defined powers and the number of members of the Senate ?
+constitution
+[10.93501091003418]
+italian republic
+
+Is the small Atlantic brief squid commonly known as a pencil squid ?
+no its other name is lolliguncula brevis
+[13.190738677978516]
+no small atlantic blue blue blue blue blue blue blue blue blue blue blue blue blue blue
+
+Were the two core treaties that form on which the EU is based published before or after Europe colonized America and Africa ?
+after
+[8.958918571472168]
+after
+
+Which other lakes are in the same state as the largest coastal lagoon in India ?
+anshupa tampara and kanjia
+[14.110045433044434]
+latter is in same state latter is in same state as latter 1 of latter state latter is in latter
+
+Which is more likely to be objectionable to those looking at it ; The Sister in Law ( film ) or Sibling in Law ( term ) ?
+sister in law film
+[15.554023742675781]
+sibling term
+
+Did the heavy blade that ' s 18 in in length have a hilt that was simple with a small pommel ?
+it was grip not hilt
+[11.303818702697754]
+it was small blade that was very long and very long and very thin blade was very thin blade was very thin
+
+Why didn ' t John Osborne ' s father attend the award ceremony when John received the Evening Standard Drama Award ?
+he was dead
+[8.008268356323242]
+osborne osborne was first to receive award
+
+How old was LaShawn Daniels when he helped write Angel in Disguise ?
+20 1
+[15.385519027709961]
+lashawl was 11
+
+What common sign of skin aging , caused by reoccurring sleeping positions , loss of weight , or as the result of being under water for long periods of time is also the name of a homeless man who dresses as a clown and hires himself out to parents to scare kids for a few hundred dollars ?
+wrinkles
+[25.3287296295166]
+wrinkles
+
+What team lost in the final postseason series in 1990 ?
+oakland athletics lost
+[13.038091659545898]
+reds
+
+How long ago was it from the Roman ' s departure from Wales c . 388 to the death of ruler Maelgwn Gwynedd in 547 ?
+it was 159 years between events
+[13.393308639526367]
+it was 4 years old
+
+Did Gilbert Dean work in Congress at the same time that Nathaniel Banks took over as Speaker of the House ?
+no gilbert dean resigned from congress on july 3 1854 before nathaniel banks was elected in 1854 elections for following year s congress
+[15.691521644592285]
+no he was in congress gilbert dean resigned in september gilbert dean resigned in september gilbert dean resigned in se
+
+How was the history of Nei Mongol recorded and preserved ?
+through chinese chronicles and historians
+[11.905946731567383]
+it was documented in early 1900 s
+
+Which contains more Bible books ; Books of Wisdom or Biblical Protestant Apocrypha ?
+books of wisdom
+[11.496244430541992]
+books of wisdom
+
+What jobs did James Myers Thompson do during his life ?
+he was screenwriter author and worked at aircraft factory
+[13.700963020324707]
+he worked as freelance journalist he worked as office he worked as office he worked as freelance journalist he worked as
+
+Which would more likely be pulled out of a hat or cage ; Jackalope or Rabbit ?
+rabbit
+[11.781396865844727]
+jackalope
+
+What proportion of all the territories held in the Caribbean Sea does the United States Virgin Islands represent ?
+1 third
+[11.141088485717773]
+number of islands
+
+Does the China Central Television broadcast to more people than live in the most populous city in Central China ?
+yes china central television broadcasts to 1 1000000000 viewer while most populous city in central china has only 11 1000000 people
+[12.658651351928711]
+china television television television television television television television television television television television television television television television television
+
+How many districts are there in the state where Sikhism originated ?
+there are 22 districts in punjab
+[10.925605773925781]
+there are sikhs there are sikhs in state sikhs
+
+Are Sardinella tawilis and Sardinella brasiliensis found in the same country or different countries ?
+they re found in different countries
+[9.34085750579834]
+different countries
+
+Which nation can the highest mountain Attavyros on the Rhodes island and the Ancient Olympic Games stadium be found ?
+greece
+[11.814579010009766]
+greece
+
+What are Kanzans and Prunus pensylvanicas ?
+kanzans and prunus pensylvanicas are cherry trees
+[15.759626388549805]
+prunus pennies prunus pennies and prunus pennies pennies pennies pennies pennies pennies pennies pen
+
+Which chemical is more likely to change its visual appearance when placed in sea water , copper ( II ) chloride or titanium ?
+copper ii chloride
+[8.548266410827637]
+copper
+
+Heinz Hopf has two things named after him in mathematics named what ?
+hopf algebra and hopf fibration
+[8.692270278930664]
+abab
+
+Which two dates did Paraguay establish boundaries between Bolivia and Brazil ?
+paraguay established boundary with bolivia in 1938 and with brazil in 1927
+[16.4565486907959]
+
+
+What are Parcoblatta lata and Parcoblatta bolliana ?
+parcoblatta lata and parcoblatta bolliana are cockroaches
+[23.05401039123535]
+parcoblatta bolliana parcoba parcoblatta parcoba parcobarcoba parc
+
+The power spectral density of what thing characterized as the measured total noise in a given bandwidth at the input or output of a device when the signal is not present , is measured by noise spectral density ?
+noise power
+[8.317889213562012]
+same intensity
+
+What was the tile of the consorts that would have been related to Nicholas and Henry as they ruled the Duchy of Schleswig ?
+they were referred to as duchesses of schleswig holstein
+[10.019184112548828]
+they were both called
+
+Which specific term in chess has as part of it ' s term a word that also means doing without something or the ritualistic killing of an animal for a religious rite ?
+sham sacrifice is chess term that has word sacrifice in it which means doing without or ritualistic animal killing
+[9.662717819213867]
+term sacrifice or sacrifice
+
+How many years are there between the Hershey Bears joining the AHL and the costumed mascot debuting for the school who ' s rivals are principal rivals are Lower Dauphin High School , Milton Hershey School , and Palmyra Area High School ?
+75
+[9.084721565246582]
+current 2 of current 2 of current team
+
+Where was the father of Muhammad ibn Ali ibn Muhammed ibn Ali ibn Musa ibn Ja ' far summoned to by the Abbasid Caliph Al - Mutawakkil at age 30 ?
+father of muhammad ibn ali ibn muhammed ibn ali ibn musa ibn ja far was summoned to samarra at age 30
+[9.779738426208496]
+he was born he was born
+
+What is the name of the structure that functions as a royal residence to the King of Cambodia , and a UK Parliament building ?
+palace
+[9.693073272705078]
+palace of palace of palace of palace of phnom penh
+
+During the time that this person ' s youth in Germany totaled 8 . 8 million , who appealed to the KDF to have their children killed ?
+parents applied to kdf to have their disabled children euthanized
+[10.967611312866211]
+they were attacked by nazi nazi
+
+What won the Oscar for Best Picture the year that Leslie Howard was nominated for Best Actor as Professor Henry Higgins ?
+you can t take it with you won best picture that year
+[10.795873641967773]
+actress was voted actress
+
+What happened first : West Slavic tribes settling in Pomerania or the name Vistula first recorded in Pomponious Mela ?
+name vistula was recorded first
+[8.862848281860352]
+west slavic tribes
+
+What do Tymoviridae , Closteroviridae , and Begomovirus have in common ?
+they are all diseases that cause yellowing in plants
+[14.071107864379883]
+they are both both of virus they are both in virus they are both invertated they are both invertated they
+
+Canals , floodways and the Delta Works in the Netherlands are all projects that can help to control what ?
+flooding
+[8.199016571044922]
+redirecting waterways are major movement of economy redirecting waterways
+
+Who designated the special area of conservation in the Moray Firth that has its outer portion as the site of the Beatrice Wind Farm and oil field ?
+it is designated by eu habitats directive
+[8.289031982421875]
+ac firth
+
+What type of materials are most commonly seen in the beds of the river that used to be called Rio de San Felipe or La Porciuncula ?
+pale yellow to light brown sandstone and conglomerate are seen in beds of this river
+[12.984821319580078]
+glass are used to make them dry
+
+Who wrote the lyrics for the musical that was first called Shine It On ?
+fred ebb wrote lyrics
+[13.398724555969238]
+sylvia craig
+
+What did Christos Tsiolkias ' 2008 novel have in common with the show that starred Dabney Coleman as an egocentric sportswriter for a newspaper called the Ledger ?
+they both had word slap in their title
+[8.377921104431152]
+they were both both in same author they both both both both had been published in same style they both both both both both both in
+
+What element is present in both the compound that is used in the manufacture of anthraquinones , and in steel that has this diffused into it creating an intermetallic layer ?
+aluminum
+[10.491277694702148]
+aluminium
+
+Does the river that ends at the town of Greenfield flow through any of the same states as the river that rises near Quandary Peak and flows through the Dillon Reservoir ?
+no green river which ends at town of greenfield flows through vermont and massachusetts while blue river which rises near quandary peak and flows through dillon reservoir flows through colorado
+[10.255430221557617]
+yes green river flows at different rate at rate at rate at rate at rate at rate at rate at
+
+Which item is typically longer , the inflorescence of the Bulbophyllum apodum or the flower of the Bulbophyllum calceolus ?
+inflorescence of bulbophyllum apodum is usually longer
+[20.035911560058594]
+bulbophyllum bulllum bpodum bulbophyllum bulbophyllum bulbophyllum bulbo
+
+Was Rick Perry still the governor of Texas when media journalist Jim Rutenberg wrote about the blunt condemnation of Trump ?
+no ricky perry was governor of texas from 2000 2014 which was before rutenberg s comments in october 2016
+[15.831572532653809]
+no rick perry perry perry perry perry perry perry perry perry perry perry perry perry perry perry perry was born in 1972 rick perry rick perry perry perry
+
+Which are grown more for their root ; Brassica rapa or Brassica juncea ?
+brassica rapa
+[10.195069313049316]
+brassica rapa
+
+Though Christianity is a sort of westernizing feature in European Union , it ' s beginnings originate where ?
+middle east
+[12.801551818847656]
+christianity originated in europe
+
+Did Rachel Carson ' s book The Sea Around Us win both Book of the Year from both the Pacific Northwest Booksellers Association and the Mountains and Plains booksellers association ?
+no hawk s rest which came out after carson s book was first to do this
+[13.180591583251953]
+no they both both won books no
+
+The HK 416 and the GSMG are both types of what ?
+guns
+[11.721894264221191]
+they are both machine gun
+
+Is the film Virginia City set in the same state as the city Bonanza is in ?
+no virginia city is set in virginia and bonanza is in oregon
+[22.496206283569336]
+no bonanza bonanza bonanza bonanzaanza bonanza bonanza bonanza bonanza bonanza bonanza bonanza bonanza bon bonanza
+
+How was the acting of the person who played Dondi in the movie received by film critics ?
+negatively
+[8.053807258605957]
+they both had good reputation for their role as pilot
+
+Did James Phillip Connor live to see Kevin O ' Connor inducted into the Order of Military Medical Merit ?
+no james connor passed away 19 years before induction
+[16.51238441467285]
+no james connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor connor
+
+Energy from alternating electric current or voltage that oscillate in a frequency range from around 20 kHz to around 300 GHz that radiate into space as electromagnetic waves is the basis of what ?
+energy from rf currents in conductors that radiate into space as electromagnetic waves is basis of radio technology
+[10.18923282623291]
+electrical waves
+
+What is the name of a short Southern Mountain Range between the Albanian - Greece border in the physiogeographical region in southern Albania ?
+it is called nemërçkë
+[16.67276954650879]
+southern mountain range southern mountain range
+
+What religion is practiced in La Rochelle Cathedral and Meaux Cathedral ?
+roman catholic religion is practiced in these locations
+[10.512557983398438]
+catholic
+
+In Guinea - Bissau , how many subdivisions does it 8 regions have ?
+regions are subdivided into total of 37 sectors
+[11.735709190368652]
+guinea
+
+Are the proteases found in fruits like pineapple the same type of protease as Trypsin ?
+no
+[11.007800102233887]
+no proteases are in regions of regions as regions as regions as regions as regions of regions of no
+
+What do the Lamma and Gamayun have in common ?
+they both have human heads
+[9.535067558288574]
+they are both both both of deities they are both both both both both both have both have both had wings they have both have both have had
+
+The metro line with 12 stations from Versova to Ghatkopar is in the same city as which line currently being built that will be the first underground line in that city ?
+aqua line 3
+[9.289396286010742]
+aqua line is second line aqua line is second line of second line of line aqua line is
+
+What content is found in both bread that contains flaxseed and wine ?
+phenolic content
+[13.602656364440918]
+c o o o o o o o o o o o o o o
+
+Which type of music has a name that is possibly derived from goat behavior ?
+capriccio is possible derived from capretto word that refers to goat behavior
+[10.64889144897461]
+capriccio
+
+Did the film Walking Out have to do with a walkout organization to carry out protests ?
+no walking out was survival drama film and had nothing to do with politics
+[9.771811485290527]
+no
+
+Are JMSDF Tateyama Air Base and Naha Air Base in the same prefecture ?
+no
+[18.042360305786133]
+no base is located in base no
+
+Did Isabel Neville or Princess Margaret have a longer life span ?
+princess margaret had longer life
+[10.903055191040039]
+queen elizabeth lived longer
+
+What series is set in the city of Lexington , Kentucky , and the hill country of eastern Kentucky featured Margo Martindale as Mags Bennett ?
+bennett family matriarch mags bennett was character in series justified
+[9.24945068359375]
+bennett
+
+Why was the All - India Hindu Grand - Assembly political party in India started ?
+to protect rights of hindus
+[12.373086929321289]
+hindu party was formed in 1907
+
+What conference did the Michigan Wolverines football team play in the year Bill Freehan was hit by a pitch 24 times in a single season ?
+big 10 conference
+[12.179327011108398]
+they played in championship game
+
+Are the AICA and the AIIS in the body both arteries ?
+no while aica is artery aiis provides attachment for inguinal ligament around pelvis
+[11.52834415435791]
+yes aica is located in lymphal artery in median and aica
+
+Rex Angliae Dei gratia : is a what for the Kings of England , defined as a a memorable motto or phrase used in a clan , political , commercial , religious , and other context as a repetitive expression of an idea or purpose , with the goal of persuading members of the public or a more defined target group ?
+slogan
+[9.950841903686523]
+symbolic expression symbolic expression for symbolic expression or symbolic expression for purpose symbolic expression for symbolic or symbolic expression for symbolic
+
+Did Helen Gardner publish The New Oxford Book of English Verse : 1250 - 1950 during the same decade as Helen Garner published her debut novel ?
+yes
+[11.570723533630371]
+no helen gardner was published in 1972
+
+At maximum , how many seats on the STS - 116 flight could have been filled by astronauts who were not African - American ?
+6 seats could have been filled by astronauts who weren t african american
+[10.66506576538086]
+44 more
+
+How many books has the winner of the Chess Journalist of the Year in 2016 written ?
+12
+[10.990074157714844]
+lawrence
+
+What day of the week did the Gregorian calendar begin on the year when the Society of Civil Engineers first met ?
+year started on tuesday
+[10.836933135986328]
+they were both on year
+
+Did the films All That Heaven Allows and Secret Obsession have the same director ?
+no secret obsession was directed by peter sullivan and all that heaven allows was directed by douglas sirk
+[15.667616844177246]
+no they both starred in movies no they both were released in 1955 no no no no no no no
+
+What are the surnames of the aunts of the Wodehouse character whose valet is Jeeves ?
+bertie wooster wodehouse character whose valet is jeeves had 2 aunts whose surnames were travers and gregson
+[11.24537467956543]
+bertie name of bertie name of bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie bertie
+
+What decade did the largest pewter manufacturer and retailer first start exporting their products to other countries ?
+1970 s
+[11.94796371459961]
+1970s launched in 1970s 1970s launched in 1970s
+
+Was Ryan Henry Ward born on the same continent as artist Henry Ward or a different one ?
+same continent
+[10.702898025512695]
+
+
+How old was Renée Rebecca Geyer when Jane Hall began her acting career in 1985 ?
+renée rebecca geyer was 32 years old
+[12.770867347717285]
+she was 1 of most popular actresses of 1950s she was 12
+
+The corymbia paractia and the corymbia grandifolia are both found in what country ?
+both are found in australia
+[15.067659378051758]
+australia are both in australia they are native australia are native australia are native
+
+Did the illusionist and the prestige come out in the same year ?
+yes
+[10.389078140258789]
+no film came out in 2006
+
+What color trim do both the Brazilian Armed Forces and the Military Forces of Columbia use ?
+both brazilian armed forces and military forces of columbia use gold trim on their uniforms
+[12.19487476348877]
+they both carry red stripe
+
+What city in England do the Eltham district and the Romford Mail Centre come from ?
+london
+[14.551277160644531]
+london are both from london
+
+What might the Rock of Gibraltar as a fortified town have served as ?
+fortresses mainly served purpose of watch tower which guarded certain roads passes and borders
+[17.524797439575195]
+rock of gibraltar
+
+What are the specified focuses of the environmental agencies The GCC , and The International Union for Conservation of Nature ( IUCN ) ?
+gcc focuses on climate policy international union for conservation of nature iucn focuses on nature conservation
+[8.935249328613281]
+international union of natural resources and management
+
+Which includes more equines ; Coronation of George VI or Coronation Cup ?
+coronation cup
+[9.149004936218262]
+coronation of george vi
+
+Are the renal hilum and the renal arteries both located in the same organ ?
+yes they are both part of kidney
+[9.664857864379883]
+yes renal flow is in renal flow of renal flow is in renal flow of renal flow flow is
+
+Is it more likely for any given person in the United States to survive five years after being diagnosed with ovarian cancer or to be diagnosed with polycystic ovary syndrome at any point in their life ?
+more likely to survive 5 years after ovarian cancer diagnosis
+[15.671940803527832]
+it is likely to be diagnosed with ovarian cancer in single person in single person in single person in single person in single
+
+Taxila – Khunjerab Railway Line is planned to be owned and operated by an organization that is ultimately run by what ?
+government of pakistan specifically ministry of railways
+[8.794021606445312]
+government
+
+SpaceX has proposed to build infrastructure allowing transport to what planet that has 28 . 4 % of Earth ' s surface area ?
+mars
+[11.628532409667969]
+marsx has capacity of 23
+
+Which lasted more seasons , the First American Football League or Arsenal ' s season streak in the top division of English Football in the 1920 ' s ?
+arsenal s streak
+[12.983098030090332]
+arsenal s
+
+Which centuries did the end of the Han dynasty and the Han - Xiongnu War occur ?
+end of han dynasty occurred from 2nd to 3rd century ad while han xiongnu war occurred from 1st to 2nd century ad
+[13.840161323547363]
+both occurred between 89 and 8955
+
+Between James Jones and Adam Jones , which player played in a college farther to the west ?
+james jones
+[16.088817596435547]
+adam jones was drafted in 2006 adam jones was drafted in 2006 adam jones was drafted in 2006 adam jones was drafted in jones adam jones
+
+Which nation played in both Rectory Field ' s 1886 first international rugby union match and the first rugby football international of 1871 ?
+england participated in both games
+[9.466731071472168]
+england were both in 1871
+
+How many category levels higher was the storm designation given to Hurricane Rita than that of Hurricane Katrina on August 27th ?
+2
+[10.182701110839844]
+4
+
+Why would medical doctors have an interest in Mountain horseshoe bats ?
+mountain horseshoe bats are rhinolophids which doctors believe carry illnesses
+[16.299503326416016]
+they are not in wild
+
+Does the town of Jerome , Arizona have a higher elevation than the town of Tazewell , Virginia ?
+jerome s elevation is more than 5 0 feet which is higher than tazewell s 2 503 feet elevation
+[10.183815002441406]
+no town is currently in town s highest elevation no arizona arizona arizona arizona arizona arizona arizona
+
+Which would be more useful on an open sea ; Narrowboat or Sailing ship ?
+sailing ship
+[10.819391250610352]
+narrowboat
+
+How many years were there between the releases of The Four Seasons : Let ' s Hang On and December , 1963 ( Oh , What a Night )
+10 1965 and 1975
+[12.106500625610352]
+until end of year until end of season 1
+
+In the 1903 season , did the Michigan Wolverines or Ohio State Buckeyes outscore their opponents by more points ?
+michigan wolverines outscored their opponents by more points
+[10.711475372314453]
+michigan wolverines had more points
+
+Who designed a female character that became an action figure in the 2009 edition of a toyline that was reintroduced after the success of Star Wars and Micronauts 3 3⁄4 scale toylines ?
+mayan escalante
+[18.185405731201172]
+michael zam
+
+What makes up the Trans - European Rail network and how long is the Trans - Siberian Railway ?
+trans european high speed rail network 10 r together with trans european conventional rail network make up and trans siberian railway is 5 750 miles 9 250 km
+[11.48512077331543]
+trans european rail is about 7 km long
+
+Which appendage at the end of the human forearm has five digits ?
+hand
+[8.103058815002441]
+finger is finger of finger of finger finger is finger of finger
+
+What profession did Alexei Yashin and Lev Yashin share ?
+alexei yashin and lev yashin were both athletes
+[18.93218421936035]
+they both played ice hockey
+
+What was used in ancient Egypt and sea battles to facilitate a siege ?
+machines and siege engines
+[11.161239624023438]
+they were used to protect ships and ships from attack they were used to protect ships from attack they were used to protect ships and protect ships from
+
+Which might infect the other but not visa versa ; Corvinae or Coronaviridae ?
+coronaviridae
+[15.6550874710083]
+coronaviridae
+
+Are the Ross Barnett Reservoir and the Winsor Dam located on the same river system ?
+no ross barnett reservoir is part of pearl river in mississippi while winsor dam is located in chicopee river watershed in massachusetts
+[13.354446411132812]
+no ross barnett dam is located in massachusetts located in massachusetts located in massachusetts located in massachusetts located in massachusetts located in massachusetts located in massachusetts dam
+
+Did the 1st and 2nd Barons Harding of Petherton both at some time have a position in the British Army ?
+yes
+[9.480142593383789]
+yes
+
+What state are both St Elizabth ' s Medical Center and UMass Memorial Health located in ?
+massachusetts
+[14.025348663330078]
+massachusetts
+
+How does folic acid differ from folacin ?
+folic acid is synthetic form of folate folacin
+[16.338146209716797]
+folacin acid is used in folacinated in folaated folacinated folacinated folacinated folacin
+
+What is the most common size of what replaced floppy disks ?
+most common size is 120 mm
+[17.25812530517578]
+cd was large size of 80mm
+
+Would the Yanomami tribes be likely to meet the requirements of a Federally recognized Indian tribe ?
+no federally recognized indian tribe is legal term specific to united states and yanomami tribes are not in united states
+[10.150130271911621]
+they are not only tribe that is
+
+What is the name of Bethuel the Aramean ' s daughter in biblical tradition that is also shared with a fictional character portrayed by Emily VanCamp ?
+they are both named rebecca
+[11.968671798706055]
+rebecca harper
+
+How many milliliters of liquid do a teaspoon and bar spoon hold ?
+they both hold about 5 milliliters of liquid
+[10.262441635131836]
+4
+
+Are there more species of reptile in Turkey than there are extant species of amphisbaena ?
+no there are over 200 extant species of amphisbaena and only 136 species of reptile in turkey
+[10.020881652832031]
+no
+
+What type of roads does Florida State Road 817 intersect with ?
+it intersects with other state roads and interstate
+[16.238452911376953]
+they are both both inlocked they are both both inlocked they are both both inlocked they are both both inlock
+
+What did the premier lay peer of the kingdom of France rule over ?
+he ruled over vast complex of territories known as burgundian state
+[9.434597969055176]
+duchy of burgundy
+
+How does the depth of the Cayman Trough compare to the depth of the Factorian Deep ?
+they are roughly same depth with cayman trough reaching 7 686 meters in depth and factorian deep reaching 7 433 6 meters in depth
+[13.467208862304688]
+it s approximately 687777777777777777777777777
+
+Which brother was older , Miran Shah or Shah Rukth ?
+miran shah is older of 2 brothers
+[15.259249687194824]
+shahn
+
+Did the ancient Greek chromatic scale have the same number of tones as the modern chromatic scale ?
+no greek scale was heptatonic
+[9.731201171875]
+no classical pic
+
+Did Fredrick the Great take over as the King of Prussia before or after the Treaty of Krakow ?
+after
+[14.71309757232666]
+after
+
+Is there a higher percentage of extinct species or a higher percentage of invertebrates ?
+extinct species
+[12.704498291015625]
+there are more diversity of extinct species of extinct species in world of extinct species extinct extinct species extinct in world there are species of extinct species
+
+What 5 species of fish do British Columbian natives consider better than people , spiritually ?
+sockey pink chum coho and chinook salmon
+[11.88219928741455]
+salmon
+
+What sort of animals are Nemipterus furcosus and Nemipterus virgatus ?
+nemipterus furcosus and nemipterus virgatus are both threadfin bream
+[12.509858131408691]
+they are both furent and breacid
+
+What does the son of Joan Hawthorne born on 29 , July , 1939 have in common with member of the League of Gentlemen that was born on 14 June , 1966 ?
+they share their first name
+[9.669824600219727]
+they both both had been born on 28
+
+What is the name of the sport for which the oldest object so far recovered , 8 , 000 years old , was found in the Holmegård swamp in Denmark ?
+name of that sport is archery
+[12.048754692077637]
+word
+
+Did the Numidians ever adopt Roman cultural beliefs ?
+yes
+[12.122454643249512]
+yes numi empire was founded in empire
+
+Was the tv character Jennifer Whelan played by the same actress who played a the tv character Janice Goralnik ?
+no jennifer was played by ashley crow and janice was played by maggie wheeler
+[16.638639450073242]
+no
+
+What do mandibles and chelicerae have in common ?
+they are both mouthparts of arthropod species that are referred to as jaws
+[11.78298282623291]
+mandible devices both mandible devices both both both both of mandible devices
+
+At what year did Mia Blichfeldt start playing badminton ?
+she started playing in 2006 when she was 9 years old
+[13.247492790222168]
+1995
+
+Does the NES Classic Edition use a Nintendo Optical Disc ?
+no it uses flash storage and memory
+[14.761346817016602]
+no nem classic games use full size format no nem classic
+
+What artist genre are both Chris Hart and Corey Hart known for ?
+music
+[11.3065185546875]
+japanese
+
+What two companies made the ALCO S - 1 and the C424 ?
+alco and montreal locomotive works made these locomotives
+[14.490055084228516]
+alco s 2 were both used by alco s 2 2 2 2 2 2 alco s
+
+Are the Holston Mountains found in more states than the Cherokee Lake ?
+cherokee lake is only found in 1 state while holston mountains can be found in 2 states
+[9.849194526672363]
+no holston mountains are in tennessee
+
+How far after the beginning of the Akkadian Empire did the Elamite lands become ravaged beyond repair as a result of the Assyrian conquest of Elam ?
+approximately 1700 years span between beginning of empire and ravaging of elam lands
+[11.658409118652344]
+elam conquest empire was destroyed by elamite in eruption elamite empire
+
+Which location has a richer history of festivals and celebration ; Mainz or Alemannia Aachen ?
+mainz
+[11.695459365844727]
+alemannia aachen
+
+Which is more responsible for blood flow to a part of the brain ; Superior frontal gyrus or Posterior inferior cerebellar artery ?
+posterior inferior cerebellar artery
+[8.928037643432617]
+posterior inferior
+
+Did Moustapha ben Sliman El - Ouznadji or Ramdane - Tchulak bey reign for a longer period ?
+ramdane tchulak bey
+[20.81982421875]
+moustapha bengali bengali bengali ob ob ob obna bengali ben
+
+In what year did the Holy See establish the Delegation to Dakar what rank does the Apostolic Nuncio to Mauritania hold ?
+holy see established delegation to dakar in 1948 and apostolic nuncio to mauritania holds rank of ambassador
+[14.879915237426758]
+they were both appointed ministers
+
+Which would have been more inexpensive to obtain ; Screening of Kanchaivaram or silk ?
+sceening of kanchaivaram
+[16.904741287231445]
+kanchipuram
+
+Does the South American Plate run underneath the continent where countries have territory straddling an overland continental boundary are most commonly found ?
+no those countries are most commonly found in europe and asia and plate runs under south america
+[12.065887451171875]
+no south american plate is located in south america south american plate south america south american plate plate is located in
+
+Which tournament took place over a longer span of time , the tournament held by the International Basketball Federation in 2002 or the tournament held in Pardubice and Hradec Králové , Czech Republic , from December 25 , 2001 – January 4 , 2002 ?
+international basketball tournament took longer as it was over 13 day span versus 10 day span of other 1
+[14.831317901611328]
+tournament held in 2002
+
+When did the geological event occur that might have made the desert line drawings in Nazca , Peru appear to shake ?
+november 12 1996
+[9.712393760681152]
+it was caused by eruption
+
+What is the local name of the mostly white bird that has a long , drooping crest , and has wings and tails that are black at the ends , and are known as talking birds that sound like they mimic human speech ?
+local name is jalak bali
+[17.417400360107422]
+cat s tail
+
+What year did Lord of Badenoch appear where his lordship was created out of the territory of Meic Uilleim who his father defeated ?
+as early as 1229
+[10.177936553955078]
+1234
+
+Of Iowa , Utah , and California , which held its Democratic primary on Super Tuesday ?
+utah and california
+[12.463813781738281]
+2020 democratic presidential primary election was held on tuesday
+
+What is the country of origin of both Harry Leslie Smith and Daniel Campbell Smith ?
+they are both from england
+[13.466418266296387]
+they are both native they are native they are native they are native they are
+
+What state has both a White river and a river called Whitewater river ?
+white river and whitewater river are in indiana american state
+[10.388906478881836]
+ohio
+
+Is Captree State Park home to Captree Causeway that connects West Islip on Long Island to the barrier beach islands ?
+no
+[12.865453720092773]
+no robert moses causeway is located in west robert moses causewayway is located in robert moses causeway causeway cause
+
+During the Battle of Bosra , who did the person who ruled Damascus until 1174 aid ?
+he aided mu in ad din unur
+[8.576013565063477]
+he was killed
+
+What musical terms indicate the increase and decrease in speed and loudness of a sound ?
+rubato crescendo and diminuendo
+[12.818998336791992]
+creso s behavior
+
+Do the Royal canadian army and the royal australian army both have same commanders ?
+they have different commanders
+[11.192373275756836]
+yes royal navy has royal navy royal navy has served in royal navy yes royal royal navy has served in
+
+Is Goodnight Moon the name of a book , an album or both ?
+both
+[9.936266899108887]
+both
+
+Which are more likely to cause some sort of physical discomfort to your skin ; Biting Midge or Midge Ure ?
+biting midge
+[17.96576499938965]
+biting midge
+
+What two letters are in the German abbreviations for both the Federal Constitutional Court in Germany and the Constitutional Court in Austria ?
+letters v and f are in abbreviations for both courts
+[13.16185188293457]
+bunder
+
+What genre of music is Kings of Chaos into and how many shows have they played at in South Africa ?
+kings of chaos are hard rock supergroup they have played at 4 shows in south africa since they changed their name to kings of chaos
+[12.125582695007324]
+they were played by band members 3 of them played by band members played on band members
+
+Was Michael Che or Michael O ' Brien born further south ?
+michael che was born further south
+[11.579638481140137]
+michael che campbell was born in 1970s michael che
+
+Does the Ring of Fire include the continent in which contains the mainland of the country where Longhope , Orkney is found ?
+no
+[16.080026626586914]
+long east of fire
+
+When did the ducal title held by the Capetians end ?
+it ended with extinction of male line in 1477
+[9.703277587890625]
+duke of burgundy was born in 14th century
+
+Marcian was an Emperor of what empire that Euphemius was a military commander of ?
+byzantine empire
+[9.566650390625]
+
+
+Do the ingredients for Red braised pork belly and Ghanian Braised rice contain the same type of meat ?
+no
+[13.00490951538086]
+yes they are both used to prepare meat and vegetables but they are both contain different flavors of meat yes they are both they contain
+
+The tributary of the Colorado River with the same name as a river that ends in the town of Greenfield reaches its own end in which national park ?
+green river tributary of colorado that shares its name with green river that ends in town of greenfield reaches its end in canyonlands national park
+[9.48935317993164]
+greenfield green river
+
+The country with 82 cantons and 473 districts declared independence in which year ?
+costa rica which is divided into 82 cantons and 473 districts declared independence in 1847
+[15.064924240112305]
+socialists declared independence in 1946
+
+Borna was Duke of the Guduscani , a tribe from the area where what person contributed to building monasteries ?
+sestak
+[14.566619873046875]
+ziograd
+
+What branch of Buddhism has the main stay of Lamaism and a complex consisting of a stupa ?
+tibetan buddhism
+[13.565530776977539]
+buddhism
+
+The largest of which two types of parks are located in Alaska ?
+largest national park and largest urban park are both located in alaska
+[11.435917854309082]
+yellow lakes are located in alaska
+
+Which engine type uses the crankcase as part of the induction tract , mixing the oil with gas there and uses a high amount of fuel to do this ?
+2 stroke engines mix gas and oil and uses lot of fuel
+[10.461896896362305]
+stroke engine
+
+The protocols which are , according to OSI routing framework , layer management protocols for the network layer , regardless of their transport mechanism , specify how what objects communicate ?
+routers
+[13.297818183898926]
+osi routing
+
+Annbank railway station opened how many years before Dunkerton Railway station ?
+annbank station opened nearly 40 years before dunkerton station
+[13.894542694091797]
+it opened in 1871
+
+Which Spanish municipality is closest to the location once known as Mons Calpe ?
+la línea de la concepción is spanish municipality closest to gibraltar location once known as mons calpe
+[11.077620506286621]
+spain
+
+Could the Hebrew word mal ' akh be used to describe a seraphim ?
+since seraphim are types of angels mal akh could be used for them because mal akh is modern hebrew word for angels
+[11.653996467590332]
+yes word mal is used to describe word mal
+
+How many years after the Nimrod expedition ended did the Imperial Trans - Antarctic expedition start ?
+imperial trans antarctic expedition started about 5 years after
+[11.778990745544434]
+it was about about 100 years
+
+Does the Ninth and Eleventh Amendment to the United States Constitution deal with rights of foreigners ?
+no ninth amendment amendment ix to united states constitution addresses rights retained by people that are not specifically enumerated in constitution while eleventh amendment clarifies judicial power over foreign nationals
+[11.467182159423828]
+yes
+
+What is the name of the church at the bottom of Parangimalai ?
+st thomas garrison church
+[14.623631477355957]
+st thomas mount thomas mount thomas mount thomas mount thomas mount thomas mount thomas mount thomas mount thomas mount thomas mount thomas mount thomas mount thomas thomas mount thomas
+
+Cystic fibrosis and Spinocerebellar ataxia both are what in origin ?
+genetic
+[10.338976860046387]
+they are both both both have different types of neurological diseases
+
+What chemical symbol does the molecular compound of sulfuryl flouride share with dichlorine heptoxide ?
+both molecular compounds share chemical symbol o
+[13.96998405456543]
+it is potent element of sulfur is compound that is strong sulfur sulfur sulfur sulfur sulfur sulfur sulfur sulfur
+
+What are the respective titles of the second - in - command in the British Army and United States Army ?
+in britain second in command is known as deputy commander and in united states they are known as major
+[10.67760944366455]
+united states army united states army they are both united states army they are both british united states army
+
+Line beam scanning and tomography both use x - rays as part of the process of creating what ?
+3 d models
+[8.497689247131348]
+x ray microscope
+
+What are the official and unofficial subdivisions of the German language ?
+west north and south german
+[13.754255294799805]
+unofficial subdivisions
+
+Do ungulates such as cattle , pigs , giraffes , camels , sheep , deer , and hippopotamuses have the same number of toes as ones that have a long upper jaw with an extended diastema between the front and cheek teeth ?
+no odd toed ungulates have long upper jaw with extended diastema between front and cheek teeth and ungulates such as cattle pigs giraffes camels sheep deer and hippopotamuses are even toed ungulates
+[14.030901908874512]
+no ungulates ungulates ungulates ungulates ungulates ungulates ungulates ungulates ungulates un
+
+Does Cyprus have either an embassy or consulate - general in every mainland administrative division of Greece ?
+no
+[13.453509330749512]
+no cyprus has been official residence of official residence
+
+which might help you light up the air around you better ; Photinus Pyralis or Crambidae ?
+photinus pyralis
+[17.07411766052246]
+photinus pyralis
+
+What is the group of the kidney - shaped organs in the lymphatic system that drain the majority of lymph from the breasts ?
+axillary lymph nodes
+[17.285194396972656]
+lymphatic system
+
+What country joins the one that defeated Athens and Thebes in 337 BC that to form what is referred to as Northern Greece ?
+thrace and macedonia are often referred to as northern greece
+[9.97642993927002]
+macedonia
+
+Texts from which two cultures formed the basis for a practice rejected by the scientific community as having no explanatory power for describing the universe ?
+hellenistic and arabic
+[12.4227933883667]
+astrology is often used astrology
+
+What religious group has churches in Macon , Columbus , and Atlanta ?
+episcopal church
+[9.820110321044922]
+episcopal church
+
+How are the scales of themit Auszeichnung bestanden in Germany and the grade point system in the Philippines similar ?
+they both use scale from 1 to 5
+[10.549419403076172]
+they both have both have different types of points they both have different types of they both have different types of points they both have different types
+
+What Japanese mountain does the river that arises from Mount Nokogiri in the Akaishi Mountains , and Lake Kawaguchi flow near to ?
+they are near mt fuji
+[13.734439849853516]
+lake kawawa is river that flows into ayuwawakekekekekekekekekekekekekekeke
+
+Eric Clapton was in what rock band in 1969 that had the same number of members as the Yardbirds ?
+blind faith
+[9.354514122009277]
+band clapton
+
+How many years after Frederick II was born did Conrad agree to join King Louis VII of France in a great expedition to the Holy Land ?
+this event occurred 57 years after frederick ii was born
+[15.169939041137695]
+conrad ii died in 1147
+
+What trees can be found in the large country with mostly desert and semi arid environments where the south east and south west corners have fertile temperate climates , in that countries temperate savanna ecoregion of large grassland ?
+eucalyptus trees are found in australias grasslands
+[10.669057846069336]
+northern part of eastern hemisphere
+
+Is beer bong a cultural part of English brewery cask units ?
+no it is not
+[16.945913314819336]
+yes
+
+Is a Stairlift and example of a modern - day lift ?
+no as it does not involve enclosed space in shaft
+[11.36618709564209]
+no stairlift is lift that is not used by lift no stairlift is stairlift is
+
+Was Admiral Chester Nimitz in charge of the US ships that fought in the Naval Battle of Casablanca ?
+no
+[15.808398246765137]
+no navy was navy s control of navy navy s control navy s control of navy s
+
+How much time elapsed between the release of The Walker Brother ' s album The Walker Brother ' s Story and the release of the Chas & Dave album Rockney ?
+rockney was released in 1978 about 11 years after walker brother s story was released
+[11.59382438659668]
+7 years
+
+Does verbal irony contain evidence of absence ?
+verbal irony does not contain traits of evidence of absence which suggests something is missing or that it does not exist
+[8.409232139587402]
+no
+
+Approximately many total cents are in a classical characteristic interval of the Dorian scale ?
+approximately 600 cents as dorian scale contains 2 chromatic tetrachords
+[13.78978157043457]
+1
+
+Which location did the Argentine submarine ARA San Juan participate in a navy exercise in that eventually resulted in a futile 15 days - long search for its disappearance ?
+navy exercise was in tierra del fuego
+[8.88703727722168]
+argentine submarine was lost in search of submarine s disappearance argentine submarine argentine submarine was lost in submarine argentine submarine
+
+How does the mandible of a human differ from the mandible of an arthropod ?
+in human mandible only refers to lower jaw in arthropod it is pair of jaws
+[13.070047378540039]
+mandible is mandible form of mandible form of mandible form mandi form mandible form
+
+What casting terms do flaskless molding and foundry work have in common ?
+cope and drag
+[9.01314640045166]
+they are both used to make molding and drag they are used to drag sand they are used to drag sand
+
+What are the chemical symbols that wholly comprise the molecular makeup of dichlorine heptoxide , monomeric chlorine trioxide and chlorine perchlorate ?
+in all 3 molecular compounds cl and o are chemical symbols that account for their entire chemical makeups
+[8.951383590698242]
+they are both called carbon
+
+Which Actor was born earlier ; Joel Courtney or Anthony Geary ?
+anthony geary
+[9.36100959777832]
+joel courtney
+
+Which song by British rock band alt - J from their debut studio album An Awesome Wave is about a character ' s relationship with a girl named Mathilda ?
+matilda
+[17.409626007080078]
+newman
+
+Were fewer people killed in the blaze at Mecca Intermediate School No . 31 or in the Erwadi fire incident on 6 August 2001 ?
+blaze at mecca intermediate school no 31
+[18.12882423400879]
+fire occurred in fire fire occurred in fire occurred in erwadi fire occurred in erwadi
+
+What archeological age are the Hunsbury Hill and Hollingbury Castle hillforts both from ?
+iron age
+[13.903346061706543]
+they are both both from 7th centuries
+
+Who were the artists featured in the Ludacris song that was used in Fast and Furious 6 ?
+usher and david guetta
+[10.071427345275879]
+rest of band
+
+Does the genus Pan have thousands of species like the Orchidaceae ?
+no pan only has 2 extant species chimpanzee and bonobo
+[9.524402618408203]
+no panchidaceae are found in same family they are found in panchidaceae
+
+What is the name of the region that refers to the entire northern Levant and whose Regional Command has the power to nominate a candidate for president ?
+syria
+[10.045801162719727]
+region
+
+Is mail from the IG and SM postcode areas of England sorted at the same location ?
+no ig postcode is sorted at romford mail centre while sm postcode is sorted at croydon mail centre
+[13.558833122253418]
+no they are sorted at different locations no
+
+Are the Moeraki Boulders and the Scare Rocks located in the same country ?
+no moeraki boulders are located in new zealand while scare rocks are off coast of scotland
+[11.724370002746582]
+no moeraki boulders are located in south west they are located in south west of moerakya are located in
+
+Were the series of public massacres that took place during the Reign of Terror historically unique ?
+no use of formal execution dates back to beginning of recorded history
+[11.433640480041504]
+no series of events that occurred in late 19th century
+
+Which lasted longer , Thomas Legh Claughton ' s tenure as professor of poetry at Oxford , or his reign as Bishop of Rochester ?
+his reign as bishop of rochester lasted longer
+[18.731069564819336]
+thomas legh claughtlaughtlaughtlaughtlaughtlaughtlaughtlaughtlaughtlaughtlaughtlaughtlaught
+
+In geology , depositional environment or sedimentary environment describes the combination of physical , chemical and biological processes associated with the deposition of a particular type of what , an example of which are rocks composed predominantly of broken pieces or clasts of older weathered and eroded rocks ?
+sedimentary rocks
+[10.496077537536621]
+clastic rock formation
+
+Which came first ; Music of Friends or formation of Arrival the band ?
+formation of arrival
+[11.613519668579102]
+music of friends
+
+On which date was content on pay TV required to give a rating to their programming ?
+content rating system went into effect on march 1 1994
+[11.24713134765625]
+yes
+
+What sort of animals are African dusky and blue flycatchers ?
+fly catchers are birds
+[10.277789115905762]
+they are both native african and african species african species
+
+Is an Illyushin II - 4 or Volkswagen Caravelle a more currently vehicle in Russia ?
+volkswagen caravelle
+[16.096073150634766]
+volkswagen caravelle ii
+
+Is the alcohol that is found in drinks the same type of alcohol that is used as an emulsifier ?
+no cetyl alcohol is used as emulsifier while ethanol is found in drinks
+[12.600231170654297]
+no alcohol is not made in alcohol is made in alcohol as alcohol no alcohol is made in alcohol is made in alcohol is made
+
+Is an Abrasion conducted using an Maxillary central incisor ?
+no it is not
+[21.54353141784668]
+no cervical line is cervical line no cervical line is cervical
+
+Because of its position near several different countries like Tunisia , Corsica , and Italy , did Sardinian authors utilize different languages when writing ?
+yes some wrote in italian spanish catalan and sardinian
+[12.903810501098633]
+they used different languages
+
+How many years after the birth of Brandon Boyd was American rock band Incubus founded ?
+15 years
+[10.206068992614746]
+he died
+
+Does the red chakra of the flag of the Romani people have more spokes than the The Stella d ' Italia has points ?
+red chakra of flag of romani people does indeed have more spokes at 16 than stella d italia has points 5
+[14.560243606567383]
+no stella d italia has more stars no
+
+How many years after the death of Francesco I Sforza was Francesco Italia born ?
+506
+[15.902875900268555]
+francesco italia was born
+
+What did the character ' s played by Rodney Perry and Natalie Desselle - Reid argue about on the way to a dinner ?
+argument was about directions to house
+[13.449546813964844]
+they both argue
+
+How long after they agreed to build the Little Dipper did Lockheed scrap it for tax reasons ?
+3 years
+[8.21908187866211]
+company completed first leg of little dipper
+
+Was the Japanese seinen manga magazine Monthly Comic Alive being published during the time period that the novel The Company takes place ?
+no
+[9.515792846679688]
+no issue of magazine was launched in late 1950s no issue was published in no issue issue of magazine was published
+
+Did Xerxes the first ' s failed invasion of Greece occur at the same time when Alexander the Great conquered Syria ?
+xerxes failed invasion occurred 147 148 years before alexander conquered syria
+[12.820083618164062]
+no great xerxes i was before great xerxes i was destroyed in great xerxes i was destroyed in great
+
+Terry Hershey Park and the affluent forested neighborhoods of Memorial can both be found along what Bayou ?
+buffalo bayou
+[12.992833137512207]
+buffalo memorial
+
+What were the names of the authoritative books that New Text Confucianism was based on ?
+because new text confucianism was based on confucian classics they would have reference 4 books and 5 classics which illustrate core value and belief systems in confucianism
+[9.412301063537598]
+fourshūcianism and chinese scholars of scholars of scholars of scholars of scholars of scholars of scholars of scholars were
+
+Michael Army Airfield is owned by the military of what country that the 78th Training Division is a part of ?
+united states
+[12.882265090942383]
+united states army
+
+Are the Type 332 Frankenthal - class and MCM - 14 both MCMV vehicles ?
+mcm 14 is mcmv vessel but type 332 frankenthal class is not because it is just minehunter
+[16.44270896911621]
+no type 332wwwwwwwwwwwwwwwwwwwwwwww
+
+Which radio broadcasting system is more robust with regard to noise , DAB or FM ?
+dab
+[13.97364616394043]
+dab
+
+If you needed someone to help you get out of jail whom would you choose ; Bobby knutt or Bobby diamond ?
+bobby diamond
+[7.472291469573975]
+bobby knutting
+
+Which country outside of Germany during World War II suffered through mass murders due to the belief in eugenics ?
+poland suffered through mass murders
+[9.663726806640625]
+nazi was in nazi
+
+On which continent could Cironius Scurrulus and C exoletus both be found ?
+both c scurrulus and c exoletus can be found in south america
+[17.054166793823242]
+brazil america
+
+Which occurred first : Nanchan Temple escaping destruction during the Buddhist purges or the building of the Great East Hall ?
+nanchan temple escaping destruction occurred first
+[9.267483711242676]
+nanchan temple
+
+What are 4 types of classification that can be given to asteroids ?
+pha c type m type and s type
+[11.239995002746582]
+type asteroids
+
+Does Indonesia have more endemic species of fish or avifauna ?
+indonesia has slightly more endemic avifauna at 457 species as opposed to 440 species of endemic fish
+[9.291412353515625]
+there are percentuna
+
+What year the Duke of Anjou ' s older brother , the Duke of Burgundy , die ?
+1761
+[10.077827453613281]
+1751
+
+Between Ashleigh Barty in the 2019 French Open final and Jacquemot in the 2020 French Open Final , who lost more sets ?
+ashleigh barty lost 4 sets and jacquemot lost 12 sets
+[16.626556396484375]
+ashacquemot
+
+Livestock breeders in Killa Saifullah produce much livestock share for meat and milk purpose for a province in what country ?
+pakistan
+[12.759711265563965]
+they are province
+
+Is the Brahminy blind snake a venomous pit viper species found in the southern United States ?
+it is non venomous and is found in connecticut
+[21.202848434448242]
+no brahminytytytytytytytytytytytytyt brahminyt brahminytytytyt
+
+Did Nadine Lustre ' s first album have the same name as Moody Blue ' s second album ?
+no nadine lustre s debut album was called nadine lustre and moody blue s album was called look out
+[12.65581226348877]
+no same album was released in 2016 no same album but no same album was released in 2016 same album
+
+Are the U - Tapao Royal Thai Navy Airfield and the Michael Army Airfield owned by the same country ?
+no former is owned by uk and latter is owned by usa
+[14.06484603881836]
+no u tapao airfield airfield is located in same country as country as same country no u tapa
+
+Transcarpathia runs through part of which combatant in the conflict between Galicia - Volhynia , Poland and Lithuania ?
+poland
+[21.033910751342773]
+transcaria
+
+What is the name of the airport in the city where the Emirates professional football club is based ?
+ras al khaimah international airport is in same city as emirates club
+[10.243403434753418]
+nickname is emirates
+
+which organ is near the orbital fissure and infraorbital vessels ?
+eye is in orbital fissure
+[16.820161819458008]
+orbital germical nerves of orbital orbital system orbital germical nerves of orbital germical nerves orbital
+
+Was Gregory VII pope while church Patriach Christodulus reigned ?
+yes pope gregory vii was pope from 1073 1085 and christodulus reigned from 1047 1077
+[10.690229415893555]
+no gregory vii was only 1 in third archbishop of catholic of catholic church no gregory vii was gregory vii of
+
+What movies in 1955 and 1954 did Jane Wyman and Rock Hudson star in ?
+they starred in films all that heaven allows and magnificent obsession
+[13.179439544677734]
+jane hudson both starred in movies they both starred in movies they both both star they both starred in movies they both starred in movies
+
+Have both Carol Lawrence and Liz Lawrence sung on broadway ?
+no
+[11.042757034301758]
+yes they both were both both both both both of same roles
+
+Did George Fairbairn ' s younger brother become a rowing coach at only a different club from that of the college George attended ?
+no
+[9.83916187286377]
+no george fair was different from george fairford he was different team he was different team george fairford
+
+In which event would someone actually have to stand or move around without assistance more to do well ; 2014 Formula one World Championship or 2014 CONCACAF Women ' s Championship ?
+2014 concacaf women s championship
+[9.167415618896484]
+2014 formula 1 s championship
+
+Of these singers named Robbie , which ones are male : Robbie Williams , Robbie Montgomery , and Robbie Glover ?
+robbie williams and robbie glover are male
+[9.723760604858398]
+robbie are both female singers robbie singers
+
+Which anemone can withstand salt water ; dahlia anemone or Anemone , Ranunculacea , windflowers ?
+dahlia anemones are found in north atlantic body of salt water
+[13.63331127166748]
+dahlia anemone anemone is dahlia anemone anemone is dahlia anemoneia anemon
+
+Is there a Canadian equivalent to the OMB designation for the most expansive , wide - reaching area designation for the Denver – Aurora , CO ?
+no
+[18.285533905029297]
+no comb is comb designation of comb designation comb is comb is comb is comb
+
+Both Anomic aphasia and amnesia have what symptom in common ?
+forgetting something
+[13.339227676391602]
+they are both both in common
+
+Who was born in an earlier month in the calendar year : Steven Oliver or Oliver Wallace ?
+steven oliver
+[11.27952766418457]
+oliver oliver
+
+Did Grandstand launch before or after the birth of Aung San Suu Kyi ?
+after
+[10.35506820678711]
+before
+
+Who died at an older age : Private John Newman or John Colter ?
+john newman
+[11.329911231994629]
+john colter
+
+Was it James Madison ' s 14th Federalist Paper that had the military and militia discussed greatly in ?
+no that is federalist paper 46
+[9.55007266998291]
+yes 14th federalist was not in 14th position
+
+Are buildings define as skyscrapers among those that are also defined by the Council on Tall Buildings and Urban Habitat in Australia ?
+that council does indeed define buildings that are classified as skyscrapers
+[17.38604164123535]
+no
+
+Which bodies of the cell go through dissolution which later leads to neuronal regeneration under Chomatolysis ?
+nissi bodies
+[16.429771423339844]
+nervous system
+
+What genus name do the black - banded spider wasp , the spider wasp found mainly in Eurasia , and the organism that is approximately 20 mm in length share ?
+they are all anoplius
+[11.956127166748047]
+genus wasp genus wasp wasp genus wasp genus wasp was named after genus genus was
+
+Did the Greco - Persian Wars end before Cyrus the Great died ?
+no greco persian wars ended in 449 bc which is after cyrus great s death in 530 bc
+[15.515693664550781]
+great great great great great great great great great great great great great
+
+Who tries to prevent agents from doing their work on the Show that features FBI assistand Director Brad D . Follmer as a character ?
+kerch is antagonist who tries to prevent special agents mulder and skully from investigating their cases
+[10.34433364868164]
+kelder
+
+Which Star Wars film had a final design of a four - legged walker for the armoured fighting vehicles ?
+empire strikes back
+[10.159618377685547]
+
+
+What causes allergic contact dermatitis ?
+allergic diseases are caused by hypersensitivity of immune system to typically harmless substances in environment
+[9.299470901489258]
+i can sometimes cause dermatitis
+
+Is the last letter of the name of the protagonist of the 1991 Aircel Comics six issue miniseries Carmilla the same as the antagonist in The Dark Blue published in 1971 - 72
+yes
+[7.849910736083984]
+
+
+What type of transports were the USS General John Pope and the USS General A . E . Anderson ?
+they were troop transports
+[9.079534530639648]
+they were both both ships ships
+
+Are the horn shark and the Hapanese bullhead shark both in the same family ?
+horn shark and japanese bullhead shark are both in family heterodontidae
+[11.655542373657227]
+no hapanea is only bullhead shark that is only bullhead shark that occur in japan no hapanea
+
+Which major places on the earth ' s surface do both the 12th and 18th parallel south ( latitude ) pass through ?
+atlantic ocean africa indian ocean australasia pacific ocean and south america
+[13.502460479736328]
+they both cross ocean they cross ocean
+
+Is Linguistic description the signature feature of page description language ?
+it is not
+[12.510478973388672]
+page
+
+Is a higher percentage of the shares of the Romanian company Transelectrica on the Bucharest Stock Exchange now than the proportion of the stocks of the Romanian company Electric on the same exchange in 2014 ?
+no
+[11.467597007751465]
+yes number of same shares in same number of same number as same number as same number as yes yes same
+
+Did the Swedish pop music group ABBA release the same number of studio albums as the English musician Paul McCartney ?
+no abba released 8 studio albums while paul mccartney released 26
+[8.722970008850098]
+no swedish band had record
+
+Which anatomical locomotive feature is shared by Odobenus rosmarus and loggerhead sea turtles ?
+odobenus rosmarus and loggerhead sea turtles both have flippers
+[9.319212913513184]
+walrus is common in walrus walrus are both found in ocean and walrus are both
+
+Which is the longest of over 60 literary things using metres in Tolkien ' s work ?
+song of earendil is longest poem in lord of rings by tolkien
+[14.166893005371094]
+song of eomun is short story song of eomun is short song of eomun is short story e
+
+On what date did France win its maiden World Cup ?
+july 12 1998
+[8.179547309875488]
+july
+
+To what family do the gastropd mollusks Conus capitaneus and the conus natalaurantium belong ?
+conidae
+[17.869678497314453]
+conus natalula conus natalulansis belong to conus natalulaula they belong to conus natal
+
+Which rail line provides service to Island Park and Deer Park stations in New York ?
+long island rail road provides service to these 2 stations
+[10.736817359924316]
+long island island road
+
+Which work of art is older ; Madonna with Sleeping child by Mantegna or the same named painting ( with the Infant St . John the Baptist added ) ?
+mantegna s painting is older
+[11.555339813232422]
+madonna with child by mantegna
+
+Which is a better example of religion Catholicism or Animism ?
+catholicism
+[9.68516731262207]
+animism
+
+What other species is included in the family that the souimanga sunbird originates ?
+family of soulmanga sunbird is called nectariniidae and also includes spiderhunters
+[19.34212303161621]
+sunbird
+
+Was the album by DJ Khaled featuring the song Top Off released before or after the one containing the track Greece ?
+father of asahd which features song top off was released before khaled khaled which contains greece
+[12.32020378112793]
+before
+
+What country is situated entirely on the Indian Plate and has its Northern Culture describing seven different states ?
+india
+[9.784585952758789]
+state
+
+Which features more golf related activities ; Beach Boulevard ( Hamilton ) or Confederation Beach Park ?
+confederation beach park
+[12.699223518371582]
+beach boulevard hamilton
+
+Neither the Republic of Crimea nor the city of Sevastopol are internationally politically recognized as parts of what country that had a capital in both Moscow and Saint Petersburg ?
+russia
+[10.906965255737305]
+russia
+
+How do the number of member states of the European Union compare to the number of member states of the United Nations ?
+there are significantly more members of united nations encompassing 193 sovereign states to european union s 27 members
+[16.007465362548828]
+number of members of member states per member states per member states per member states number of member states per member states per member states per member
+
+Were the USS Strength and the USRC Levi Woodbury both used during the Civil War ?
+no
+[15.87020206451416]
+no uss strength levi wood wood wood wood wood wood wood wood wood wood wood wood wood wood wood wood wood wood wood wood wood wood
+
+How many more years did Luise Rainer live than Frederick Douglass ?
+rainer lived 27 years longer
+[12.192497253417969]
+6 years
+
+What are the name of the additional segments that are part of both the Shirpur Vidhan Sabha constituency and the Nandurbar Lok Sabha constituency ?
+they are 5 vidhan sabha segments including sakri in dhule district and akkalkuwa navapur nandurbar and shahada in nandurbar district
+[12.572572708129883]
+nandurbar is nandurbar nandurbar is nan constituency nandurbar is nan
+
+Are the area codes 720 and 530 found in the same state ?
+they are not 720 is in denver colorado and 530 is in california
+[13.034039497375488]
+no area area area area area area area area area area area area area area area area area area area area area area area area area area area area
+
+What name is shared in common by a British sommelier and singer who was a member of the band Five , and an American musician who was in the band The Meters ?
+neville
+[9.051685333251953]
+cyril neville
+
+The term Alto in regard to Flutes and choral range both involve what ?
+alto flutes and alto voices indicate musical terms
+[15.991288185119629]
+tenor and flute
+
+Which road is shorter , County Route 81 in Suffolk County or New York State Route 454 ?
+county route 81 is shorter
+[17.06039810180664]
+county route 814 is longest road in world long island 814
+
+Who ' s name , meaning virtue covered the Iraq war , winning a George Polk Award for it ?
+leila fadel
+[9.292068481445312]
+fade f
+
+For which branch of government does the White House Presidential Personnel Office assess and recruit candidates to serve in departments and agencies ?
+they recruit staff for executive branch of government
+[9.545915603637695]
+office is job of
+
+In which view of the Curve on the Norfolk Southern Railway Pittsburgh Division main line between Pittsburgh and Harrisburg can it be seen framing the upper impoundment of the Kittanning Reservoir , with the second larger part of the reservoir also visible ?
+aerial view
+[14.78515911102295]
+right
+
+Are MRP2 and MRP4 encoded by the same gene in humans ?
+no mrp2 is encoded by abcc2 gene while mrp4 is encoded by abcc4 gene
+[14.12913703918457]
+yes they are both encoded by mcpp
+
+Which occurred first : Sean Wilson ' s first year on the Coronation Street show or Guy Wilkerson starting to make films ?
+guy wilkerson starting to making films
+[12.872231483459473]
+sean wilson s first season of show of show
+
+What order of crustaceans is part of the Malacostraca class and is present in Dominica ?
+decapoda
+[14.607190132141113]
+can order to order to order to order to order order order to order order order order order order order order order order order order order order order order order
+
+A type of bursts , a well known high energy electromagnetic transient , are classified as what type of deep - sky event ?
+violent 1
+[9.54106616973877]
+gamma rays
+
+The Swiss were famed for provided what type of service during the Middle Ages that was practiced by Andy Marlow ?
+mercenary service
+[11.674140930175781]
+they were fighter
+
+Was Georgios Sachtouris the commander of the Ottoman fleet that was captured with five Austrian cargo ships ?
+no he commanded greek fleet in that event
+[11.806102752685547]
+no ottoman fleet was captured by ottoman fleet
+
+How many years after the Quaternary period took place did the Brimpton interstadial happen ?
+britain interstadial happened some 2 5 1000000 years after quaternary period
+[13.359272956848145]
+it was about 100 years ago
+
+How old was Rémi Joseph Isidore Exelmans when be became aide - de - camp to Marshal Joachim Murat ?
+he was 26 years old
+[13.297715187072754]
+he was 19
+
+The chemical with the symbol Cs 2 S is similar to an ether except for what ?
+it contains sulfur atom in place of oxygen
+[9.385068893432617]
+sulfide
+
+The Salmon river would be included on what list of which the Kootenai River is the third longest on ?
+list of 70 streams that are at least 50 miles long that flow through u s state of idaho
+[12.266748428344727]
+river is river
+
+Which is taller : The Church of Saint Peter ( Aramaic : Knisset Mar Semaan Kefa , Turkish : Senpiyer Kilisesi , St . Peter ' s Cave Church , Cave - Church of St . Peter ) near Antakya or Sant ' Antonio
+sant antonio
+[9.789262771606445]
+kilismanimal
+
+Under which class do Dirona albolineata fall ?
+dirona albolineata are gastropoda
+[16.415416717529297]
+dirona albasata
+
+The year that FDR criticized Hoover for over - spending , what Democrat won the Senate Election in Louisiana ?
+john h overton won louisiana senate election in 1932
+[10.173980712890625]
+edwin bdr won election
+
+What happens if the radiant point of the Orionids is at or below the horizon ?
+few meteors will be observed if radiant 0 is at or below horizon because atmosphere shields earth from most of debris
+[14.486001014709473]
+it is not visible it is not visible it is not visible it is visible below surface it is visible below surface it
+
+In which state of Myanmar is the town that was the capital from 1287 to 1364 of the kingdom later known as the Hanthawaddy Kingdom ?
+mon state
+[9.982922554016113]
+no capital of myanmar kingdom of myanmar
+
+What type of rock is most common on the northeastern shores of the peninsula of the province that was governed by John Coape Sherbrooke ?
+granite is most dominant rock
+[11.220588684082031]
+rocky rock formation
+
+Did the same author write both the manga series Sleepy Princess in the Demon Castle and the Dragon Ball manga on which Dragon Ball : Sleeping Princess in Devil ' s Castle is based ?
+no 1 is by kagiji kumanomata and other is by akira toriyama
+[12.130218505859375]
+no
+
+Which of the bodies of water near the geological formation of the Great Lakes Basin is included in the mixed plains ecozone and has tree species that occur nowhere else in Canada ?
+lake erie
+[14.26778507232666]
+no great lakes
+
+Where can you find both Melaleuca alternifolia and Alphitonia excelsa ?
+melaleuca alternifolia and alphitonia excelsa are native to australia
+[12.703485488891602]
+they can both be found in australia melaleucalyptus melaleucalyptus melaleucalyptus
+
+Which areas are the Trimeresurus albolabris and Trimeresurus puniceus both endemic to ?
+trimeresurus albolabris and trimeresurus puniceus are both endemic to southeast asia
+[10.821821212768555]
+they are endemic they belong to trimeresurfris endemic to trimeresurface endemic to trimere they belong in to
+
+Hunting Wild Deer , using their meat to feed people is best described and defined in Marshall ' s Conservation ethics or Meta Ethics ?
+marshall s conservation ethics
+[7.295369625091553]
+meta ethics
+
+What kind of warfare do the actions of the APD adhere to ?
+modern warfare
+[12.669450759887695]
+they are conducted by military they are conducted by military
+
+What are the responsibilities of someone addressed as Your Honor ?
+judge is supposed to conduct trial impartially and typically in open court
+[10.168473243713379]
+judge must be addressed to judges judge must be addressed to judges
+
+What connection does Econometrics have with the body of science that pertains to the collection and analysis of data ?
+econometrics uses statistical methods to study economic theories and relationships
+[6.945555210113525]
+they are both both both subject and computational science
+
+What are two types of alcohol that can be used to create cosmetics and are white in color ?
+cetyl alcohol and stearyl alcohol
+[20.01459312438965]
+it is both called dissozzyzzyzzyzzyzzyzzyzzyzzyzzyzzyzzyzzyzzyzzyzzyzzyzzyzzyzzyzzyzzyzzy dizzy
+
+What two plates had a collision creating the great folded mountain belts that has easternmost Turkey lie towards the southern boundary of it ?
+arabian plate with eurasian plate
+[9.87746524810791]
+iranians
+
+What two words are shared between the alternate term for Akinetopsia and Motion Induced Blindness ?
+motion and blindness
+[13.811426162719727]
+they are both both in motion
+
+Which roadway was opened first , the Pettipauge and Guilford Turnpike or Interstate 80 ?
+pettipauge and guilford turnpike
+[12.051506042480469]
+interstate 80
+
+Which band has more albums : U2 or The Steel Drivers ?
+u2 has total of 18 albums while steel drivers only have 5 albums
+[10.391193389892578]
+steel
+
+Who was part of the team that worked on Ross ' s album that included her first solo number one hit ?
+nickolas ashford and valerie simpson worked on ross album
+[8.354395866394043]
+dianaolas
+
+Between the 1937 NAIA Men ' s Basketball Tournament and the 1937 Masters Tournament which event was played further south ?
+1937 masters tournament was played in augusta georgia which is south of kansas city missouri
+[14.782400131225586]
+1937 na basketball association was held in 1937 1937 1937 1937 1937 1937 1937 1937 1937 1937
+
+Which location is shared by both Lantau Island and Tsuen Wan District in Hong Kong ?
+they are both encompassed by new territories
+[10.573102951049805]
+lantau island
+
+What year did both the Jammu and Rajouri massacres take place ?
+1947
+[12.828840255737305]
+they were massacred in 1950s
+
+Which pair of locations are closer to each other , Chena Hot Springs and Fairbanks , or Chitina and Glennallen ?
+chena hot springs and fairbanks
+[11.25104808807373]
+glenna hot springs
+
+Are Lake Hazen and the Innuitian Region in the same country or different countries ?
+they re in same country
+[17.433746337890625]
+different countries
+
+Were there more or fewer episodes of Red Riding than there were gunmen in the bus attack in Safoora Goth , Karachi , Sindh in Pakistan ?
+fewer as there were 3 episodes while there were 8 gunmen
+[9.988080978393555]
+more episodes more episodes more episodes of red than episodes of red than episodes of red than episodes of red 4 episodes of red 4 episodes
+
+The Newark and New York Railroad operated in what state that Canadian Pacific and Conrail also operate in ?
+new jersey
+[13.946685791015625]
+new jersey new jersey
+
+Is the Afghan snowfinch found at the same elevation as the White - winged snowfinch ?
+no
+[15.522510528564453]
+no afghan snowfinch is found in afghanistan no while afghan snowfinch is found in afghanistan no afghan snow
+
+How many years since the West Ham United ' s first time championship did Everton FC compete in the Football League First Division ?
+40 years
+[9.885454177856445]
+everton
+
+Which country are the bands who both sang a song titled Little by Little from ?
+england
+[13.236136436462402]
+they were both from england from england
+
+How old was Gary Ferguson when Rachel Louise Carson passed away ?
+he was 8 years old
+[9.805903434753418]
+gary ferguson was 14
+
+Which is more coarse : Granite or Greisen ?
+granite is more coarse
+[11.18492317199707]
+granite
+
+Between George Washington , Ronald Reagan , and Herbert Hoover , which two were born in the same month of the year ?
+george washington and ronald reagan were both born in february
+[11.606744766235352]
+john reagan ronald reagan ronald reagan ronald reagan ronald reagan reagan ronald reagan reagan ronald reagan ronald reagan ronald reagan
+
+Do both the Wolfe Tone and St Enda ' s GAC and the Drumquin Wolfe Tones have football teams for multiple age groups ?
+yes they both range from under 6 to seniors
+[10.776580810546875]
+yes
+
+What were the occupations of the two figures who respectively stumbled upon and dug up the Acambaro figures according to Dennis Swift ?
+hardware salesman and farmer
+[10.607095718383789]
+they were both men
+
+What kind of insect is the western Chinese and north - east Indian Parnassius imperator , and the Indian and Nepalese Parnassius epaphus ?
+they are high altitude butterflies
+[18.955915451049805]
+parnassius epator epator parnassius epator epapator epator pa parnassius
+
+What type of religious institution is the structure that houses the title of ecumenical mother church of the Roman Catholic faithful , and the structure of St . Paul ' s Within the Walls that is in Via Nazionale in Castro Pretorio , Rome ?
+these are churches
+[11.317184448242188]
+church
+
+Which city hosted the first Olympic games to feature female athletes and built the Les Olympiades residential towers ?
+paris
+[12.008986473083496]
+paris
+
+Which molecule has more atoms , Phosphorus monoxide or Phosphorus pentoxide ?
+phosphorus pentoxide as it has composition p 4 o 10 while phosphorus monoxide has only p o
+[18.89631462097168]
+
+
+Does the band The Mixtures play the same type of music as DJ Jazzy Jeff & the Fresh Prince , or are they of a different genre ?
+different genre
+[11.165674209594727]
+different genre
+
+If a tiger came across an Ariopsis felis in the wild , could the tiger eat it ?
+yes ariopsis felis are fish and tigers are known to eat fish
+[10.01382827758789]
+tiger would eat catfish
+
+Are Ruthweiler and Rutsweiler am Glan the same place ?
+no they are not
+[12.676328659057617]
+they are both in valley they are located in
+
+With which two countries does Paraguay have established diplomatic relations and shared diplomatic memberships ?
+paraguay has established diplomatic relationships and memberships with colombia and bolivia
+[11.84724235534668]
+paraguay and paraguay
+
+What are two conditions that UHB can treat ?
+decompression sickness and arterial gas embolism
+[13.068130493164062]
+they are both in sea and undersea conditions
+
+What are the territorial areas that include rivers , roads and peaks divided into ?
+districts
+[14.97413158416748]
+territorial territorial areas of territorial disputes
+
+Did the Leibniz - Clarke correspondence happen before or after the Newton - Leibniz approach was introduced ?
+it happened after with introduction of newton leibniz approach happening in 17th century while correspondence happened in 18th century
+[9.797723770141602]
+after it was not before it was introduced in 1716
+
+To which continent do Chiuta and Chifunde belong to ?
+africa
+[13.23781681060791]
+africa belong to east
+
+How long ago did small sap - sucking insects and members of the superfamily Aphidoidea , first originate ?
+aphids originated in late cretaceous about 100 1000000 years ago
+[10.840140342712402]
+they were found in wild
+
+Were the Napoleanic Wars still ongoing by the time that Napoleon III had been born ?
+yes
+[11.645414352416992]
+no
+
+80 % of almost all of the fully sequenced genomes consist of intact ORFs in members of what type of organism that constitutes the majority of Prokaryotic microorganisms that have been sequenced to date ?
+bacteria
+[9.800830841064453]
+bacteria
+
+Which two deities is Set associated with ?
+he is associated with ra and ha
+[9.934961318969727]
+setis
+
+What term used by TEPs to greet one another in the UK is also the name of a company that merged into Namco Ltd . on March 31 , 2006 ?
+bandai
+[9.924005508422852]
+usco bandai games
+
+Do the tropical African calabash and the Trichosanthes dioica plants both feature gourds ?
+yes
+[16.833358764648438]
+no trichosanthemums are both white and white no tricho are white and blue no tri
+
+Which features more romance centered depiction ; La inolvidable or Luisa Fernanda ?
+luisa fernanda
+[12.051630020141602]
+la inolvidable
+
+Which two types of skin cancer are commonly found on people ?
+basal cell carcinoma and epidermoid carcinoma
+[11.111882209777832]
+adenocarcinomas are found in cases in cases of cases of cancer but they can be found in cases in cases in many cases
+
+Which work is smaller ; Madonna with Sleeping child by Mantegna or Madonna with sleeping child with the infant St . John the Baptist ?
+madonna with sleeping child by mantegna
+[10.130800247192383]
+madonna with baby by mantegnan
+
+Who came out with music called Friends first ; ( Album of Music of Friends ) or Arrival ?
+arrival
+[15.63741683959961]
+arriful friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends friends
+
+Both The River Erne , and The River Bann are rivers in Northern Ireland , but which one is part of Lough Neagh ?
+river bann widens into enormous lough neagh
+[16.44689178466797]
+river ernegh neagh neagh nea river river river ernegh neagh neagh nea neagh
+
+Was the city of Aelia Capitolina built while the Assyrians held Israel captive ?
+no
+[10.223860740661621]
+no jews were built in jews were built in 7th century
+
+How old was Duncan Stewart when William Manning died ?
+stewart was 27
+[10.235918045043945]
+duncan stewart was 15
+
+What relationship allowed the person with a Gaelic nickname that roughly translated as the freckled to get an earldom ?
+his relationship with his wife gave him earldom
+[11.750551223754883]
+they were both married they were both married they were married they were married they were married they were married they were married
+
+Who was most recently crowned winner of Miss Universe Philippines ; Rabiya Mateo or Maricres Castro ?
+rabiya mateo
+[17.932415008544922]
+maricrea castro
+
+What month in common do the release of the first single of the album Who I Am by Nick Jonas & the Administration and the last time the original version of the album Greatest Hits Volume II by Alan Jackson was available share ?
+december
+[10.061891555786133]
+9
+
+How long has it been since Saint Paul spread teachings of Jesus from the individual who was martyred in Frisia in 754 ?
+6 centuries
+[11.046582221984863]
+4 years
+
+Are there more or less virtues depicted in the lower panels of the Florence Baptistery than there were versions of a portrait format image of The Magdalen painted by the Master of the Magdalen ?
+less as there were 8 vices and 13 versions
+[9.813347816467285]
+more
+
+Did Shazia Mirza and Mawaan Rizwan born in the same country ?
+no
+[9.61366081237793]
+no shazia mirza was born in same country as same country as same country as same country as same country as
+
+In which area can you find both Parcoblatta uhleriana and Parcoblatta pensylvanica ?
+both parcoblatta uhleriana and parcoblatta pensylvanica are in north america
+[13.369633674621582]
+parcoblatta parcoba parcoblatta parcoblatta parcoba parcoblatta pa
+
+How far west does the land seized by Igwe Okolie Akwara go ?
+it extends to confluence of rivers of atamiri and enyinja
+[12.434798240661621]
+they are located in region they are located in they are located in region they are located in region they are located in
+
+How many state gubernatorial elections took place on the same day as the Indiana gubernatorial election in 2004 ?
+11 states had elections on that day
+[12.368743896484375]
+3
+
+Did the first or second album released by Stephen Bishop have a longer title ?
+first album
+[9.811724662780762]
+second album released by band
+
+Were the Medway and the Silverlip the same style of ship or were they different styles of ship ?
+different styles
+[9.929625511169434]
+different styles of ships different styles
+
+What month were both I Love This Bar and I ' m Gonna Hire a Wino to Decorate Our Home released ?
+they were released in august
+[10.444659233093262]
+june
+
+How many Greek warships fought the Ottomans in the battle that had a siege at Missolonghi ?
+20
+[8.310443878173828]
+
+
+What is the most common profession in Fringe ?
+special security agent
+[15.179664611816406]
+they are both both female and male they both both both both female they both both female they both female
+
+Which countries were Alexander I and Stepan Krasheninnikov from ?
+alexander i and stepan krasheninnikov were both from russia
+[11.437153816223145]
+russia and russia were both
+
+Between Taiga Cordillera and Nunavut , which contains Arctic tundra ?
+both
+[11.960801124572754]
+both are both within arctic regions arctic regions
+
+How common is Kodo Nishimura ' s surname ?
+it is 46th most common surname in japan
+[10.575786590576172]
+they are both both of same surname they are both of same surname
+
+Was Shahara in the film that Shriya Saran made her acting debut in ?
+no
+[18.289146423339844]
+no shri sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara sara
+
+Which prime minister of Italy appointed both Dario Franceschini and Roberto Speranza ?
+giuseppe conte appointed them both
+[10.032632827758789]
+cardinal
+
+How can the amendment that was passed in 1865 be enforced ?
+congress can enforce it with legislation
+[9.661465644836426]
+it is illegal to rule in constitution it is illegal to rule in constitution it is illegal to rule in constitution in constitution
+
+What other New Jersey city is part of the same combined statistical area as the city where Walt Whitman bought a house in 1884 ?
+atlantic city new jersey is in same csa
+[7.8263092041015625]
+camden
+
+Where can I find beetles in the same genus as D . latissimus ?
+beetles in dytiscus genus are distributed in europe asia north africa and north and central america
+[12.579744338989258]
+dytiscus is found in wild d latis d latis saris saris saris sarisytis sa
+
+Are Murphy ' s Law and Henry ' s Law both epigrams ?
+henry s law is gas law that states that amount of dissolved gas in liquid is proportional to its partial pressure above liquid while murphy s law is adage or epigram that is typically stated as anything that can go wrong will go wrong
+[8.094232559204102]
+no henry s law is not law no but it s law is not law
+
+How many months later from when the ISU made a confirmation regarding the 2020 - 21 Grand Prix of Figure Skating Final was it finally scheduled to be held ?
+4 months
+[13.810033798217773]
+it was held
+
+What songbird of northern and eastern South America lives in the rainforest , secondary woodland , and overgrown plantations ?
+yellow legged thrush
+[16.005901336669922]
+platycicccccccccccccccccccccc platsc
+
+In 1896 which happened first , the USA presidential election or the Cedar Keys Hurricane ?
+cedar keys hurricane occurred in september and election happened in november
+[9.81315803527832]
+cedar
+
+Is the paroon shark and sofa shark part of the same family ?
+no paroon shark is part of pangasiidae family while sofa shark is part of pseudotriakidae family
+[16.359764099121094]
+no parrot is member of family no parrot is member of parrot family no par
+
+Are the Prettyboy Dam and the Rocky Valley Dam located in the same country or different countries ?
+different countries
+[16.67259979248047]
+different countries
+
+When the Scottish under - 20 football team reached the quarterfinals of the World Youth Championship and lost to Poland , what was the current NRL Under - 20 ' s still known as ?
+jersey flegg cup
+[14.101419448852539]
+scottish under 20s
+
+Has the French motto Liberté , égalité , fraternité always been the only motto of France ?
+no during french revolution is was only 1 motto among others
+[14.454479217529297]
+no motto is always good thing good thing no
+
+Who carried out bomb attacks on October 9 , 1975 and September 29 , 1971 ?
+provisional ira carried out these attacks
+[9.692452430725098]
+raid was carried out by raid on raid on house raid was carried out on raid on house raid on
+
+Was Aneurin Bevan elected leader of the Labour Party before or after the announcement of The Queen ' s Birthday Honours in 1959 ?
+before
+[8.036484718322754]
+before
+
+What did the composer Moose Charlap ' s best known accomplishment have in common with the play Peter and the Starcatcher ?
+charlap s best known accomplishment was composing for peter pan who was also main character in play peter and starcatcher
+[11.67695140838623]
+they both both have roles in roles in musical they both have roles both have roles in starcatcher
+
+What was the name of the person that built the first railway station in the city where the central stadium of Kharkiv , Metalist is located ?
+architect andrey ton
+[18.86269187927246]
+tharki tharki tharki tharki tharki thar tharki thar t t thar thar t
+
+What major occurrences took place regarding the Clapham Parliament constituency in the UK in the year 1885 ?
+it was created in time for 1885 general election it was established as 1 of 2 divisions of new parliamentary borough to be named battersea and clapham
+[9.907855987548828]
+it was major event in 20th century
+
+Which writer wrote for Selena as well as another song called Si La Quieres ?
+vela wrote songs that selena recorded as well as si la quieres
+[10.739253044128418]
+velatte quiereereeres
+
+What country could you find the G postcode area and the HS postcode area ?
+scotland
+[11.899419784545898]
+scotland would be in scotland scotland would be in scotland scotland would be in scotland scotland would
+
+Which is more of a political leader , setting an example for others to follow ; Kanye West or Martin of Tours ?
+martin of tours
+[23.126873016357422]
+kanye west
+
+What is the shared odor of carbon monoxide and copper hydride ?
+they are both odorless
+[8.825275421142578]
+classification of carbon dioxide is aromatic classification of carbon dioxide is classification of carbon dioxide classification of carbon classification of carbon dioxide is
+
+In terms of surface area , how many full Castle Lakes ( the one located in California ) could fit in Skiatook Lake ?
+2 100 and 20 3
+[7.668801784515381]
+it would be feet
+
+Who came up with a theory about space and time that was tested with a thought experiment involving twins that were separated by a space trip ?
+albert einstein founded theory
+[16.879823684692383]
+twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin twin
+
+What is a wiring diagram and what is it used for ?
+circuit or wiring diagram is visual display of electrical circuit it is often used to troubleshoot problems and to make sure that all connections have been made and that everything is present
+[17.1243896484375]
+electrical components
+
+Were Senators Ossoff sworn in before or after Jerry Moran ?
+senator ossoff was sworn in in 2021 10 years after jerry moran was in 2011
+[13.741748809814453]
+before jerry moran sworn in
+
+Peak repetitive reverse and breakdown are characteristics of a material ' s relationship with what ?
+voltage
+[11.843156814575195]
+they are not always always voltages they are not always voltages they are not always voltages they are not voltages they are
+
+Which viper is the longest : the Lachesis muta or the Gloydius halys ?
+gloydius halys has maximum length of 23 inches which is shorter than 12 foot maximum length of lachesis muta
+[22.06745147705078]
+guinea pig is longest in guinea pig in guinea pig is guinea pig guinea
+
+How is the name of the snake that references the type locality , Ein Gedi on the western shore of the Dead Sea pronounced in Arabic ?
+al aswad alkhabith
+[9.210576057434082]
+it is name of name gedi it is name of name of gedi it is gractas g
+
+Did the movies Austin Powers : The Spy Who Shagged Me and Austin Powers : International Man of Mystery have the same production team ?
+yes
+[11.796927452087402]
+they both starred in crime fiction
+
+How do the purposes of the dorsal root and the ventral of a mixed spinal nerve differ ?
+dorsal root is sensory root of spinal nerve while ventral root is motor root
+[14.211662292480469]
+dorsal roots transmits information from brain dorsal roots transmits information from
+
+Between the Four Corners Generating Station and Plant Scherer , which plant has the highest generating capacity at their height ?
+plant scherer has highest output of 3 720 megawatts while 4 corners generation station has output of 2 40
+[14.323708534240723]
+plant scherer station
+
+In their 2013 general elections did both Kenya and and Italy elect a new president ?
+no kenya elected president but not italy
+[19.45209312438965]
+yes
+
+Do the stars of the Turkmenistan flag represent more areas than the stars of the American flag ?
+no stars of american flag represents 50 states while stars of turkmenistan flag represents 5 provinces
+[9.813417434692383]
+no stars have been used in united flag since it has been used in united flag no stars have been used in
+
+What type of animal tissue is the Triphosa dubitata sometimes used to clean ?
+triphosa dubitata is sometimes used to clean epithelium
+[10.515335083007812]
+moth
+
+Kunoichi and Ninjas were both found in what country ?
+japan
+[12.836627960205078]
+japan
+
+What is the Xhosa name of the South African province where the Robberg Marine Protected Area is located ?
+intshona koloni is xhosa name of western cape province province of south africa where robberg marine protected area is located
+[15.134336471557617]
+robberg is most populous area in south africa robberg marine is located in south africa robberg marine protected area
+
+Which area includes more postcode districts , the UB postcode area or the BA postcode area ?
+ba postcard area includes more districts
+[15.150162696838379]
+ba postcode area bab postcode area is metropolitan area bab postcode area is metropolitan area of metropolitan
+
+What is the commonality between Phaedrus and Phaedo ?
+they both were students of socrates
+[11.13858413696289]
+both are both both in same position both are both in position they both both are in position they are both in position they in
+
+What artistic practice did both Carol Lawrence and Lee Lawrence participate in ?
+singing
+[11.804462432861328]
+they both sang and performed
+
+Sayf marched towards Ghazna in what year of his reign ?
+third
+[10.406576156616211]
+1147mna was born in 1147
+
+What year did fighting in the Second Schleswig War begin and that occurred as the same time as the Battle of Gettysburg in the American Civil War
+1863
+[9.102581977844238]
+
+
+Was R . J . Mitchell working for Supermarine when his son Gordon was born ?
+yes
+[10.35098934173584]
+no gordon gordon was born in 1922 gordon
+
+Do the small anal valves have a continuous peritoneal fold lies outside the colonic / mesocolic complex ?
+no
+[9.50314998626709]
+no analysurel is analysure of colonic colonicum no analysurel
+
+Which is something that could be seen today ; The Fall of Phaeton ( Rubens ) or Phaeton ( planet ) ?
+fall of phaeton
+[19.26692771911621]
+fall of phaeton phaeton aeton phaeton fall of ph
+
+What are four governmental institutions in the country within which Andalusia is an autonomous community ?
+government of spain cortes generales constitutional court and supreme court
+[11.685598373413086]
+spain is political entity that is political entity that is political entity spain is civil entity
+
+Are both the Medal of Honor and U . S . civil awards and decorations military honors ?
+no civil awards and decorations are issued for sustained meritorious service or for eminence in field of endeavour not for military action
+[11.63534927368164]
+no medal of honor civil war they are both awarded in civil
+
+Did promoter Ralph Sanchez bring auto racing to the Miami area earlier or later than the 11th season of the IMSA GT Championship auto racing series happened ?
+later
+[13.937829971313477]
+earlier
+
+Which extinct mammal in the family of predatory animals characterized by long curved saber shaped canine teeth that protruded from their mouth when closed is it ' s most famous type or genus ?
+smilodon is extinct genus of saber toothed cat
+[8.617090225219727]
+smilodonine
+
+Which was more involved in fighting other Cavalrys ; Indian Civil Service or Cavalry in the American Civil war ?
+cavalry in american civil war
+[16.275876998901367]
+indian cavalry
+
+which is not an actual form of test ; Multiple Choice Novel or Multiple choice format ?
+multiple choice novel
+[14.78812313079834]
+multiple choice of test
+
+Where is the first line therapy used for cyanide poisoning found as a vitamin ?
+vitamin can be found in food
+[10.691215515136719]
+hydroxocoboba is used in first line of defense in most dangerous foods in most dangerous foods byanbababa
+
+What position in the government did the person that Franklin D . Roosevelt beat in the 1944 United States presidential election hold ?
+thomas dewey was governor
+[14.914870262145996]
+they werebentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbentbent
+
+What Powers Allen Boothe character would have been depicted mixing a Southern Comfort Based Cocktail ?
+cy tolliver saloon owner
+[14.943205833435059]
+southern comfort
+
+What did Owens do after Alvis Edgar Owens Sr . turned a radio into an amplifier ?
+owens used amplifier to teach himself how to play electric guitar
+[15.722875595092773]
+he was born in early 1900
+
+Which was listed on the national Register of Historic Places first , the Bell Homestead or the Homestead Historic District ?
+homestead historic district
+[12.077313423156738]
+bell
+
+Which plant shares it ' s name with a village in Belize District , Belize ?
+gardenia is plant and village in belize
+[18.54478645324707]
+gardenia ja is plant that grows in belize gardenia japanese gardenia japanese gardenia japa japa
+
+What kind of house did the first Duke of York live in ?
+in mansion
+[10.456092834472656]
+house
+
+The military branch that runs the Air Facility Quantico , Virginia calls what force its Warfighting MEF ?
+i marine expeditionary force
+[12.222806930541992]
+corps
+
+How are both public schools in the United States and academy schools in England funded ?
+they are both funded by state or government
+[16.476837158203125]
+academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy academy
+
+Which is longer , the River Lune in Cumbria or the Luni River ?
+luni river at 495 km long is longer than river lune which is only 85 km long
+[16.60835838317871]
+river lune is longer than river lune is longer than river lune is longer river lune is longer river lune
+
+What type of animals are Promerops cafer and Euplectes progne ?
+promerops cafer and euplectes progne are birds
+[17.97186851501465]
+promeropopopopopopopopopopopopopopopopopopopopopopopopopopopop
+
+Who has appeared on stage more often , to roaring crowds of young people screaming ; Lee Su - ji or Shin Soo - ji ?
+lee su ji
+[16.11573028564453]
+lee su ji ji ji ji ji ji ji ji ji ji ji ji ji ji ji ji ji ji ji ji ji ji ji lee su ji ji
+
+Who was Empress of Byzantium when the Portrait of the Four Tetrarchs was removed to Venice ?
+agnes of france
+[11.974740982055664]
+emperor was empress
+
+Was the priory which was built by Ansgot of Burwell for Benedictine monks in place when the Wellow Abbey was founded ?
+wellow abbey was founded around 1110 which is around same time that burwell built priory for monks
+[11.571260452270508]
+no
+
+Detection of an injury normally caused by what can be tested for by trying to abduct the injured shoulder against resistance ?
+direct impact of some sort to outer arm
+[11.654891967773438]
+no
+
+Which is longer , The Dolphin Expressway or The Penobscot Narrows Bridge ?
+dolphin expressway
+[10.372956275939941]
+penobscot narrows bridge is longer than penobscot narrows bridge bridge is longer than penobscotob na
+
+What would have been a 17th century alternate spelling of the area that the historic market town of Windsor is in ?
+barkeshire
+[10.239551544189453]
+it is traditional village
+
+How many companies are there at least in Romania whose names contain the letters that make up the English word ' electric ' within their names ?
+2
+[9.034156799316406]
+there are companies that contain electricity electrica as well as electrica electrica electrica
+
+Where can you find a striped , freshwater fish that is usually less than 7 centimeters long ?
+it is found in sydenham river in canada
+[11.842070579528809]
+black stripe in black stripe in black stripe black stripe black stripe in black stripe in black stripe around black
+
+What sort of bird ' s are Henst ' s goshawks ?
+goshawk s are accipeter and accipeters are birds of prey
+[9.862563133239746]
+accipital owls they are both both of owls they are both owls
+
+What does the largest living rodent in the world do to help digest the cellulose in their diet ?
+eats its own feces
+[7.204561710357666]
+it is not
+
+Did John O ' Kelley and Jim Plunkett play the same positions or different positions ?
+different positions
+[12.645523071289062]
+they were different positions they were different positions they were different positions they were different positions they were different positions they were different positions
+
+Was the IKV - 91 tank part of a lighter tank class than the T - 34 ?
+yes
+[11.144906997680664]
+no
+
+In what country is the company that makes the crane called Big Carl ?
+belgium
+[13.193049430847168]
+belgium netherlands is heavy crane belgium netherlands
+
+How many species are in the family that the Indos crab belongs to ?
+16
+[9.309281349182129]
+there are 4
+
+Had the Ottomans already crossed over into Europe when the Janissary corps became known as an effective military unit ?
+ottomans crossed over into europe in 1352 which is before janissary corps earned accolades in 15th and 16th century
+[13.497588157653809]
+no janissary corps were in ottoman empire no janissary corps were in janissa janissary
+
+What state is the highway that runs between the city of Elkton and the highway when approaching the city of Klamath Falls , 97 becomes a freeway just south of a junction in ?
+they are in oregon
+[8.996848106384277]
+oregon
+
+Muslim rulers began using other titles , such as Sultan during the late period of what rule that ended in 1258 ?
+abbasid rule
+[14.865742683410645]
+empire was known as empire s empire empire s empire
+
+Did Fred Curly Morrison get named the Player of the Game in the Rose Bowl before or after the Lansing Capitals became a member of the Independent Basketball Association ( IBA ) ?
+fred curly morrison was named player of game more than 50 years prior to lansing capitals establishment
+[13.302750587463379]
+after
+
+Does The Angels Bakers Team support people in the same line of work as those portrayed in the movies featuring John Rambo ?
+yes
+[9.587520599365234]
+no they both work with angels
+
+How much longer is the Nevezis than the A1 Kaunas - Klaipeda highway ?
+nevezis is 14 km longer
+[11.669261932373047]
+nevezis km long it is about 120 km long it km
+
+What is the process of testing a product ' s graphical user interface where test designers attempt to cover all the functionality of the system ?
+graphical user interface testing
+[9.886205673217773]
+test test
+
+Was the 1940 and 1944 United States presidential elections both held on the same day of the month ?
+no 1940 election took place on 5th and 1944 election was held on 7th
+[12.752311706542969]
+no
+
+In which month were the 18th Amendment ratified and the 13th Amendment passed ?
+these events occurred in january
+[14.29550552368164]
+13th constitution was ratified in september
+
+Do the Seneca River and the Lima River both flow east ?
+no seneca river begins flowing east while lima river flows westward
+[14.156643867492676]
+yes seneca river flows east
+
+Do US 20 and US - 302 have the same or different orientations ?
+they have same as both run east to west
+[14.426209449768066]
+different orientations
+
+Can branches of The Church of Jesus Christ of Latter - day Saints and Cathedral of Christ the Living Saviour both be found in Sri Lanka ?
+yes
+[13.031214714050293]
+yes living saviour are both in sri lanka and sri sri sri sri sri sri sri sri sri sri sri sri sri sriviour sri sriviour
+
+How did the status of Knapton , North Yorkshire change from during the 16th century to 1988 ?
+it changed from being detached part of parish of holy trinity micklegate in york to being absorbed into civil parish of rufforth and parish was subsequently renamed rufforth with knapton
+[10.991931915283203]
+status changed to more recent status of parish
+
+How many 4 - 6 - 2 locomotives were built for the major French railway companies ?
+there were total of 1364 pacific type also known as 4 6 2 locomotives built for french railway companies
+[10.226393699645996]
+4
+
+Which nation has a working class part of the mostazafin and has a class of rural wage earners ?
+iran
+[8.342402458190918]
+iran
+
+For a tape ball and a spitball , do you add something to the ball or remove something ?
+you add something to ball
+[10.387223243713379]
+you can use tape measure to measure size around it
+
+What medium is the Walking Dead with Lennie James as Morgan Jones based on ?
+it is based on comic book series
+[14.834785461425781]
+walking walking
+
+How many meters difference is there between the top of Miller Mountain and the highest point in the Mule Mountains ?
+1810 meters
+[12.407758712768555]
+there are 2 of 2 of 2 of miller mountain 2 of miller mountain
+
+Between The Band and Foreigner , which had their greatest hits compilation released on Capitol Records ?
+band
+[9.21252155303955]
+band
+
+San Pedro is a small town in a mountain range that is the southernmost range of what system ?
+peninsular ranges system
+[11.33806324005127]
+laguna municipality
+
+Of the two German states which contain parts of the Nauen Plateau , which one surrounds the other ?
+of 2 states which include nauen plateau brandenburg and berlin brandenburg surrounds berlin
+[15.575390815734863]
+state
+
+What type of railway is deemed to be the most cost effective construction in the area featuring the North Wales Coast Line ?
+narrow gauge
+[10.388666152954102]
+north wales main line
+
+What type of energy is lowered to increase reaction rates from isomerases and for example , in converting from a stable cis isomer to the less stable trans isomer is greater than for the reverse reaction ?
+isomerization energy
+[8.696593284606934]
+energy is energy
+
+When Senator Robert Corker Jr was elected to begin his Senate participation in 2007 , did he fill a majority or minority seat ?
+he won minority seat
+[14.902680397033691]
+it was fill
+
+What geometrical term did ancient Greek Perseus first describe that is a quartic plane curve ?
+spiric section
+[16.215068817138672]
+spiricular shapes
+
+Are there more extant species of lizard worm in the Blanus genus than there are in the genus that Blanus was formerly included in
+there are over 200 extant species in amphisbaenian genus and 5 in blanus genus
+[21.969648361206055]
+blanus amphisbabababababababababababa amphisbababababababa
+
+What can a measuring cup measure regarding liquids , that have other traditional units of its measure like the cubic inch ?
+volume
+[13.614148139953613]
+cubic inch diameter
+
+How much did the film Love Story make the week that the 1970 Christmas number - one , I Hear You Knocking by Dave Edmunds , remained at number - one ?
+2 405 809
+[12.179075241088867]
+25
+
+What governmental position did both Ireland and England have , at least until it was abolished in Ireland in 1817 ?
+they both had lord high treasurer position within their governments
+[16.672828674316406]
+they were in control of control over control over control over control of control of control over control of control of control they were in control control over control
+
+What is the name of the urban locality that ' s in the same district as Rytkuchi ?
+yuzhny
+[13.206042289733887]
+it is town that is town that is located in south of same state it is city it is town located in
+
+How many districts are in the state whose state animal belongs to the genus Nilgiritragus ?
+there are 38 districts in tamil nadu whose state animal is nilgiri tahr which belongs to genus nilgiritragus
+[10.895273208618164]
+there are species of animal species
+
+How many fewer children does the actor who played Rev . Eric Camden have in real life compared to the 7th Heaven TV show he starred in ?
+he has 6 fewer children in real life
+[13.890913963317871]
+1 more
+
+If LibreOffice Writer was a standalone Java application , what would most users run it on ?
+java runtime environment
+[8.364442825317383]
+javabreofficed
+
+Which genus of the family Agaricaceae was described first : Quelatia , or Macrolepiota ?
+quelatia was described in 1872 macrolepiota wasn t described until 1948
+[16.912187576293945]
+querolepiota
+
+How many years before the coat of arms of France was created did the last direct Capetian die ?
+last direct capetian died some 577 years before coat of arms of france was created
+[9.662692070007324]
+first half of 19th century
+
+Which happened first , the One Wild Night Tour or the Lost Highway Tour ?
+1 wild night tour
+[9.156050682067871]
+lost highway tour was success
+
+Did Western Arabic numerals originate in the same present - day country as the Bengali numbers ?
+yes india
+[13.328751564025879]
+no number of number of people in bengali numerals in early 1900 s number numerals number n
+
+How many more seasons has the ADAC GT Masters been running than the ADAC TCR Germany Touring Car Championship ?
+9
+[15.165399551391602]
+1 more seasons
+
+Does the British basketball league system have less levels does the Spanish basketball league system ?
+no
+[15.98202133178711]
+spanish league system has higher levels of play
+
+Was Duke Xiao alive before or after the Qing dynasty ruled China ?
+he was alive before qing dynasty
+[9.111133575439453]
+he lived in qing dynasty
+
+Are colossus penguins and Marple ' s penguins both extinct ?
+yes they are both extinct
+[14.825827598571777]
+no placid penguins palacid penguins palacides are placid penguin palacid pen
+
+When Bishop William Hogarth became the first bishop of the diocese of Hexham and Newcastle , had the modern diocese been expanded to include the title of Newcastle ?
+no
+[13.056462287902832]
+yes diocese was expanded in 1861
+
+Which could you have possibly watched in your home with subtitles more effectively ; Absolutely ( TV series ) or Abbasalutely ?
+absolutely tv series
+[12.14494514465332]
+abbasalutely
+
+On which continent are both Indonesia ' s 76 volcanoes and Jolo and the Bud Dajo group of volcanoes ?
+asia is site of indonesia and philippines where jolo and bud dajo volcanoes are
+[15.034903526306152]
+indonesia
+
+The Ouse ' s system of tributaries help to drain two of what three major drainage divides that influence the direction of stream flow in Yorkshire ?
+yorkshire dales and north york moors
+[9.392837524414062]
+ode basin
+
+Which area is older : Manaus or the Praetorian prefecture of the Orient ?
+praetorian prefecture of orient was formed in 4th century which was before manaus was formed in 1669
+[12.686342239379883]
+manaus
+
+In what initial way was land in , what is now Great Britain , that was held by the Crown , worked , or made to bear a crop ?
+initially demesne lands were worked on lord s behalf by villeins or serfs who had no rights to it
+[11.493767738342285]
+it was made by crown
+
+What British tv show did Clive Dunn , Arthur Lowe and Ian Lavender all have a part in at one point or another in their acting career ?
+dad s army
+[14.81502914428711]
+they both have role both have appeared in roles in drama they both have appeared in 0 in 0 they both appeared in 0 they both
+
+What rivers share each others ' namesake that is a tributary of the Multnomah Channel on Sauvie Island and a freshwater tributary of the Cyriac River , flowing in the unorganized territory of Lac - Ministuk ?
+gilbert river
+[9.6253662109375]
+gilbert gilbert
+
+Does the Kohima War Cemetery and Mainamati War Cemetery both honor the soldiers from the same war ?
+yes kohima war cemetery and mainamati war cemetery both honor soldiers from world war ii
+[13.369139671325684]
+no kohima war cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery cemetery kohima
+
+Is the Socialist Party in Belgium the only party with that name in the world ?
+socialist party is name of many different socialist parties around world
+[9.258411407470703]
+no socialist
+
+What school won the NCAA Women ' s Tennis Championships the year that Betsy King won the first of her two consecutive U . S . Women ' s Open titles ?
+stanford
+[16.073713302612305]
+ucla
+
+How old was the Brazilian football player Socrates , when the Spanish football player Socrates Romero was born ?
+socrates was 12 when socrates romero was born
+[12.712747573852539]
+he was born
+
+What type of rails do the West Rail line in Denver and the Mass Transit Railway in Hong Kong have in common ?
+west rail line and mass transit railway both use light rails
+[14.071979522705078]
+they are both used to serve mass transportation system they are used to serve mass transportation system they serve mass transportation both serve mass
+
+How many total deaths were there for the terrorist attacks on the Abrams Building in Frankfurt and the attack on the El AI passenger bus in the Munich - Riem Airport ?
+there were 2 total deaths for abrams building attack in frankfurt and el ai passenger bus attack
+[11.288581848144531]
+5 more
+
+Who won the most tournaments on the PGA Tour in the year that the song Mamy Blue was rendered into English ?
+lee trevino
+[11.965950012207031]
+richard trevino won first ever competition richard trevino won first major tournaments in 1971 richard treo won
+
+Which river joins the Darwen River outside Witton Country Park and rises on the moors above Guide near Blackburn ?
+blakewater river
+[9.68889045715332]
+blakewater
+
+The lead singer of which industrial rock band formed another band that shares its name with a Kate Bush album ?
+stabbing westward
+[9.804868698120117]
+west bush
+
+Which countries do the names Frances and Stephen originate from ?
+frances originates from france and stephen originates from greece
+[13.377184867858887]
+france and country they are both from france they come from france they come from france they come from france they come from france
+
+Are the Rhinacanthus nasutus and Tomarus native to the same continents ?
+no tomarus is native to americas and parts of caribbean while rhinacanthus nasutus is native to tropical asia and western indian ocean
+[17.35408592224121]
+no rhinacanthus narcissinae are native they are native to america they are native to rhinaca
+
+On what continent can the black - necked stork and cassowaries both be found ?
+both have populations in australia
+[13.177247047424316]
+africa
+
+What type of object is both the tepoztli and the macuahuitl ?
+they are both weapons
+[10.826661109924316]
+weapon both have sword
+
+In which state is a hotspot below the North American Plate that displays time - progressive shifts in magmatic activity ?
+this hotspot is in wyoming
+[11.507479667663574]
+california
+
+What bright - yellow flowering member of the family Brassicaceae is one of the oldest known vegetable oils ?
+rapeseed oil
+[16.838397979736328]
+brasseseed brassica
+
+Are Afro - Germans and Mexicans concentrated in the same German states ?
+no they are not mexican population is concentrated mostly in federal states of bavaria baden württemberg while afro germans are in larger cities like hamburg darmstadt frankfurt munich bremen cologne and berlin
+[13.661062240600586]
+no population of population of population of population of population of population of population of population is 36 36
+
+Which is located further south ; Hyde Park or Vanderbilt University ?
+vanderbilt university
+[11.629667282104492]
+vanderbilt university built in 190204
+
+Which boulders can be found on beaches in New Zealand : Koutu Boulders or Moeraki Boulders ?
+both koutu boulders and moeraki boulders can be found on beaches in new zealand
+[16.12407112121582]
+koyau boulders
+
+Was the movie The Gathering directed by Randal Kleiser made before or after the Dutch rock band The Gathering had formed ?
+before
+[10.315826416015625]
+before
+
+What province of Canada does the Saint Lawrence river flow through that is also home to a peninsula of Lake Erie near Detroit ?
+province of ontario
+[14.92656421661377]
+river
+
+Between the collum and the thorax , which appears higher up in humans ?
+collum refers to neck and thorax refers to chest so collum is higher up
+[14.699005126953125]
+thorax is usually supported by arms
+
+What continent do the Lily plants the Hemerocallis fulva , and the Alstroemeria grow on ?
+hemerocallis fulva is from asia and alstroemeria is from south america
+[14.211172103881836]
+they both grow on continents
+
+Who both supported The Casemate du Pont Saint Louis , and fired on Pont - Saint - Louis bridge ?
+cap martin and his men supported casement and fired 8 shots at bridge
+[9.170961380004883]
+cap martin
+
+Have there been any legal actions taken to tackle the Rugby drug epidemic ?
+there have been multiple regulations introduced by various governments in response
+[10.563581466674805]
+yes there are no
+
+Was Napoleon ' s invasion of Egypt launched before or after the Battle of Aboukir ?
+before
+[9.6707763671875]
+after
+
+What country were Larry Glick and Laurence Gluck born in ?
+america
+[15.64877700805664]
+they were born in england they were born in england they were born in england they were born in england were born in england were in england
+
+Where was the French president who was shoot in Paris born ?
+he was born in aurillac
+[10.85753345489502]
+his father was born in paris
+
+What is the HBO show that includes the American Vampire League based on ?
+southern vampire mysteries by charlaine harris
+[11.947510719299316]
+blood
+
+Which came first : Big Bash League ' s inaugural year or Brett Lee ' s retirement from playing cricket ?
+big bash league s inaugural year
+[13.454357147216797]
+big bash league s inaugural season big bash league s inaugural season big bash league s inaugural season s inaugural season
+
+Were both the HMNZS Otago and the USS Spruance named after human beings ?
+no
+[17.223257064819336]
+yes uss spruance were commissioned to commemorate first year of uss spruance
+
+Which bodies of water are the Janaria and Labidochirus splendescens native to ?
+janaria and labidochirus splendescens are both native to pacific ocean
+[10.730120658874512]
+janaria and labidora are both found in ocean janaria and labidora are both found inria and labidora are found
+
+Who helped spread the study of the Japanese word meaning form that typically begins around green belt level throughout Japan ?
+gichin funakoshi and others
+[15.385279655456543]
+kata
+
+Which two awards were given as part of the Boroplus Gold Awards for TV serials until at least 2012 ?
+gold award for beset actor in lead role male and best actor critics
+[15.617688179016113]
+gold gold gold gold gold gold gold gold gold gold gold gold gold gold gold
+
+What church did the person that Aimone took his regnal name in memory of attend in 925 ?
+tomislav attended church council of split in 925
+[18.509883880615234]
+catholic church built in 924
+
+What are two examples of states that held a special election in 1802 ?
+new york and georgia
+[16.2918643951416]
+new york
+
+Which states did the 1966 - 67 college basketball champion and the # 1 ranked college football team in 1966 come from ?
+1966 67 college basketball champion came from california while 1 ranked college football team in 1966 came from indiana
+[9.71924114227295]
+they both come from california
+
+Were Cerdanya and Urgell still united when Wilfred was Count of Cerdanya ?
+no cerdanya and urgell remained united until 897 and wilfred was was count of cerdanya from 988 until 1035
+[13.318614959716797]
+no centa was in control in control in control of control of control of control of control of ce centa
+
+Which is a better descriptor for a key found on a device used to add and multiply ; ECCE or EX ?
+ex
+[9.291187286376953]
+ecce
+
+Were both David Hamid and William Edward Collins born in London ?
+no david hamid was born in scotland while william edward collins was born in london
+[9.958174705505371]
+no david
+
+How large was the empire of the Islamic caliphate that sieged Constantinople in 717 - 718 relative to the other world empires of that time period ?
+umayyad caliphate had largest empire in world at time
+[8.49308967590332]
+umayyad was largest empire umayyad empire um umayyad umayd empire was
+
+Did Cassandra Cain or Duela Dent claim to have more parents ?
+duela dent claimed to have more parents
+[13.022307395935059]
+cassandra cain was once member of family cassandra cain was cassandra cain
+
+What type of research methodology would be used to construct the history of Cambridgeshire and its returning of members to Parliament ?
+chronology would be used to locate these historical events in time
+[10.163650512695312]
+they would use techniques to study
+
+The sides ( lateral ) and undersurface ( ventral ) of the tongue are high risk sites for the development of a type of cancer strongly associated with what two types of substance abuse ?
+tobacco and heavy alcohol use
+[7.753872871398926]
+they are both in mouth and tongue and tongue they are both in mouth and mouth are in mouth and lipatic are both in
+
+In which country can you find both Darling Downs and New South Wales ?
+darling downs and new south wales are in australia
+[12.878896713256836]
+australia can both be found in southern and new south wales and new south wales they can be found in southern south wales
+
+Did John Fitzalan and Adeliza of Louvain ever meet each other ?
+no adeliza of louvain died well before john fitzalan was born
+[10.634913444519043]
+no john fitzalan was born in 1157
+
+Into what do the disks of all classes of enoyl - CoA isomerases dimerized ?
+hexamers
+[11.041571617126465]
+clusters of 4
+
+Was the NCAA Basketball game published by EA Sports was voted as the best PlayStation 2 game in the year 2004 by GameSpot ?
+no
+[12.894691467285156]
+no ncaa game was first game of year in year no ncaa gamesop was first game of ncaa
+
+What symptoms might you experience after contact with a bug from the Phlebotominae family ?
+you might experience myalgia fever and elevated liver enzymes
+[11.3696870803833]
+they can be seen in certain areas of desert they can be seen in certain areas of desert they can be seen in certain areas in
+
+What unique color are the deer weighing normally 125 to 301 pounds , that can be found in New York ?
+population of white tailed deer are white in new york
+[8.966924667358398]
+white tailed deer is found in canada white tailed deer white tailed deer is found in canada white tailed deer is found
+
+When the Anastasian Wars were fought , had the capital of the Roman Empire been transferred to Byzantium ?
+yes anastasian wars were fought from 502 506 which is after transfer of roman empire capital in 330
+[13.418130874633789]
+anastasian wars began in 1206
+
+Was Abraham Lincoln from the same state or a different state than where the city of Lincoln is located ?
+different state
+[10.980316162109375]
+different state
+
+Which person would have been able to shoot a target with a gun more effectively ; Henry Allen Ironside or William Edmund Ironside ?
+william edmund ironside
+[17.204355239868164]
+henry allen ironside
+
+How did the leaders within the region which included the western fringes of the Holy Roman Empire , Upper Burgundy and Lorraine mark borders of their kingdoms in the Middle Ages ?
+they believed their kingdoms had natural borders
+[9.524240493774414]
+they were in holy roman empire
+
+Do both the TV shows the Twelfth Doctor and Spyfall , involve someone who is referred to as The Doctor ?
+yes both shows have someone referred to as doctor
+[16.142911911010742]
+peter
+
+To which field does Electrically powered spacecraft propulsion and Thrusters belong to ?
+spacecraft technology
+[14.420873641967773]
+electrical
+
+The Romanesque style and The Gothic style were both styles primarily concerned with different ways of building what ?
+cathedrals
+[15.027584075927734]
+they were both styles
+
+Which country are both All Angels church and Cathederal of the Transfiguration ?
+canada
+[11.066655158996582]
+they are both in canada
+
+How many years after Stoke won the 1972 League Cup was their new stadium opened ?
+20 5
+[11.317407608032227]
+it was opened
+
+What first name is shared by an Australian actor that graduated NIDA in 1984 and an English - Australian actor that gave birth to a son named Jason ?
+terence
+[10.331167221069336]
+terence donovan
+
+What cardinal region of Canada can you find the Innuitian Region and the terrestrial ecozone called the Arctic Cordillera ?
+in north
+[10.569738388061523]
+red sea
+
+Is gradient boosting used in GSP algorithm ?
+no it is not
+[9.557201385498047]
+it is not
+
+Anna Basarab ' s father would have used what title for himself when writing in Romanian ?
+domn
+[13.500776290893555]
+vachian ruler was ruler his father was ruler his father was ruler his father was ruler of vachi ruler vachi ruler
+
+Was the institution currently known as the London South Bank University founded before or after the institution known as the National Bakery School ?
+before
+[12.719165802001953]
+
+
+Benzyl chloroformate is the benzyl what of chloroformic acid , other examples of which being Chloroalkyl and Chloromethyl methyl ?
+ether
+[12.621600151062012]
+chloroalkyllkylla
+
+Are safety slogans intended also for raising productivity ?
+yes
+[12.847579002380371]
+safety slogans are used to help improve productivity safety slogans are used to improve productivity safety slogans are used to improve productivity safety slogan
+
+What part of the pieces of matter that make up chemical elements determines the atomic number ?
+number of protons in atom are atomic number
+[9.9600830078125]
+number of neutrontons electrons and number of neutrons of nucleus number of neutrons number of neutron and
+
+When you get an allergic response to contact with a substance , what symptom will develop first ?
+in cases of contact dermatitis first sign is presence of rash or skin lesion at site of exposure
+[16.664445877075195]
+irritantic contactic contactic contact contactic contactic contactic contactic contact is usually caused by dermatitis irritant
+
+Is Castle Lake in California managed by the same US federal entity as Skiatook Lake ?
+no
+[12.173001289367676]
+no shasta is located in california which is located in california located in california it is located in california it is located in
+
+Which silent film actress who died in 1986 shared a name with a character whose brother - in - law is Stanley Kowalski ?
+sarah blanche sweet silent film actress who died in 1986 shared name with character blanche dubois whose brother in law is stanley kowalski
+[12.277643203735352]
+blanche blanche
+
+During Philip V ' s and Aeropus ' reign in Macedonia , which populations caused problems for them ?
+roman empire thracians and iiiyrians were groups who opposed and threatened macadonia during their rule
+[8.599422454833984]
+
+
+What is something that both gymnosperms and glossopteris produce ?
+both gymnosperms and glossopteris produce seeds
+[12.96189022064209]
+glossopterteries
+
+What Australian state is the Cape York Peninsula a part of that is where Brisbane is found ?
+queensland
+[10.273924827575684]
+australia is part of south australia
+
+Is the regular script of Chinese calligraphy full of homophones and synonyms ?
+no variant chinese characters are
+[11.22890853881836]
+no popular language is 1 of most popular type of chinese characters no popular characters no popular language popular
+
+Who existed first : The Carolina Rhinos or the Florence Phantoms ?
+carolina rhinos existed first
+[12.673408508300781]
+rhinos were first introduced in 2002 rhinos were first introduced in 2002
+
+Which uses math and chance more to figure out things that might happen ; Probabilistic logic or Causality ?
+probabilistic logic
+[10.347721099853516]
+probabilism
+
+Which UN resolution involves territory further north ; 1666 or 1663 ?
+1666
+[17.94696044921875]
+1666
+
+In which countries waters might you be able to find Conus ebraeus and Conus miliaris ?
+you ll locate conus ebraeus and conus miliaris off coast of india conus ebraeus is native to there and miliaris is everywhere
+[19.35228157043457]
+asiaus miliaris is found in asia conus miliaris are found in asia and conus miliaris conus milia
+
+What are the inspirations for some of Wilson ' s songs .
+perter gabriel kate bush talk talk tears for fears and acoustic guitar playing busker
+[10.382452964782715]
+
+
+What continent were both armadillos and rhea both native to ?
+they are both native to south america
+[9.981934547424316]
+america were both native to america
+
+How many years were there between when Elfin Sports Cars was founded and when it began manufacturing cars ?
+2
+[12.632346153259277]
+2 years
+
+Does the term North Indian Culture officially describe native Indo - European speakers ?
+no it describes cultural heritage of 7 north indian states
+[14.205629348754883]
+no word indo european
+
+Did Arthur Quiller - Couch or Helen H . Gardener have a longer pen name that they used for their works ?
+helen h gardener
+[16.24362564086914]
+arthur quiller couchler couchler couchler couchler couchler couchler co
+
+What family are the Aphis nerii and Lipaphis erysimi part of ?
+they are part of family aphididae
+[9.927953720092773]
+they are family members of aphid family liphids family they belong to family they belong to family
+
+Did Dan Baird pursue a solo career before or after forming the Satellites band in Atlanta ?
+after
+[9.541205406188965]
+after

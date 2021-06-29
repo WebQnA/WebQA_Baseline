@@ -1,0 +1,21 @@
+
+recover_step = 1, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.5693307173252106
+recover_step = 2, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.5586286985874176
+recover_step = 3, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.4922297585010529
+recover_step = 4, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.4283421063423157
+recover_step = 5, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.4564908105134964
+recover_step = 6, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.4247191292047501
+recover_step = 7, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.5283825981616974
+recover_step = 8, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.5616934287548065
+recover_step = 9, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.6639830183982849
+recover_step = 10, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.635988205075264

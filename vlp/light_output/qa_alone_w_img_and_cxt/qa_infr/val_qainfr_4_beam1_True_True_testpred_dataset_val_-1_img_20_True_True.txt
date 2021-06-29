@@ -1,0 +1,38 @@
+21-05-27 16:55:01
+Decoding ... -------------------- recover from step 6 -----------------------
+-------------------- QA Decoding ------------------------
+use_img_content = True
+use_img_meta = True
+split = val
+use_num_samples = 4
+ --------------------- metrics -----------------------
+{'Bleu_1': 0.23529411763321803, 'Bleu_2': 0.1902605976488841, 'Bleu_3': 0.148742476951056, 'Bleu_4': 2.3951143732984473e-05, 'METEOR': 0.29237803219671876, 'ROUGE_L': 0.35565819861431874}
+
+F1_avg = 0.5937450586260041
+F1_max = 0.5937450586260041
+EM = 0.25
+
+F1_avg_bertscore = 0.9292031973600388
+F1_max_bertscore = 0.9292031973600388
+
+-----Starting writing results:-----
+
+What was Catriona Le May Doan wearing on her hands at the 2010 winter Olympic opening ceremonies ?
+mittens
+[8.356307029724121]
+white coat
+
+Is the Comcast building taller than the NBC building ?
+yes
+[15.838457107543945]
+yes
+
+In the British Museum , which of these two statues has more detailed facial features : the Statue of Gudea or the Easter Island ancestor statue ?
+statue of gudea
+[14.531122207641602]
+statue of gudea of gudea gudea gudea gudea gude of gudea gudea g
+
+Are the sign at Jerusalem , Ninth Station of Via Dolorosa and the sign in Jerusalem where Pilate had Jesus whipped both engraved in stone ?
+no
+[9.530019760131836]
+yes

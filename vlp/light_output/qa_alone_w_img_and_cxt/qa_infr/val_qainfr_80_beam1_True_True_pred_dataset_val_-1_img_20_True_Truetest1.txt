@@ -1,0 +1,418 @@
+21-05-27 17:16:58
+Decoding ... -------------------- recover from step 6 -----------------------
+-------------------- QA Decoding ------------------------
+use_img_content = True
+use_img_meta = True
+split = val
+use_num_samples = 80
+ --------------------- metrics -----------------------
+{'Bleu_1': 0.23255813953380206, 'Bleu_2': 0.12451456127218735, 'Bleu_3': 0.08163288435066905, 'Bleu_4': 0.05714869429649262, 'METEOR': 0.20065344215916422, 'ROUGE_L': 0.4150075566760716}
+
+F1_avg = 0.44895585341904176
+F1_max = 0.44895585341904176
+EM = 0.3625
+
+F1_avg_bertscore = 0.9399970509111881
+F1_max_bertscore = 0.9399970509111881
+
+-----Starting writing results:-----
+
+What was Catriona Le May Doan wearing on her hands at the 2010 winter Olympic opening ceremonies ?
+mittens
+[8.356307029724121]
+white coat
+
+Is the Comcast building taller than the NBC building ?
+yes
+[15.83845329284668]
+yes
+
+In the British Museum , which of these two statues has more detailed facial features : the Statue of Gudea or the Easter Island ancestor statue ?
+statue of gudea
+[14.531108856201172]
+statue of gudea of gudea gudea gudea gudea gude of gudea gudea g
+
+Are the sign at Jerusalem , Ninth Station of Via Dolorosa and the sign in Jerusalem where Pilate had Jesus whipped both engraved in stone ?
+no
+[9.530020713806152]
+yes
+
+Which sculptures has more people wearing arm decorations : the River Ganges at Musée Rodin or the panel on the south face of the Dashavatara temple ?
+panel at dashavatara temple
+[10.79854965209961]
+river in temple at river in temple in river in river in river in river in river
+
+Can I see banisters at the front of a building both on West Main Street in Covington , Virginia and West Main Street in Hillsboro , New Hampshire ?
+yes
+[10.433189392089844]
+yes
+
+Does the US Bancorp building in Minneapolis have a dome on top ?
+no
+[11.963281631469727]
+yes
+
+Is the Edmonton Expo Center made up of reflective material or non - reflective material ?
+reflective material
+[10.827510833740234]
+reflective reflective
+
+Is California Adventure open to the public after sunset ?
+yes
+[11.821868896484375]
+yes
+
+When Vidya Balan is at Esha Deol ' s wedding reception , are her earrings short or do they dangle from her ears ?
+dangle
+[14.50613784790039]
+longer longer longer longer longer longer longerer longer longer longer longer longer long
+
+Is there more than one character in both Jules - Joseph Lefebvre ' s Graziella at The Metropolitan Museum of Art and Marie Cazin ' s Les Oubliées ?
+no
+[19.594148635864258]
+yes
+
+Is the splash of color on the Plateni butterfly on the top wings or bottom wings ?
+bottom
+[12.997188568115234]
+top wings
+
+Are both the roofs of the Caltech Laboratories of the Biological Sciences and the Caltech Sloan Laboratory flat ?
+yes
+[11.038610458374023]
+no
+
+What colour is the scarf Yvette Guilbert has wrapped around her waist in the L ' Horloge poster ?
+pink
+[8.955699920654297]
+red
+
+What two animals are featured in statues in Madrid ' s Puerta del Sol square ?
+bear horse
+[9.895109176635742]
+horse and horse
+
+Is the dome of the Adler Planetarium made of the same material as the rest of the building ?
+no
+[14.13477897644043]
+no
+
+What color flowers were displayed outside of the Hotel al codega san marco venezia in June of 2011 ?
+red
+[8.070319175720215]
+red
+
+Does the pizzeria located on 95 MacDougal Street in New York City advertise the price of their pizza on their building ?
+yes
+[13.571105003356934]
+yes
+
+What item was Ming Xi wearing around her waist when she walked the runway at the Michael Kors Spring / Summer 2014 show ?
+thin brown belt
+[7.201829433441162]
+black dress
+
+What is the number on the train in Hogwarts Express at Universal ’ s Islands of Adventure ?
+5972
+[11.18408203125]
+2
+
+What brand of shoes was Kevin Love ( UCLA ) wearing when defending Jordan Hill ( Arizona ) , in front of UCLA ' s Russell Westbrook and Arizona ' s Jawann McClellan ?
+adidas
+[14.823390007019043]
+nike
+
+Do the facades of the Baiyoke Tower I in Pratunam and the Empire Tower in Bangkok both reflect light ?
+no
+[13.696136474609375]
+yes
+
+Are rectangular signs posted on New Jersey State Route 23 at New City Road and Interstate 80 just east of Exit 12 in Hope Township ?
+yes
+[9.019989013671875]
+yes
+
+Which vehicle rides closer to the ground , the Wiesmann Spyder Concept or the Cadillac Escalade 6 . 2 V8 Platinum ?
+wiesmann spyder concept
+[17.411088943481445]
+wiesmann 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6
+
+Are the doors to the left and right of the Sherlock Holmes Museum , Baker Street 221B , London arched ?
+no
+[9.074202537536621]
+yes
+
+Which fungus has a purple color : Hydnellum regium or Mycena seynesii ?
+mycena seynesii
+[21.583391189575195]
+hydnellum regi
+
+In the painting Bartholomew the Apostle by Pyotr Basin , can one or two of the apostle ' s feet be seen ?
+only 1
+[9.430410385131836]
+2
+
+Are the Aquarena Springs Hotel and the Minneapolis Old Stone Arch Bridge Curve both made of stone ?
+no
+[8.948184967041016]
+yes
+
+How many rows of keys are on the MIM French Harpsichord ?
+2
+[11.995662689208984]
+2
+
+Are there sculpted works in Giovanni Paolo Panini ' s paintings Modern Rome and Roma Antica ?
+yes
+[7.576277732849121]
+yes
+
+Which instrument is more angled ; Schwenk + Seggelke , Bassett Becher or Ganassi - type - alto - recorder - by - Fred - Morgan ?
+schwenk seggelke bassett becher
+[17.17519760131836]
+schwenk altoh alto alto alto alto alto alto alto alto alto alto altoh
+
+Is the Puck statue outside the Puck building in Soho the same color as the building itself ?
+no
+[12.098752975463867]
+no
+
+Is there a dome on top of the Gibson showcase building on Beale Street ?
+no
+[9.256841659545898]
+yes
+
+What color do the bodies of the Malaysian replica of a Ganesh statue and the Ganesh statue in Trinidad and Tobago share ?
+gold
+[10.265979766845703]
+white
+
+What is the color of the robe worn by the angel in the painting Kneeling Angel by Bernardo di Stefano Rosselli ?
+red
+[11.375085830688477]
+white
+
+Are there less than 3 lines on the track for Olympic Stadium Berlin ?
+no
+[12.117141723632812]
+no
+
+Which has the taller break lights , the 2011 Cadillac Escalade or the Bentley Continental GT ?
+2011 cadillac escalade
+[14.78211498260498]
+bentley continental gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt gt
+
+Are all of the windows of the Saint Hubert Chapel in the Amboise Castle the same distance from the ground ?
+no
+[13.717758178710938]
+no
+
+Do The Brandy Library in Manhattan , New York City and the Grand Study Hall at the New York Public Library both have lighting on their tables ?
+yes
+[8.256025314331055]
+yes
+
+Is there street parking available in front of Cinema Royal in Rome ?
+yes
+[10.697126388549805]
+yes
+
+Is there stadium seating or bleachers at Muscle beach in Venice Beach ?
+yes
+[9.98784065246582]
+bleachers at beach
+
+Is the framework in front of the Gallina Building in Memphis the same color as the Blues Guy Cafe at the corner of Beale and Second in Memphis ?
+yes
+[8.235579490661621]
+no
+
+Is Ganesh always portrayed with his trunk curled the same way ?
+no
+[12.785204887390137]
+no
+
+Does the Disney Art of Animation Resort have at least one magenta door ?
+yes
+[9.668207168579102]
+yes
+
+What is the shape of the lights at the base of the commemorative sculpture of the Beijing Olympic Games ?
+round
+[9.95120620727539]
+circle
+
+Looking at the engraving over the entry to Peabody Museum , Harvard University , what year was it built ?
+1877
+[7.49069356918335]
+1900
+
+Did the 2016 Rio Olympic Village have more tennis courts than the Olympiadorf in Munich ?
+no
+[12.657228469848633]
+no
+
+Does the Harpy Eagle ' s top beak slope up or down ?
+down
+[11.35275650024414]
+down
+
+Is water depicted in both the woman in the park painting and a fisherman painting by Georges Seurat ?
+yes
+[11.146116256713867]
+yes
+
+What is the color of the roof in Paul Gauguin ' s painting , Osny , Stormy Weather ?
+black and red
+[8.982870101928711]
+white
+
+What type of sculpture is on top of the Bethesda Fountain in Central Park ?
+metal angel
+[8.15291976928711]
+fountain
+
+How many entryways did Central Library Building of Boston have in 1920 ?
+3
+[12.822539329528809]
+2
+
+What material is the chimney at the White Tower in Cambridge , MA made from ?
+metal
+[10.433923721313477]
+brick
+
+What hotel is next to Bally ' s and across the street from Caesar ' s Palace ?
+flamingo
+[8.915824890136719]
+hotel
+
+Which has the more curved roof , Les Halles in Paris or the Berlin Alexanderplatz ' s Haus der Elektroindustrie ?
+les halles
+[9.216609954833984]
+les halles in paris
+
+Which instrument has more round pull stops ; Ann Arbor Organ Co . reed pump organ or Hammond S - 6 Chord Organ ?
+ann arbor organ co reed pump organ
+[12.075535774230957]
+ann arbor organ co reed co reed reed pumpkins co s co s co s s co s co
+
+Which building at the University of Oklahoma has a flowering tree on each side of the sidewalk in front of the entrance ?
+gaylord hall
+[9.61459732055664]
+building
+
+Which Fort Worth building has a bay window ; Masonic Temple or Land Title Block building ?
+land title block building
+[7.632150173187256]
+masonic temple
+
+Is the Jail cell in Old Town , San Diego , California the same color as the United States Capitol in Washington D . C . ?
+no
+[12.053646087646484]
+no
+
+Is the base of the Mycena alexandri thick or thin ?
+thin
+[13.55472183227539]
+thin
+
+What is the type of facade on the Uniqlo store in Perth ' s Murray Street mall ?
+glass facade
+[8.979248046875]
+deced glass
+
+Which is composed of more individual stalks , the Clavulinopsis fusiformis or the Hongo Sin Sangrita ?
+clavulinopsis fusiformis
+[15.708084106445312]
+clavulinopsis fusiform fusiformiformiformiformiformiformiformiformiformiformiformiformiformiformiformiformiformiformiformiformiform
+
+Which mushroom ' s cap can hold water - Russula paludosa or Pholiota communis ?
+russula paludosa
+[11.568917274475098]
+pholio paludosa paludosa paludosasasasasasasaulasasasasasasasasasa
+
+Is the canopy or rear wing higher on the Copenhagen car at the A . J . Foyt : A Legendary Exhibition at the Indianapolis Motor Speedway Museum ?
+rear wing
+[10.239212036132812]
+rear wing
+
+Do the flowers on both the Plumeria and the Herbaceous peony grow in bunches on the same stem ?
+no
+[12.052433013916016]
+no
+
+Is the statue near Albertina shorter than people ?
+no
+[13.374162673950195]
+yes
+
+Does the Ernst and Young building in Detroit face the same square that the Compuware HQ building does ?
+yes
+[8.949972152709961]
+no
+
+What kind of trees can you find along the Las Vegas Strip ?
+palm trees
+[9.636685371398926]
+palm trees
+
+Are crowds of people allowed to peruse at the Chelsea Market ?
+yes
+[9.546465873718262]
+yes
+
+Which Tokyo train has a higher number to the left of the S ?
+97s
+[10.08434009552002]
+train
+
+Looking at the WTC Hub from the ground , do the two sets of ribs appear to be the same length ?
+no
+[13.767720222473145]
+no
+
+Do the Chinese Trumpet Flower and the Japanese Honeysuckle have the same color flowers ?
+no
+[13.721010208129883]
+no
+
+Does the flight of stairs at the bottom of the Walnut Hills High School have more than 200 steps ?
+no
+[13.945714950561523]
+yes
+
+Which is more numerous at the entrance to Saint Mark ' s Basilica in Italy : flags or stone arches ?
+arches
+[9.976644515991211]
+flags
+
+Were multiple colors used to illuminate the stadium during the 2008 Olympic opening ceremony ?
+yes
+[12.584199905395508]
+yes
+
+Is In Your Eye Studio taller than the Carson Engineering Center ?
+no
+[11.37864875793457]
+yes
+
+Is Orchard Road the same number of lanes as South Bridge Road in Singapore ?
+no
+[12.811647415161133]
+no
+
+What surrounds the Bang Pa - In Floating Pavilion ?
+white fence
+[10.453063011169434]
+bridge
+
+What color was the outer circle on the curling playing field at the 2010 Winter Olympics ?
+green
+[7.651895999908447]
+red
+
+What color is a Blue Coua ' s beak ?
+black
+[9.461851119995117]
+red

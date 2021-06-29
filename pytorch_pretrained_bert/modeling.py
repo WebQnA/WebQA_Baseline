@@ -1678,7 +1678,7 @@ class BertForWebqa(PreTrainedBertModel):
                     re = overlap / (torch.sum(label, dim=-1) + 1e-5) # batch_size
                     #print(torch.sum(label, dim=-1)[0])
                     f1 = 2*pr*re / (pr+re+1e-5)
-                    th_dict[th] = [torch.mean(pr).item(), torch.mean(re).item(), torch.mean(f1).item()]
+                    th_dict[th] = [torch.sum(pr).item(), torch.sum(re).item(), torch.sum(f1).item()]
                 return th_dict, pred.detach().cpu()
                 '''
                 num_flags = torch.sum(target, dim=-1)
