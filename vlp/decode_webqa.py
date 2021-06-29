@@ -42,8 +42,10 @@ from pycocoevalcap.cider.cider import Cider
 from datetime import datetime
 from pytz import timezone
 from word2number import w2n
-import re
-
+import string, re
+from collections import Counter
+import spacy
+nlp = spacy.load("en_core_web_sm", disable=["ner","textcat","parser"])
 # SPECIAL_TOKEN = ["[UNK]", "[PAD]", "[CLS]", "[MASK]"]
 def toNum(word):
     try: return w2n.word_to_num(word)
@@ -51,26 +53,32 @@ def toNum(word):
         return word
 
 def normalize_text(s):
-    import string, re
     def remove_articles(text):
         regex = re.compile(r"\b(a|an|the)\b", re.UNICODE)
         return re.sub(regex, " ", text)
 
     def white_space_fix(text): # additional: converting numbers to digit form
         return " ".join([str(toNum(w)) for w in text.split()])
-        #return " ".join(text.split())
 
     def remove_punc(text):
-        exclude = set(string.punctuation)
-        return "".join(ch for ch in text if ch not in exclude)
+        exclude = set(string.punctuation) - set(['.'])
+        text1 = "".join(ch for ch in text if ch not in exclude)
+        return re.sub(r"\.(?!\d)", "", text1) # remove '.' if it's not a decimal point
 
     def lower(text):
         return text.lower()
     
-    if len(s.strip().split()) == 1:
-        return white_space_fix(lower(s))
+    def lemmatization(text):
+        return " ".join([token.lemma_ for token in nlp(text)])
 
-    return white_space_fix(remove_articles(remove_punc(lower(s))))
+    if len(s.strip()) == 1:
+        # accept article and punc if input is a single char
+        return white_space_fix(lower(s))
+    elif len(s.strip().split()) == 1: 
+        # accept article if input is a single word
+        return lemmatization(white_space_fix(remove_punc(lower(s))))
+
+    return lemmatization(white_space_fix(remove_articles(remove_punc(lower(s)))))
 
 # Language eval with Caption metrics
 class Evaluate(object):
@@ -131,25 +139,32 @@ def compute_bertscore(cands, a):
 # VQA Eval (SQuAD style EM, F1)
 def compute_vqa_metrics(cands, a):
     if len(cands) == 0: return (0,0,0)
-    bow_a = a.split()
-    #bow_a = [str(toNum(w)) for w in bow_a]
+    bow_a = normalize_text(a).split()
     F1 = []
     EM = 0
+    RE = []
+    PR = []
     for c in cands:
-        bow_c = c.split()
-        #bow_c = [str(toNum(w)) for w in bow_c]
+        bow_c = normalize_text(c).split()
         if bow_c == bow_a:
             EM = 1
-        #print(bow_a, bow_c)
-        overlap = float(len([w for w in bow_c if w in bow_a]))
-        precision = overlap/(len(bow_c) + 1e-5)
-        recall = overlap / (len(bow_a) + 1e-5)
+        common = Counter(bow_a) & Counter(bow_c)
+        num_same = sum(common.values())
+        if num_same == 0:
+            return (0,0,0,0,0)
+        precision = 1.0 * num_same / len(bow_c)
+        recall = 1.0 * num_same / len(bow_a)
+        RE.append(recall)
+        PR.append(precision)
+
         f1 = 2*precision*recall / (precision + recall + 1e-5)
         F1.append(f1)
     
+    PR_avg = np.mean(PR)
+    RE_avg = np.mean(RE)
     F1_avg = np.mean(F1)
     F1_max = np.max(F1)
-    return (F1_avg, F1_max, EM)
+    return (F1_avg, F1_max, EM, RE_avg, PR_avg)
 
 
 def detokenize(tk_list):
@@ -196,10 +211,14 @@ def main():
                         help="Bert config file path.")
     parser.add_argument("--bert_model", default="bert-base-cased", type=str,
                         help="Bert pre-trained model selected in the list: bert-base-cased, bert-large-cased")
-    parser.add_argument("--output_dir",
-                        default='',
+    parser.add_argument("--ckpts_dir",
+                        default='/data/yingshac/MMMHQA/ckpts/no_model_name_specified/',
                         type=str,
-                        help="The output directory where the model predictions and ckpts will be written")
+                        help="The output directory where checkpoints will be written.")
+    parser.add_argument("--output_dir",
+                        default='light_output/no_model_name_specified/',
+                        type=str,
+                        help="The output directory where the model predictions and loss curves.")
     parser.add_argument("--output_suffix", default="", type=str)
     parser.add_argument("--log_file",
                         default="training.log",
@@ -242,7 +261,7 @@ def main():
 
     # webqa dataset
     parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_J.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_dataset_J_0529-Copy1.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_J_Qcate.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
     parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
@@ -277,8 +296,13 @@ def main():
                         help="Truncate_config: Whether we should always truncate tail.")
     parser.add_argument("--num_workers", default=4, type=int, help="Number of workers for the data loader.")
 
-    parser.add_argument('--image_root', type=str, default='/mnt/dat/COCO/images')		
+    parser.add_argument('--image_root', type=str, default='/mnt/dat/COCO/images')	
+
     parser.add_argument('--split', type=str, default='val')
+    # available Qcate in img data: {'YesNo': 8432, 'Others': 6748, 'choose': 5240, 'number': 2341, 'color': 2044, 'shape': 662}
+    # available Qcate in txt data: ### TBD
+    parser.add_argument('--Qcate', type=str, default=['all'])
+
     parser.add_argument('--drop_prob', default=0.1, type=float)
     parser.add_argument('--enable_butd', action='store_true',
                         help='set to take in region features')
@@ -306,6 +330,7 @@ def main():
 
     # output config
     os.makedirs(args.output_dir, exist_ok=True)
+    os.makedirs(args.ckpts_dir, exist_ok=True)
     os.makedirs(os.path.join(args.output_dir, 'qa_infr'), exist_ok=True)
     json.dump(args.__dict__, open(os.path.join(
         args.output_dir, 'opt.json'), 'w'), sort_keys=True, indent=2)
@@ -324,7 +349,7 @@ def main():
     tokenizer.max_len = args.max_seq_length
 
     processor = webqa_loader.Preprocess4webqaDecoder(list(tokenizer.vocab.keys()), \
-            tokenizer.convert_tokens_to_ids, max_len=args.max_seq_length, len_vis_input=args.len_vis_input, \
+            tokenizer.convert_tokens_to_ids, seed=args.seed, max_len=args.max_seq_length, len_vis_input=args.len_vis_input, \
             max_len_a=args.max_len_a, max_len_Q=args.max_len_Q, max_len_img_cxt=args.max_len_img_cxt, \
             max_tgt_len=args.max_tgt_len, new_segment_ids=args.new_segment_ids, \
             truncate_config={'trunc_seg': args.trunc_seg, 'always_truncate_tail': args.always_truncate_tail}, \
@@ -333,7 +358,7 @@ def main():
     infr_dataloaders = []
     if 'txt' in args.answer_provided_by:
         args.output_suffix =  args.txt_dataset_json_path.split('/')[-1].replace(".json", "") + args.output_suffix
-        train_dataset = webqa_loader.webqaDataset_qa(dataset_json_path=args.txt_dataset_json_path, split=args.split, \
+        train_dataset = webqa_loader.webqaDataset_qa(dataset_json_path=args.txt_dataset_json_path, split=args.split, Qcate=args.Qcate, \
                 batch_size=args.batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
                 processor=processor, device=device)
 
@@ -342,7 +367,7 @@ def main():
 
     if "img" in args.answer_provided_by:
         args.output_suffix = args.img_dataset_json_path.split('/')[-1].replace(".json", "") + args.output_suffix
-        train_dataset = webqa_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, \
+        train_dataset = webqa_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, Qcate=args.Qcate, \
                 batch_size=args.batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
                 distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
                 processor=processor, device=device)
@@ -374,8 +399,8 @@ def main():
         forbid_ignore_set = set(tokenizer.convert_tokens_to_ids(w_list))
     
     recover_step = None
-    if len(args.output_dir)>0:
-        recover_step = _get_max_epoch_model(args.output_dir)
+    if len(args.ckpts_dir)>0:
+        recover_step = _get_max_epoch_model(args.ckpts_dir)
         if args.recover_step: recover_step = args.recover_step
         print("detect output_dir, recover_step = ", recover_step)
     if args.from_scratch or args.recover_ori_ckpt: recover_step = None
@@ -397,7 +422,7 @@ def main():
             print("Decoding ... -------------------- recover from step {} -----------------------".format(recover_step))
             log_txt_content.append("Decoding ... -------------------- recover from step {} -----------------------".format(recover_step))
             logger.info("*****Decoding ...  Recover model: %d *****", recover_step)
-            model_recover = torch.load(os.path.join(args.output_dir, "model.{0}.bin".format(recover_step)))
+            model_recover = torch.load(os.path.join(args.ckpts_dir, "model.{0}.bin".format(recover_step)))
         elif args.model_recover_path:
             print("Decoding ... ------------------ recover from path ----------------------")
             log_txt_content.append("Decoding ... ------------------ recover from path ----------------------")
@@ -478,7 +503,7 @@ def main():
                             if t in ("[SEP]", "[PAD]"):
                                 break
                             output_tokens.append(t)
-                        output_sequences.append(normalize_text(' '.join(detokenize(output_tokens))))
+                        output_sequences.append(' '.join(detokenize(output_tokens)))
                     
                     output_lines.append(output_sequences)
                     #print("\noutput_sequence for cur batch = ", output_sequence)
@@ -486,7 +511,7 @@ def main():
                 iter_bar.set_description('Step = {}'.format(step))
 
         Q, A = infr_dataloader.dataset.get_QA_list()
-        Q, A = [' '.join(detokenize(q)) for q in Q], [normalize_text(' '.join(detokenize(a))) for a in A]
+        Q, A = [' '.join(detokenize(q)) for q in Q], [' '.join(detokenize(a)) for a in A]
         assert len(Q) == len(A)
         
         output_Q.extend(Q)
@@ -501,14 +526,19 @@ def main():
     F1_avg_scores = []
     F1_max_scores = []
     EM_scores = []
+    RE_scores = []
+    PR_scores = []
     F1_avg_bertscores = []
     F1_max_bertscores = []
     for cands, a in zip(output_lines, output_A):
         assert len(cands)==args.beam_size
-        F1_avg, F1_max, EM = compute_vqa_metrics([cands[0]], a)
+        F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics([cands[0]], a)
         F1_avg_scores.append(F1_avg)
         F1_max_scores.append(F1_max)
         EM_scores.append(EM)
+        RE_scores.append(RE_avg)
+        PR_scores.append(PR_avg)
+
         F1_avg_bertscore, F1_max_bertscore = compute_bertscore([cands[0]], a)
         F1_avg_bertscores.append(F1_avg_bertscore)
         F1_max_bertscores.append(F1_max_bertscore)
@@ -516,11 +546,17 @@ def main():
     F1_avg = np.mean(F1_avg_scores)
     F1_max = np.mean(F1_max_scores)
     EM = np.mean(EM_scores)
+    RE_avg = np.mean(RE_scores)
+    PR_avg = np.mean(PR_scores)
+
     F1_avg_bertscore = np.mean(F1_avg_bertscores)
     F1_max_bertscore = np.mean(F1_max_bertscores)
     print("F1_avg = {}".format(F1_avg))
     print("F1_max = {}".format(F1_max))
     print("EM = {}".format(EM))
+    print("RE_avg = {}".format(RE_avg))
+    print("PR_avg = {}".format(PR_avg))
+
     print("F1_avg_bertscore = {}".format(F1_avg_bertscore))
     print("F1_max_bertscore = {}".format(F1_max_bertscore))
 
@@ -539,6 +575,8 @@ def main():
         f.write(str(scores))
         f.write('\n\n')
         f.write('\n'.join(["F1_avg = {}".format(F1_avg), "EM = {}".format(EM)]))
+        f.write('\n\n')
+        f.write('\n'.join(["RE_avg = {}".format(RE_avg), "PR_avg = {}".format(PR_avg)]))
         f.write('\n\n')
         f.write('\n'.join(["F1_avg_bertscore = {}".format(F1_avg_bertscore)]))
         f.write('\n\n')

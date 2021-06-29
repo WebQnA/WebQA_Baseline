@@ -9,6 +9,7 @@ os.environ['MASTER_ADDR'] = 'localhost'
 #os.environ['MASTER_PORT'] = '12355'
 import sys
 sys.path.append("/home/yingshac/CYS/WebQnA/VLP")
+sys.path.append("/home/yingshan/CYS/WebQnA/VLP")
 import logging
 import glob
 import math, time
@@ -85,10 +86,14 @@ def main():
                         help="Bert pre-trained model selected in the list: bert-base-cased, bert-large-cased.")
     parser.add_argument("--config_path", default=None, type=str,
                         help="Bert config file path.")
-    parser.add_argument("--output_dir",
-                        default='tmp',
+    parser.add_argument("--ckpts_dir",
+                        default='/data/yingshac/MMMHQA/ckpts/no_model_name_specified/',
                         type=str,
-                        help="The output directory where the model predictions and checkpoints will be written.")
+                        help="The output directory where checkpoints will be written.")
+    parser.add_argument("--output_dir",
+                        default='light_output/no_model_name_specified/',
+                        type=str,
+                        help="The output directory where the model predictions and loss curves.")
     parser.add_argument("--log_file",
                         default="training.log",
                         type=str,
@@ -186,7 +191,7 @@ def main():
 
     # webqa dataset
     parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_J.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_dataset_J_0529-Copy1.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_J_Qcate.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
     parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
@@ -221,6 +226,10 @@ def main():
     parser.add_argument('--dataset', default='coco', type=str,
                         help='coco | flickr30k | cc')
     parser.add_argument('--split', type=str, default=['train', 'val', 'ind_test', 'ood_test'])
+
+    # available Qcate in img data: {'YesNo': 8432, 'Others': 6748, 'choose': 5240, 'number': 2341, 'color': 2044, 'shape': 662}
+    # available Qcate in txt data: ### TBD
+    parser.add_argument('--Qcate', type=str, default=['all'])
 
     parser.add_argument('--world_size', default = 1, type = int,
                         help = 'number of distributed processes')
@@ -261,8 +270,10 @@ def main():
     args.use_img_content = not args.no_img_content
     args.use_txt_fact= not args.no_txt_fact
     assert args.len_vis_input == 100, "run main: only support 100 region features per image"
+    assert args.output_dir.split('/')[-1] == args.ckpts_dir.split('/')[-1], "Warning: folder names for output & ckpts are not the same"
     # output config
     os.makedirs(args.output_dir, exist_ok=True)
+    os.makedirs(args.ckpts_dir, exist_ok=True)
     os.makedirs(os.path.join(args.output_dir, "figs"), exist_ok=True)
     json.dump(args.__dict__, open(os.path.join(
         args.output_dir, 'opt.json'), 'w'), sort_keys=True, indent=2)
@@ -322,7 +333,7 @@ def main():
     # doesn't support WhitespaceTokenizer
 
     processor = webqa_loader.Preprocess4webqa(args.max_pred, args.mask_prob, \
-            list(tokenizer.vocab.keys()), tokenizer.convert_tokens_to_ids, max_len=args.max_seq_length, \
+            list(tokenizer.vocab.keys()), tokenizer.convert_tokens_to_ids, seed=args.seed, max_len=args.max_seq_length, \
             len_vis_input=args.len_vis_input, max_len_a=args.max_len_a, max_len_b=args.max_len_b, \
             max_len_img_cxt=args.max_len_img_cxt, new_segment_ids=args.new_segment_ids, \
             truncate_config={'trunc_seg': args.trunc_seg, 'always_truncate_tail': args.always_truncate_tail}, \
@@ -332,7 +343,7 @@ def main():
     train_samplers = []
     if "filter" in args.task_to_learn:
         if "txt" in args.answer_provided_by:
-            train_dataset = webqa_loader.webqaDataset_filter(dataset_json_path=args.txt_dataset_json_path, split=args.split, \
+            train_dataset = webqa_loader.webqaDataset_filter(dataset_json_path=args.txt_dataset_json_path, split=args.split, Qcate=args.Qcate, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
                     processor=processor, filter_max_choices=args.txt_filter_max_choices, device=device)
 
@@ -341,7 +352,7 @@ def main():
             train_samplers.append(train_sampler)
         
         if "img" in args.answer_provided_by:
-            train_dataset = webqa_loader.webqaDataset_filter_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, \
+            train_dataset = webqa_loader.webqaDataset_filter_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, Qcate=args.Qcate, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
                     distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
                     processor=processor, filter_max_choices=args.img_filter_max_choices, device=device)
@@ -351,7 +362,7 @@ def main():
     
     if "qa" in args.task_to_learn:
         if "txt" in args.answer_provided_by:
-            train_dataset = webqa_loader.webqaDataset_qa(dataset_json_path=args.txt_dataset_json_path, split=args.split, \
+            train_dataset = webqa_loader.webqaDataset_qa(dataset_json_path=args.txt_dataset_json_path, split=args.split, Qcate=args.Qcate, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
                     processor=processor, device=device)
 
@@ -360,7 +371,7 @@ def main():
             train_samplers.append(train_sampler)
         
         if "img" in args.answer_provided_by:
-            train_dataset = webqa_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, \
+            train_dataset = webqa_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, Qcate=args.Qcate, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
                     distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
                     processor=processor, device=device)
@@ -386,7 +397,7 @@ def main():
         logger.info("enable fp16 with amp")
 
     # Prepare model
-    recover_step = _get_max_epoch_model(args.output_dir)
+    recover_step = _get_max_epoch_model(args.ckpts_dir)
     if args.recover_step: recover_step = args.recover_step
     if args.recover_ori_ckpt or args.from_scratch: recover_step = None
     if args.from_scratch: args.model_recover_path = None
@@ -421,7 +432,7 @@ def main():
             log_txt_content.append("-------------------- recover from step {} -----------------------".format(recover_step))
             logger.info("***** Recover model: %d *****", recover_step)
             model_recover = torch.load(os.path.join(
-                args.output_dir, "model.{0}.bin".format(recover_step)))
+                args.ckpts_dir, "model.{0}.bin".format(recover_step)))
             # recover_step == number of epochs
             global_step = math.floor(
                 recover_step * t_total * 1. / args.num_train_epochs)
@@ -513,7 +524,7 @@ def main():
     if recover_step:
         logger.info("***** Recover optimizer: %d *****", recover_step)
         optim_recover = torch.load(os.path.join(
-            args.output_dir, "optim.{0}.bin".format(recover_step)))
+            args.ckpts_dir, "optim.{0}.bin".format(recover_step)))
         if hasattr(optim_recover, 'state_dict'):
             optim_recover = optim_recover.state_dict()
         optimizer.load_state_dict(optim_recover)
@@ -560,9 +571,7 @@ def main():
             loss_dict = [[],[],[],[]]
             scst_reward = []
             for step, loader_idx in enumerate(iter_bar):
-                
                 batch = next(dataloader_iters[loader_idx])
-
                 for param_tensor in model.state_dict():
                     if torch.isnan(model.state_dict()[param_tensor]).any().item():
                         print("\n nan exists in ", param_tensor)
@@ -683,9 +692,9 @@ def main():
             model_to_save = model.module if hasattr(
                 model, 'module') else model  # Only save the model it-self
             output_model_file = os.path.join(
-                args.output_dir, "model.{0}.bin".format(i_epoch))
+                args.ckpts_dir, "model.{0}.bin".format(i_epoch))
             output_optim_file = os.path.join(
-                args.output_dir, "optim.{0}.bin".format(i_epoch))
+                args.ckpts_dir, "optim.{0}.bin".format(i_epoch))
             if args.global_rank in (-1, 0): # save model if the first device or no dist
                 torch.save(copy.deepcopy(model_to_save).cpu().state_dict(), output_model_file)
                 torch.save(optimizer.state_dict(), output_optim_file) # disable for now, need to sanitize state and ship everthing back to cpu
