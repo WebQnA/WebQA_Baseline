@@ -1,4 +1,4 @@
-import json, random, time
+import json, random, time, sys, os
 import numpy as np
 from pprint import pprint
 from collections import Counter, defaultdict
@@ -21,9 +21,16 @@ import argparse
 np.set_printoptions(precision=4)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--samples", type=str)
-parser.add_argument("--output_filename", type=str)
+#parser.add_argument("--samples", type=str)
+#parser.add_argument("--output_filename", type=str)
+parser.add_argument("--start", type=int)
+parser.add_argument("--end", type=int)
+parser.add_argument('--disable_print', action='store_true')
 args = parser.parse_args()
+assert args.end > args.start
+args.boundary = ((args.end-1) // 1000 + 1) * 1000
+if args.disable_print:
+    sys.stdout = open(os.devnull, 'w')
 
 API_URL = 'http://en.wikipedia.org/w/api.php'
 nlp = spacy.load('en_core_web_sm')
@@ -195,12 +202,12 @@ def get_keywords_and_relevant_pages_from_txt_sample(k):
     keywords = set(sum([[w.capitalize(), w.lower()] for w in keywords], []))
     titlewords = titlewords - PUNCTUATIONS
     
-    print("#pages before extension by hyperlink: ", len(anchor2page))
+    #print("#pages before extension by hyperlink: ", len(anchor2page))
     for f in new_txt_data[str(k)]['SupportingFacts']:
         d = find_pages_by_hyperlink(keywords.union(titlewords), f['url'])
         anchor2page.update(d)
     if '' in anchor2page: del anchor2page['']
-    print("#pages after extension by hyperlink: ", len(anchor2page))
+    #print("#pages after extension by hyperlink: ", len(anchor2page))
     
     A = new_txt_data[str(k)]['A']
     doc = nlp(A)
@@ -353,7 +360,6 @@ def get_sen2score_from_indx(k):
     print("answerwords = ", answerwords)
     print("goldfactwords = ", goldfactwords)
     
-    print(" -- find sentences from each page --")
     sen2score = {}
     cap2score = {}
     for title in anchor2page:
@@ -405,7 +411,52 @@ def add_html_row(k, sen2score, cap2score, word_lists, colors = ["(223, 255, 238)
     html += '<tr><td colspan=4><hr></td></tr>'
     return html.encode('ascii', 'xmlcharrefreplace').decode("utf-8")
 
+### Mining + Save as json
+try: upd_txt_data = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_txt_data/upd_txt_data_{}.json".format(args.boundary), "r"))
+except: upd_txt_data = {}
+for k in range(args.start, args.end):
+    if k%1 == 0: json.dump(upd_txt_data, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_txt_data/upd_txt_data_{}.json".format(args.boundary), "w"), indent=4)
+    if str(k) in upd_txt_data: continue
+    upd_txt_data[str(k)] = copy.deepcopy(new_txt_data[str(k)])
+    upd_txt_data[str(k)]['new_negFacts'] = []
+    upd_txt_data[str(k)]['img_negFacts'] = []
+    try: sen2score, cap2score, word_lists = get_sen2score_from_indx(k)
+    except KeyboardInterrupt: raise
+    except: continue
+    upd_txt_data[str(k)]['word_lists'] = {
+        'titlewords': " || ".join(word_lists[0]), 
+        'keywords': " || ".join(word_lists[1]), 
+        'goldfactwords': " || ".join(word_lists[2]), 
+        'answerwords': " || ".join(word_lists[3])
+    }
+    new_negFacts_count = 0
+    for s in sen2score:
+        if new_negFacts_count >= 40: break
+        if sen2score[s]['scores'][2] == 0.0 and sen2score[s]['scores'][1] == 0.0 and len(s.split()) in range(22, 60):
+            upd_txt_data[str(k)]['new_negFacts'].append({
+                'title': sen2score[s]['title'],
+                'scores': str(sen2score[s]['scores']),
+                'fact': s,
+                'url': sen2score[s]['link']
+            })
+            new_negFacts_count += 1
+    
+    img_negFacts_count = 0
+    for c in cap2score:
+        if img_negFacts_count >= 40: break
+        upd_txt_data[str(k)]['img_negFacts'].append({
+            'title': cap2score[c]['title'],
+            'scores': str(cap2score[c]['scores']),
+            'caption': c,
+            'url': cap2score[c]['link'],
+            'imgUrl': cap2score[c]['img']
+        })
+        img_negFacts_count += 1
 
+json.dump(upd_txt_data, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_txt_data/upd_txt_data_{}.json".format(args.boundary), "w"), indent=4)
+print("finish")
+'''
+### Mining + Create demo
 html = "<html><body>"
 html += "<style>th {position: sticky; top: 0;background: FloralWhite;}</style>"
 html += '<table border="0" style="table-layout: fixed; width: 100%; word-break:break-word">'
@@ -425,3 +476,4 @@ o = open(args.output_filename, 'wt')
 
 o.write(html)
 o.close()
+'''
