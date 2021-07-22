@@ -1,4 +1,4 @@
-import json, random
+import json, random, os, sys
 import numpy as np
 from pprint import pprint
 from collections import Counter, defaultdict
@@ -18,10 +18,21 @@ from itertools import tee
 import wikipedia
 import pylcs
 import string
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--start", type=int)
+parser.add_argument("--end", type=int)
+parser.add_argument('--disable_print', action='store_true')
+args = parser.parse_args()
+assert args.end > args.start
+args.boundary = ((args.end-1) // 3000 + 1) * 3000
+if args.disable_print:
+    sys.stdout = open(os.devnull, 'w')
 
 PUNCTUATIONS = set(string.punctuation)
 img_meta = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", "r"))
-img_dataset = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_J_0623-Copy1.json", "r"))
+img_dataset = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/dataset_J_split_update0721.json", "r"))
 pos_list = ['NUM', 'NOUN', 'ADJ', 'PROPN']
 nlp = spacy.load('en_core_web_sm')
 def IoU(A, B):
@@ -79,6 +90,7 @@ def get_keywords_from_img_sample(k):
     doc = nlp(Q)
     keywords = set([t.text for s in doc.sents for t in s if t.pos_ in ['NUM', 'PROPN', 'ADJ', 'NOUN'] or ((not t.is_sent_start) and t.text[0].isupper())])
     keywords = keywords - PUNCTUATIONS
+    keywords = set(sum([[w.capitalize(), w.lower()] for w in keywords], []))
     
     ### Extract noun chunks
     proper_words = [t.text for s in doc.sents for t in s if t.pos_ in ['NUM', 'PROPN', 'ADJ'] or ((not t.is_sent_start) and t.text[0].isupper())]
@@ -92,22 +104,11 @@ def get_keywords_from_img_sample(k):
     
     A = img_dataset[str(k)]['A'].replace('"', '')
     doc = nlp(A)
-    answerwords = set([t.text for t in doc if t.pos_ in pos_list or ((not t.is_sent_start) and t.text[0].isupper())])
+    answerwords = set([t.text for t in doc if t.pos_ in pos_list or ((not t.is_sent_start) and t.text[0].isupper())]) - keywords
     answerwords = answerwords - PUNCTUATIONS
-    
+    answerwords = set(sum([[w.capitalize(), w.lower()] for w in answerwords], []))
     
     return keywords, answerwords, Q, A, chunks
-
-# Given img_dataset indx & title, find sentences with word overlap with the question
-def find_sentences_from_indx_for_img(k, keywords, answerwords, chunks):
-    sen2score = {}
-    candidate_pages, updated_chunks = noun_chunk2candidate_page(chunks, k)
-    print("num of candidate pages = {}\n".format(len(candidate_pages)))
-    for title in candidate_pages:
-        page = "https://en.wikipedia.org/wiki/" + "_".join(title.split())
-        sen2score.update(find_sentences_from_page_for_img_data(title, page, keywords, answerwords))
-    sen2score = dict(sorted(sen2score.items(), key=lambda x: x[1]['scores'][0], reverse=True))
-    return sen2score, candidate_pages, updated_chunks
 
 def add_html_row_x_distractor_for_img(k, sen2score, word_lists, chunks, pages, colors=["(205, 245, 252)", "(255, 214, 222)"]):
     html = '<tr><td>{}.</td>'.format(k)
@@ -166,7 +167,59 @@ def noun_chunk2candidate_page(chunks, k):
         chunks = chunks.union(more_chunks)
     return pages, chunks
 
+# Given img_dataset indx & title, find sentences with word overlap with the question
+def find_sentences_from_indx_for_img(k, keywords, answerwords, chunks):
+    sen2score = {}
+    candidate_pages, updated_chunks = noun_chunk2candidate_page(chunks, k)
+    #print("num of candidate pages = {}\n".format(len(candidate_pages)))
+    for title in candidate_pages:
+        page = "https://en.wikipedia.org/wiki/" + "_".join(title.split())
+        sen2score.update(find_sentences_from_page_for_img_data(title, page, keywords, answerwords))
+    sen2score = dict(sorted(sen2score.items(), key=lambda x: x[1]['scores'][-1], reverse=True))
+    return sen2score, candidate_pages, updated_chunks
 
+### Mining + Save as json
+upd_img_data = {}
+try: upd_img_data = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_img_data/upd_img_data_{}.json".format(args.boundary), "r"))
+except: upd_img_data = {}
+for k in range(args.start, args.end):
+    if str(k) in upd_img_data: continue
+    if str(k) not in img_dataset: continue
+    
+    upd_img_data[str(k)] = copy.deepcopy(img_dataset[str(k)])
+    upd_img_data[str(k)]['DistractorFacts'] = []
+    keywords, answerwords, Q, A, chunks = get_keywords_from_img_sample(k)
+    d, pages, chunks = find_sentences_from_indx_for_img(k, keywords, answerwords, chunks)
+    print(k)
+    print("Q = ", Q)
+    print("Keywords = {}".format(keywords))
+    print("A = ", A)
+    print("answerwords = {}".format(answerwords))
+    print("Noun chunks: ", chunks)
+    print(' ')
+    word_lists = [keywords, answerwords]
+    upd_img_data[str(k)]['word_lists'] = {
+        'keywords': " || ".join(word_lists[0]),
+        'answerwords': " || ".join(word_lists[1]),
+        'noun_chunks': " || ".join(chunks)
+    }
+    
+    DistractorFacts_count = 0
+    for s in d:
+        if DistractorFacts_count >= 40: break
+        if len(s.split()) in range(22, 60):
+            upd_img_data[str(k)]['DistractorFacts'].append({
+                'title': d[s]['title'],
+                'scores': str(d[s]['scores']),
+                'fact': s,
+                'url': d[s]['link'] 
+            })
+            DistractorFacts_count += 1
+    if k%1 == 0: json.dump(upd_img_data, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_img_data/upd_img_data_{}.json".format(args.boundary), "w"), indent=4)
+json.dump(upd_img_data, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_img_data/upd_img_data_{}.json".format(args.boundary), "w"), indent=4)
+print("Finish")
+
+'''
 html = '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">'
 html += '<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>'
 html += '<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>'
@@ -201,4 +254,4 @@ html += '</table></body></html>'
 o = open('x_distractor_for_img_demo3.html', 'wt')
 o.write(html)
 o.close()
-
+'''

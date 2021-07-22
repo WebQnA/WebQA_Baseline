@@ -345,7 +345,7 @@ def find_imgs_from_page(title, page, keywords, answerwords, goldfactwords):
 
         IoU_Q = IoU(set(nouns_in_s), keywords)
         IoU_A = IoU(set(nouns_in_s), answerwords)
-        if IoU_Q -  IoU_A > 0.06:
+        if IoU_Q -  IoU_A > 0.0: #0.06
             IoU_G = IoU(set(nouns_in_s), goldfactwords)
             cap2score[doc.text] = {'scores': (IoU_Q, IoU_A, IoU_G, IoU_Q - IoU_A, IoU_Q - IoU_A - IoU_G), 'img':im, 'link': page, 'title': title}    
     return cap2score
@@ -371,7 +371,81 @@ def get_sen2score_from_indx(k):
     print("total num of imgs found = ", len(cap2score))
     
     word_lists = (titlewords, keywords, goldfactwords, answerwords)
-    return sen2score, cap2score, word_lists
+    return sen2score, cap2score, word_lists, anchor2page
+
+def dummy_get_sen2score_from_indx(k):
+    print('k = ', k)
+    titlewords, keywords, goldfactwords, answerwords, Q, A, anchor2page = get_keywords_and_relevant_pages_from_txt_sample(k)
+    print("Q = ", Q)
+    print("A = ", A)
+    print("keywords = ", keywords)
+    print("titlewords = ", titlewords)
+    print("answerwords = ", answerwords)
+    print("goldfactwords = ", goldfactwords)
+    
+    new_anchor2page = get_pages_from_Q_via_noun_chunks(Q)
+    sen2score = {}
+    cap2score = {}
+    for title in new_anchor2page:
+        sen2score.update(find_sentences_from_page(title, new_anchor2page[title], keywords, answerwords, goldfactwords))
+        cap2score.update(find_imgs_from_page(title, new_anchor2page[title], keywords, answerwords, goldfactwords))
+    sen2score = dict(sorted(sen2score.items(), key=lambda x: x[1]['scores'][-1], reverse=True))
+    cap2score = dict(sorted(cap2score.items(), key=lambda x: x[1]['scores'][-1], reverse=True))
+    print("total num of sentences found = ", len(sen2score))
+    print("total num of imgs found = ", len(cap2score))
+    if len(sen2score) == 0:
+        for title in anchor2page: sen2score.update(find_sentences_from_page(title, anchor2page[title], keywords.union(titlewords), answerwords, goldfactwords))
+        for title in new_anchor2page: sen2score.update(find_sentences_from_page(title, new_anchor2page[title], keywords.union(titlewords), answerwords, goldfactwords))
+        print("After accepting overlap with titlewords, total num of sentences found = ", len(sen2score))
+    if len(cap2score) == 0:
+        for title in anchor2page: cap2score.update(find_imgs_from_page(title, anchor2page[title], keywords.union(titlewords), answerwords, goldfactwords))
+        for title in new_anchor2page: cap2score.update(find_imgs_from_page(title, new_anchor2page[title], keywords.union(titlewords), answerwords, goldfactwords))
+        print("After accepting overlap with titlewords, total num of imgs found = ", len(cap2score))
+    
+    word_lists = (titlewords, keywords, goldfactwords, answerwords)
+    anchor2page.update(new_anchor2page)
+    return sen2score, cap2score, word_lists, anchor2page
+
+def get_pages_from_Q_via_noun_chunks(Q):
+    doc = nlp(Q)
+    
+    ### Extract noun chunks
+    proper_words = [t.text for s in doc.sents for t in s if t.pos_ in ['NUM', 'PROPN', 'ADJ'] or ((not t.is_sent_start) and t.text[0].isupper())]
+    chunks = set()
+    for chunk in doc.noun_chunks:
+        if any([n in proper_words for n in chunk.text.split()]):
+            chunks.add(chunk.text)
+    if not chunks: 
+        chunks = chunks.union([c.text for c in doc.noun_chunks])
+        chunks = chunks.union([t.text for s in doc.sents for t in s if t.pos_ == 'PROPN' or ((not t.is_sent_start) and t.text[0].isupper())])
+    
+    pages = set()
+    for chunk in chunks:
+        pages = pages.union(set(wikipedia.search(chunk)))
+    if len(pages) < 5:
+        more_chunks = set()
+        for token in doc:
+            if token.dep_ == 'amod' or token.dep_ == 'compound':
+                more_chunks.add(doc[token.i: token.head.i+1].text if token.head.i > token.i else doc[token.head.i:token.i+1].text)
+        more_chunks = more_chunks - chunks
+        print(Q)
+        print("More chunks: ", more_chunks)
+        for chunk in more_chunks:
+            pages = pages.union(wikipedia.search(chunk))
+        chunks = chunks.union(more_chunks)
+    
+    print("num of pages: ", len(pages))
+    anchor2page = {}
+    for title in pages:
+        anchor2page[__load(title)] = "https://en.wikipedia.org/wiki/" + urllib.parse.quote("_".join(title.split()))
+    for a in list(anchor2page.keys()):
+        if is_disambiguation_page(anchor2page[a]):
+            print(a, " is an disambiguation page")
+            for t in recover_disambiguation_page(a):
+                anchor2page[__load(t)] = "https://en.wikipedia.org/wiki/" + urllib.parse.quote("_".join(t.split()))
+            del anchor2page[a]
+    if '' in anchor2page: del anchor2page['']
+    return anchor2page
 
 def highlight_words(word_lists, colors, sentence):
     s = copy.deepcopy(sentence)
@@ -416,11 +490,10 @@ try: upd_txt_data = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/up
 except: upd_txt_data = {}
 for k in range(args.start, args.end):
     if k%1 == 0: json.dump(upd_txt_data, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_txt_data/upd_txt_data_{}.json".format(args.boundary), "w"), indent=4)
-    if str(k) in upd_txt_data: continue
-    upd_txt_data[str(k)] = copy.deepcopy(new_txt_data[str(k)])
-    upd_txt_data[str(k)]['new_negFacts'] = []
-    upd_txt_data[str(k)]['img_negFacts'] = []
-    try: sen2score, cap2score, word_lists = get_sen2score_from_indx(k)
+    #if str(k) in upd_txt_data: continue
+    #upd_txt_data[str(k)] = copy.deepcopy(new_txt_data[str(k)])
+    if len(upd_txt_data[str(k)]['new_negFacts']) >= 5 and len(upd_txt_data[str(k)]['img_negFacts']) >= 5: continue
+    try: sen2score, cap2score, word_lists, anchor2page = dummy_get_sen2score_from_indx(k)
     except KeyboardInterrupt: raise
     except: continue
     upd_txt_data[str(k)]['word_lists'] = {
@@ -429,7 +502,8 @@ for k in range(args.start, args.end):
         'goldfactwords': " || ".join(word_lists[2]), 
         'answerwords': " || ".join(word_lists[3])
     }
-    new_negFacts_count = 0
+    upd_txt_data[str(k)]['relevant_pages'] = " || ".join(list(anchor2page.keys()))
+    new_negFacts_count = len(upd_txt_data[str(k)]['new_negFacts'])
     for s in sen2score:
         if new_negFacts_count >= 40: break
         if sen2score[s]['scores'][2] == 0.0 and sen2score[s]['scores'][1] == 0.0 and len(s.split()) in range(22, 60):
@@ -441,7 +515,7 @@ for k in range(args.start, args.end):
             })
             new_negFacts_count += 1
     
-    img_negFacts_count = 0
+    img_negFacts_count = len(upd_txt_data[str(k)]['img_negFacts'])
     for c in cap2score:
         if img_negFacts_count >= 40: break
         upd_txt_data[str(k)]['img_negFacts'].append({
