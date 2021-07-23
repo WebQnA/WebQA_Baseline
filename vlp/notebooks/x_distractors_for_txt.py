@@ -160,8 +160,11 @@ def find_pages_by_hyperlink(keywords, url):
     if 'en.wikipedia.org' not in url: return {}
     anchor2page = {}
     req = urllib.request.Request(url, headers = {'User-Agent': random.choice(USER_AGENT_LIST)})
-    with urllib.request.urlopen(req) as f:
-        html = f.read().decode('utf-8')
+    try: 
+        with urllib.request.urlopen(req) as f:
+            html = f.read().decode('utf-8')
+    except:
+        return anchor2page
     end_indx = html.find('<h2><span class="mw-headline" id="References">References</span>')
     html = html[:end_indx]
     soup = BeautifulSoup(html, 'html.parser')
@@ -193,6 +196,7 @@ def get_keywords_and_relevant_pages_from_txt_sample(k):
     titlewords = set()
     anchor2page = {}
     for f in new_txt_data[str(k)]['SupportingFacts']:
+        if not 'wikipedia' in f['url']: continue
         fact_title_raw = ' '.join(urllib.parse.unquote(f['url']).split('/')[-1].split('_'))
         fact_title = pattern.sub('', fact_title_raw)
         titlewords = titlewords.union(fact_title.split())
@@ -204,7 +208,7 @@ def get_keywords_and_relevant_pages_from_txt_sample(k):
     
     #print("#pages before extension by hyperlink: ", len(anchor2page))
     for f in new_txt_data[str(k)]['SupportingFacts']:
-        d = find_pages_by_hyperlink(keywords.union(titlewords), f['url'])
+        d = find_pages_by_hyperlink(keywords.union(titlewords), urllib.parse.quote(f['url'], safe='://', encoding=None, errors=None))
         anchor2page.update(d)
     if '' in anchor2page: del anchor2page['']
     #print("#pages after extension by hyperlink: ", len(anchor2page))
@@ -226,7 +230,9 @@ def get_keywords_and_relevant_pages_from_txt_sample(k):
         if is_disambiguation_page(anchor2page[a]):
             print(a, " is an disambiguation page")
             for t in recover_disambiguation_page(a):
-                anchor2page[__load(t)] = "https://en.wikipedia.org/wiki/" + urllib.parse.quote("_".join(t.split()))
+                try: anchor2page[__load(t)] = "https://en.wikipedia.org/wiki/" + urllib.parse.quote("_".join(t.split())) 
+                ### Rarely get some keywordError cuz the returned value from _wiki_request is missing a certain field
+                except: pass
             del anchor2page[a]
     if '' in anchor2page: del anchor2page['']
     return titlewords, keywords, goldfactwords, answerwords, Q, A, anchor2page
@@ -437,12 +443,16 @@ def get_pages_from_Q_via_noun_chunks(Q):
     print("num of pages: ", len(pages))
     anchor2page = {}
     for title in pages:
-        anchor2page[__load(title)] = "https://en.wikipedia.org/wiki/" + urllib.parse.quote("_".join(title.split()))
+        try: anchor2page[__load(t)] = "https://en.wikipedia.org/wiki/" + urllib.parse.quote("_".join(t.split())) 
+        ### Rarely get some keywordError cuz the returned value from _wiki_request is missing a certain field
+        except: pass
     for a in list(anchor2page.keys()):
         if is_disambiguation_page(anchor2page[a]):
             print(a, " is an disambiguation page")
             for t in recover_disambiguation_page(a):
-                anchor2page[__load(t)] = "https://en.wikipedia.org/wiki/" + urllib.parse.quote("_".join(t.split()))
+                try: anchor2page[__load(t)] = "https://en.wikipedia.org/wiki/" + urllib.parse.quote("_".join(t.split())) 
+                ### Rarely get some keywordError cuz the returned value from _wiki_request is missing a certain field
+                except: pass
             del anchor2page[a]
     if '' in anchor2page: del anchor2page['']
     return anchor2page
@@ -492,10 +502,11 @@ for k in range(args.start, args.end):
     if k%1 == 0: json.dump(upd_txt_data, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_txt_data/upd_txt_data_{}.json".format(args.boundary), "w"), indent=4)
     #if str(k) in upd_txt_data: continue
     #upd_txt_data[str(k)] = copy.deepcopy(new_txt_data[str(k)])
-    if len(upd_txt_data[str(k)]['new_negFacts']) >= 5 and len(upd_txt_data[str(k)]['img_negFacts']) >= 5: continue
+    #if len(upd_txt_data[str(k)]['new_negFacts']) >= 5 and len(upd_txt_data[str(k)]['img_negFacts']) >= 5: continue
+    if str(k) in upd_txt_data and 'word_lists' in upd_txt_data[str(k)]: continue
     try: sen2score, cap2score, word_lists, anchor2page = dummy_get_sen2score_from_indx(k)
     except KeyboardInterrupt: raise
-    except: continue
+    except: raise
     upd_txt_data[str(k)]['word_lists'] = {
         'titlewords': " || ".join(word_lists[0]), 
         'keywords': " || ".join(word_lists[1]), 

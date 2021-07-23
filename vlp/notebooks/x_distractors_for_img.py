@@ -26,7 +26,7 @@ parser.add_argument("--end", type=int)
 parser.add_argument('--disable_print', action='store_true')
 args = parser.parse_args()
 assert args.end > args.start
-args.boundary = ((args.end-1) // 3000 + 1) * 3000
+args.boundary = ((args.end-1) // 500 + 1) * 500
 if args.disable_print:
     sys.stdout = open(os.devnull, 'w')
 
