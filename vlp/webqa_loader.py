@@ -83,6 +83,8 @@ class webqaDataset_filter(torch.utils.data.Dataset):
 
                         for fa in datum['DistractorFacts']:
                             distractor_facts.append(self.tokenizer.tokenize(fa['fact']))
+                        shuffle(gold_facts)
+                        shuffle(distractor_facts)
                         self.instance_list.append((gold_facts, distractor_facts, [], [], Q, A, True, False, i)) # do_filter_task, context_is_img
                         
                         count += 1
@@ -197,21 +199,26 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                     if use_num_samples == -1 or count < use_num_samples:
                         Q = self.tokenizer.tokenize(datum['Q'])
                         A = self.tokenizer.tokenize(datum['A'])
-                        gold_feature_paths = []
-                        distractor_feature_paths = []
-                        gold_cxt_list = []
-                        distractor_cxt_list = []
+                        #gold_feature_paths = []
+                        #distractor_feature_paths = []
+                        #gold_cxt_list = []
+                        #distractor_cxt_list = []
+
+                        gold_img_and_caps = []
+                        distractor_img_and_caps = []
+
                         for im in datum['GoldIds']:
                             if int(im) < 10000000:
                                 image_feature_path = os.path.join(gold_feature_folder, str(im)+'.pkl')
                                 assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(im)
                             else:
                                 image_feature_path = os.path.join(distractor_feature_folder, str(im)+'.pkl')
-                            gold_feature_paths.append(image_feature_path)
+                            #gold_feature_paths.append(image_feature_path)
                             img_meta_key = str(int(im))
                             cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
                             cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
-                            gold_cxt_list.append(cxt)
+                            #gold_cxt_list.append(cxt)
+                            gold_img_and_caps.append((image_feature_path, cxt))
 
                         for im in datum['DistractorIds']:
                             if os.path.exists(os.path.join(distractor_feature_folder, str(im)+'.pkl')):
@@ -219,15 +226,25 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                                 img_meta_key = str(int(im))
                                 cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
                                 cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
-                                distractor_feature_paths.append(image_feature_path)
-                                distractor_cxt_list.append(cxt)
+                                #distractor_feature_paths.append(image_feature_path)
+                                #distractor_cxt_list.append(cxt)
+                                distractor_img_and_caps.append((image_feature_path, cxt))
                             elif os.path.exists(os.path.join(gold_feature_folder, str(im)+'.pkl')):
                                 image_feature_path = os.path.join(gold_feature_folder, str(im)+'.pkl')
                                 img_meta_key = str(int(im))
                                 cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
                                 cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
-                                distractor_feature_paths.append(image_feature_path)
-                                distractor_cxt_list.append(cxt)
+                                #distractor_feature_paths.append(image_feature_path)
+                                #distractor_cxt_list.append(cxt)
+                                distractor_img_and_caps.append((image_feature_path, cxt))
+                        shuffle(gold_img_and_caps)
+                        shuffle(distractor_img_and_caps)
+
+                        gold_feature_paths = [x[0] for x in gold_img_and_caps]
+                        distractor_feature_paths = [x[0] for x in distractor_img_and_caps]
+                        gold_cxt_list = [x[1] for x in gold_img_and_caps]
+                        distractor_cxt_list = [x[1] for x in distractor_img_and_caps]
+                        
                         self.instance_list.append((gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, True, True, i)) # do_filter_task, context_is_img
                         
                         count += 1
@@ -370,7 +387,156 @@ class Preprocess4webqa(Pipeline):
         _, __, ___, ____, _____, ______, do_filter_task, context_is_img, example_id = instance
         if do_filter_task:
             assert filter_max_choices is not None, "must pass in a valid filter_max_choices when doing filter task"
-            if context_is_img:
+            if context == 'both':
+                gold_facts, distractor_facts, gold_img_and_caps, distractor_img_and_caps, Q, A, do_filter_task, context, example_id = instance
+                ## TODO: define a new Dataset, return img+cap in a tuple instead of two separate lists
+                '''
+                0: pos snippet
+                1: pos img
+                2: neg snippet
+                3: neg img
+                '''
+                order = [0] * len(gold_facts) + [1] * len(gold_img_and_caps) + [2] * len(distractor_facts) + [3] * len(distractor_img_and_caps)
+                order = np.random.permutation(order)
+                label = torch.tensor([1. if o<=1 else 0. for o in order])
+                label = torch.stack([label, 1-label], dim=0).transpose(1,0)
+                ori_choices = []
+
+                for o in order:
+                    if o%2 == 1: # context is img
+                        if o == 1: # pos img
+                            img_path, cxt = gold_img_and_caps.pop()
+                        else: # neg img
+                            img_path, cxt = distractor_img_and_caps.pop()
+                        assert os.path.exists(img_path), "loader Processor: .pkl file doesn't exist! {}".format(img_path)
+                        ori_choices.append(img_path.split('/')[-1].replace('.pkl', ''))
+
+                        tokens_a = ['[UNK]'] * self.max_len_img_cxt # 200
+                        tokens_b = Q+A
+                        max_len_cxt_meta = self.max_len_a - self.max_len_img_cxt # 200
+                        truncate_tokens_pair(cxt, tokens_b, max_len=max_len_cxt_meta + self.max_len_b, max_len_a=max_len_cxt_meta, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
+                        if self.use_img_meta: tokens_a += cxt
+                        # it seems that there is no need to pad cxt_meta to 200
+                        #n_pad = self.max_len_a+1 - len(tokens_a) # +1 for the middle SEP
+                        #tokens_a.extend(['[PAD]'] * n_pad)
+                        tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
+                        if self.new_segment_ids:
+                            segment_ids = [4] * (len(tokens_a)+2) + [5] * (len(tokens_b)+1)
+                        else:
+                            segment_ids = [0] * (len(tokens_a)+2) + [1] * (len(tokens_b)+1)
+
+
+                        # self-attention mask
+                        input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
+                        # everyone can attend to img, cxt_meta and Q. Nobody cares attention to A for filter task
+                        img_end_pos = 1+self.len_vis_input
+                        if self.use_img_content: input_mask[:, :img_end_pos].fill_(1)
+                        st, end = 1 + self.max_len_img_cxt, len(tokens_a) + 2 + len(Q)
+                        input_mask[:, st:end].fill_(1)
+                        #st, end = 2 + self.max_len_a, 2 + self.max_len_a + len(Q)
+                        #input_mask[:, st:end].fill_(1)
+                        input_ids = self.indexer(tokens)
+                        n_pad = self.max_len - len(input_ids)
+                        input_ids.extend([0] * n_pad)
+                        segment_ids.extend([0] * n_pad)
+
+                        try:
+                            with open(img_path, "rb") as f:
+                                features = pickle.load(f)
+                        except:
+                            print("can't load pickle file: ", img_path)
+                            raise
+                        img = features['fc1_features'].detach().cpu().float()
+                        cls_label = features['cls_features'].detach().cpu().float()
+                        vis_pe = features['pred_boxes'].detach().cpu()
+
+                        # Lazy normalization of the coordinates
+                        w_est = torch.max(vis_pe[:, [0, 2]])*1.+1e-5
+                        h_est = torch.max(vis_pe[:, [1, 3]])*1.+1e-5
+                        vis_pe[:, [0, 2]] /= w_est
+                        vis_pe[:, [1, 3]] /= h_est
+                        assert h_est > 0, 'loader Processor: box h_est should greater than 0! {}'.format(h_est)
+                        assert w_est > 0, 'loader Processor: box w_est should greater than 0! {}'.format(w_est)
+                        rel_area = (vis_pe[:, 3]-vis_pe[:, 1])*(vis_pe[:, 2]-vis_pe[:, 0])
+                        rel_area.clamp_(0)
+
+                        vis_pe = torch.cat((vis_pe[:, :4], rel_area.view(-1, 1), features['scores'].detach().cpu().view(-1, 1)), -1)
+                        normalized_coord = F.normalize(vis_pe.data[:, :5] - 0.5, dim=-1)
+                        vis_pe = torch.cat((F.layer_norm(vis_pe, [6]), F.layer_norm(cls_label, [1601])), dim=-1)
+
+                        assert img.size(0) == vis_pe.size(0), "img features and vis_pe should have the same token length!"
+                        vis_pad = torch.zeros((self.max_len_img_cxt - img.size(0), img.size(-1)))
+                        img = torch.cat((img, vis_pad), dim=0) 
+                        pe_pad = torch.zeros((self.max_len_img_cxt - vis_pe.size(0), vis_pe.size(-1)))
+                        vis_pe = torch.cat((vis_pe, pe_pad), dim=0)
+                        assert vis_pe.size(0) == self.max_len_img_cxt
+                        assert img.size(0) == self.max_len_img_cxt
+                        input_ids_list.append(torch.tensor(input_ids))
+                        segment_ids_list.append(torch.tensor(segment_ids))
+                        input_mask_list.append(input_mask)
+                        if not self.use_img_content: 
+                            img = torch.zeros_like(img).float()
+                            vis_pe = torch.zeros_like(vis_pe).float()
+                        img_list.append(img)
+                        vis_pe_list.append(vis_pe)
+
+                    else: # context is snippet
+                        tokens_a = []
+                        if self.use_txt_fact:
+                            if o == 0: # pos snippet
+                                tokens_a = gold_facts.pop()
+                            else: # neg snippet
+                                tokens_a = distractor_facts.pop()
+                        ori_choices.append(' '.join(self.detokenize(tokens_a)))
+                        
+                        tokens_b = Q+A
+                        truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_b, max_len_a=self.max_len_a, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
+                        tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b + ['[SEP]']
+
+                        if self.new_segment_ids:
+                            segment_ids = [4] * (len(tokens_a)+2) + [5] * (len(tokens_b)+1)
+                        else:
+                            segment_ids = [0] * (len(tokens_a)+2) + [1] * (len(tokens_b)+1)
+
+                        # self-attention mask
+                        input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
+                        # everyone can attend to cxt and Q. Nobody cares attention to A for filter task
+                        input_mask[:, :len(tokens_a)+2+len(Q)].fill_(1)
+
+                        input_ids = self.indexer(tokens)
+                        n_pad = self.max_len - len(input_ids)
+                        input_ids.extend([0] * n_pad)
+                        segment_ids.extend([0] * n_pad)
+
+                        input_ids_list.append(torch.tensor(input_ids))
+                        segment_ids_list.append(torch.tensor(segment_ids))
+                        input_mask_list.append(input_mask)
+                    
+                logit_mask = [1.] * len(input_ids_list)
+                if len(input_ids_list) < filter_max_choices:
+                    num_placeholder = filter_max_choices - len(input_ids_list)
+                    input_ids_list.extend([input_ids_list[-1]] * num_placeholder)
+                    segment_ids_list.extend([segment_ids_list[-1]] * num_placeholder)
+                    input_mask_list.extend([input_mask_list[-1]] * num_placeholder)
+                    logit_mask.extend([0.] * num_placeholder)
+                    label = torch.cat([label, torch.tensor([[0., 0.]] * num_placeholder)], dim=0)
+                input_ids = torch.stack(input_ids_list, dim=0) 
+                segment_ids = torch.stack(segment_ids_list, dim=0)
+                input_mask = torch.stack(input_mask_list, dim=0)
+                img = torch.stack(img_list, dim=0)
+                vis_pe = torch.stack(vis_pe_list, dim=0)
+                logit_mask = torch.tensor(logit_mask)
+                
+                cxt_modality_label = torch.tensor([o%2 for o in order])
+
+                ## TODO: for the other two cases in the loader, modify schema of return values to include cxt_modality_label & change context_is_img --> context
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return (input_ids, segment_ids, input_mask,       None,        None,        None,         -1,         do_filter_task,        label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id) 
+                
+
+
+
+            else if context == 'img':
                 gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img, example_id = instance
                 num_gold = len(gold_feature_paths)
                 filter_num_choices = num_gold + len(distractor_feature_paths)
@@ -486,7 +652,7 @@ class Preprocess4webqa(Pipeline):
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context_is_img, example_id)
                 return (input_ids, segment_ids, input_mask,       None,       None,       None,       -1,       do_filter_task,        label,       logit_mask, ori_choices, self.task_idx, img, vis_pe, context_is_img, example_id)
 
-            else: # do_filter_task && context_is_text
+            else if context == 'txt': # do_filter_task && context_is_text
                 gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img, example_id = instance
                 num_gold = len(gold_facts)
                 filter_num_choices = num_gold + len(distractor_facts)
