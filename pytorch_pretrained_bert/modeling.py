@@ -1601,26 +1601,13 @@ class BertForWebqa(PreTrainedBertModel):
         #self.context_crit = nn.BCEWithLogitsLoss()
 
 
-    def forward(self, vis_feats=None, vis_pe=None, input_ids=None, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=None, filter_label=None, logit_mask=None, context_is_img=None, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2, filter_infr_th=None, tokenizer=None):
+    def forward(self, vis_feats=None, vis_pe=None, input_ids=None, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=None, filter_label=None, logit_mask=None, context=None, cxt_modality_label=None, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2, filter_infr_th=None, tokenizer=None):
         #print("\n")
         #print(context_is_img)
+        ## TODO: track the change of context_is_img --> img, pass cxt_modality_label to BertEmbedding
         if context_is_img[0]: 
             vis_feats = self.vis_embed(vis_feats) # image region features Bx100xhidden_size
             vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings Bx100xhidden_size
-        #print("\nattention_mask: ", attention_mask[0][0][230])
-        #print("\n", attention_mask[0][0][10])
-        '''
-        # VQA inference
-        if vqa_inference: # vqa_inference=False during training
-            assert(ans_labels == None) # in inference mode, need no gth label
-            sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,
-                attention_mask, output_all_encoded_layers=False, len_vis_input=self.len_vis_input)
-
-            vqa2_embed = sequence_output[:, 0]*sequence_output[:, self.len_vis_input+1]
-            vqa2_pred = self.ans_classifier(vqa2_embed)
-            ans_idx = torch.max(vqa2_pred[:, 1:], -1)[1] + 1
-            return ans_idx
-        '''
 
         
         if do_filter_task[0]:
@@ -1680,34 +1667,11 @@ class BertForWebqa(PreTrainedBertModel):
                     f1 = 2*pr*re / (pr+re+1e-5)
                     th_dict[th] = [torch.sum(pr).item(), torch.sum(re).item(), torch.sum(f1).item()]
                 return th_dict, pred.detach().cpu()
-                '''
-                num_flags = torch.sum(target, dim=-1)
-                num_flags = torch.max(num_flags, torch.ones_like(num_flags))
-                labels = target / num_flags.unsqueeze(-1).repeat(1, prediction.size(-1))
-                m = lp * labels
-                m = torch.where(torch.isnan(m), torch.zeros_like(m), m)
-                loss = torch.sum(- m, dim=-1) * num_flags
-
-                probs = torch.nn.functional.softmax(prediction+logit_mask, dim=-1)
-                m = probs * labels
-                m = torch.where(torch.isnan(m), torch.zeros_like(m), m)
-                metric1 = torch.sum(m, dim=-1)
-
-                values, indices = torch.topk(probs, 2, dim=-1)
-                res = torch.zeros_like(prediction)
-                try:
-                    res = res.scatter(1, indices, torch.ones_like(values))
-                except:
-                    print(res.size())
-                    print(indices.size())
-                    print(values.size())
-                m = res * labels
-                m = torch.where(torch.isnan(m), torch.zeros_like(m), m)
-                metric2 = torch.sum(m, dim=-1)
-                return torch.mean(loss), torch.mean(metric1), torch.mean(metric2)
-                '''
-
             
+            print("context_is_img.size() = ", context_is_img.size())
+            print("input_ids.size() = ", input_ids.size())
+            print("context_is_img = ", context_is_img)
+            time.sleep(2)
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
                                             attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
             # calculate classification loss for filter function
