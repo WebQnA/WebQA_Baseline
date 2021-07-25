@@ -230,7 +230,6 @@ class BertEmbeddings(nn.Module):
 
         if context in ["img", "both"] and prev_is_None: 
             ## TODO: fit the img feature chunk into words_embeddings with specified indices.
-            print("vis_feats.size() = ", vis_feats.size())
             words_embeddings[cxt_modality_label, 1:1+max_len_img_cxt] = vis_feats
             position_embeddings[cxt_modality_label, 1:1+max_len_img_cxt] = vis_pe
             #words_embeddings = torch.cat((words_embeddings[:, :1], vis_feats, words_embeddings[:, max_len_img_cxt+1:]), dim=1)

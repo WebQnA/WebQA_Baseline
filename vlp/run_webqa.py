@@ -556,9 +556,11 @@ def main():
             print("use_img_meta = ", args.use_img_meta)
             print("use_img_content = ", args.use_img_content)
             print("\nimg Filter_max_choices: {}".format(args.img_filter_max_choices))
+            if args.use_x_distractors: print("\ntxt Filter_max_choices: {}".format(args.txt_filter_max_choices))
         if "txt" in args.answer_provided_by:
             print("use_txt_fact = ", args.use_txt_fact)
             print("\ntxt Filter_max_choices: {}".format(args.txt_filter_max_choices))
+            if args.use_x_distractors: print("\nimg Filter_max_choices: {}".format(args.img_filter_max_choices))
 
         #for param_tensor in model.state_dict():
             #print(param_tensor, "\t", model.state_dict()[param_tensor].size())
