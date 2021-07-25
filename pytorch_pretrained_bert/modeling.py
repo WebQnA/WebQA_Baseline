@@ -216,7 +216,7 @@ class BertEmbeddings(nn.Module):
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         #print("Inside embedding: hiddensize = ", config.hidden_size)
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, context_is_img=False, position_ids=None, max_len_img_cxt=200, prev_is_None=True):
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, context=None, cxt_modality_label=None, position_ids=None, max_len_img_cxt=200, prev_is_None=True):
         seq_length = input_ids.size(1)
         if position_ids is None:
             position_ids = torch.arange(
@@ -227,22 +227,17 @@ class BertEmbeddings(nn.Module):
 
         words_embeddings = self.word_embeddings(input_ids)
         position_embeddings = self.position_embeddings(position_ids)
-        #print("\ninput_ids.size() = ", input_ids.size())
-        #print("\nposition_ids.size() = ", position_ids.size())
-        #print("\nvis_feats.size() = ", vis_feats.size())
-        #print("\nvis_pe.size() = ", vis_pe.size())
-        if context_is_img and prev_is_None: 
-            #print(vis_pe[0])
-            #print(vis_feats[0])
-            words_embeddings = torch.cat((words_embeddings[:, :1], vis_feats,
-                words_embeddings[:, max_len_img_cxt+1:]), dim=1)
+
+        if context in ["img", "both"] and prev_is_None: 
+            ## TODO: fit the img feature chunk into words_embeddings with specified indices.
+            print("vis_feats.size() = ", vis_feats.size())
+            words_embeddings[cxt_modality_label, 1:1+max_len_img_cxt] = vis_feats
+            position_embeddings[cxt_modality_label, 1:1+max_len_img_cxt] = vis_pe
+            #words_embeddings = torch.cat((words_embeddings[:, :1], vis_feats, words_embeddings[:, max_len_img_cxt+1:]), dim=1)
             assert max_len_img_cxt == 200, 'only support region attn!'
-            position_embeddings = torch.cat((position_embeddings[:, :1], vis_pe,
-                position_embeddings[:, max_len_img_cxt+1:]), dim=1) # hacky...
+            #position_embeddings = torch.cat((position_embeddings[:, :1], vis_pe, position_embeddings[:, max_len_img_cxt+1:]), dim=1) # hacky...
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
-        #print("\nwords_embeddings.size() = ", words_embeddings.size())
-        #print("\nposition_embeddings_size() = ", position_embeddings.size())
-        #print("\ntoken_type_embeddings.size() = ", token_type_embeddings.size())
+
         embeddings = words_embeddings + position_embeddings + token_type_embeddings
         if self.fp32_embedding:
             embeddings = embeddings.half()
@@ -854,13 +849,13 @@ class BertModel(PreTrainedBertModel):
         return extended_attention_mask
 
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, context_is_img=True, output_all_encoded_layers=True, max_len_img_cxt=200):
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids=None, attention_mask=None, context=None, cxt_modality_label=None, output_all_encoded_layers=True, max_len_img_cxt=200):
             
         extended_attention_mask = self.get_extended_attention_mask(
             input_ids, token_type_ids, attention_mask)
 
         # hack to load vis feats
-        embedding_output = self.embeddings(vis_feats, vis_pe, input_ids, token_type_ids, context_is_img=context_is_img, max_len_img_cxt=max_len_img_cxt)
+        embedding_output = self.embeddings(vis_feats, vis_pe, input_ids, token_type_ids, context=context, cxt_modality_label=cxt_modality_label, max_len_img_cxt=max_len_img_cxt)
         encoded_layers = self.encoder(embedding_output,
                                       extended_attention_mask,
                                       output_all_encoded_layers=output_all_encoded_layers)
@@ -1594,33 +1589,42 @@ class BertForWebqa(PreTrainedBertModel):
                                        nn.ReLU(),
                                        nn.Dropout(config.hidden_dropout_prob))
         
-        # self.ans_classifier = nn.Sequential(nn.Linear(config.hidden_size, config.hidden_size*2),
-                                       #nn.ReLU(),
-                                       #nn.Linear(config.hidden_size*2, 3129)) # 3129 hard coded...
         self.context_classifier = nn.Linear(config.hidden_size, 2) # each choice gets a single logit
         #self.context_crit = nn.BCEWithLogitsLoss()
 
 
     def forward(self, vis_feats=None, vis_pe=None, input_ids=None, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=None, filter_label=None, logit_mask=None, context=None, cxt_modality_label=None, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2, filter_infr_th=None, tokenizer=None):
-        #print("\n")
-        #print(context_is_img)
-        ## TODO: track the change of context_is_img --> img, pass cxt_modality_label to BertEmbedding
-        if context_is_img[0]: 
-            vis_feats = self.vis_embed(vis_feats) # image region features Bx100xhidden_size
-            vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings Bx100xhidden_size
+        
+        ## TODO: track the change of context_is_img --> context, pass cxt_modality_label to BertEmbedding
+        if context[0] in ['img', 'both']: 
+            vis_feats = self.vis_embed(vis_feats) # image region features (NC1+NC2+ ... +NC_B, 100, hidden_size), NC = num_choices
+            vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings (NC1+NC2+ ... +NC_B, 100, hidden_size), NC = num_choices
+            # They are flattened in collate function
 
         
         if do_filter_task[0]:
             # input_ids.size() = (B, num_choices, max_len)
             num_choices = input_ids.size(1)
             B = input_ids.size(0)
-            assert filter_label is not None
-            if context_is_img[0]:
-                vis_feats = vis_feats.view(B*num_choices, -1, vis_feats.size(-1))
-                vis_pe = vis_pe.view(B*num_choices, -1, vis_pe.size(-1))
+            assert filter_label is not None and cxt_modality_label is not None
             input_ids = input_ids.view(B*num_choices, -1)
             token_type_ids = token_type_ids.view(B*num_choices, -1)
             attention_mask = attention_mask.view(B*num_choices, -1, attention_mask.size(-1))
+
+            # If different batches have different number of imgs, then vis_feats, vis_pe will be flattened (by torch.cat) in collate function
+            # Otherwise, reshape them here:
+            vis_seq_len, vis_dim = vis_feats.size()[-2:]
+            vis_feats = vis_feats.view(-1, vis_seq_len, vis_dim)
+            vis_pe = vis_pe.view(-1, vis_seq_len, vis_dim)
+
+            proc_cxt_modality_label = []
+            offset = 0
+            for l in cxt_modality_label:
+                for idx in l:
+                    proc_cxt_modality_label.append(idx + offset*num_choices)
+                offset += 1
+            cxt_modality_label = proc_cxt_modality_label
+
 
             def cross_entropy_with_logits_loss(prediction, target, logit_mask):
                 # prediction: batch_size x num_choices x 2
@@ -1637,11 +1641,8 @@ class BertForWebqa(PreTrainedBertModel):
                 normalizer = torch.sum(logit_mask, dim=-1)
                 m = lp * target * logit_mask.view(-1, num_choices, 1).repeat(1,1,2) # target.transpose --> batch_size x num_choices x 2
                 
-                #print(normalizer)
-                #print(m)
-                #print(target)
+                
                 loss = (-m).view(batch_size, -1).sum(dim=-1)/(normalizer+1e-8)
-                #print(loss)
                 return torch.mean(loss)
             def filter_metric(prediction, target, logit_mask, th_list):
                 # prediction: batch_size x num_choices x 2
@@ -1649,31 +1650,27 @@ class BertForWebqa(PreTrainedBertModel):
                 # logit_mask: batch_size x num_choices
 
                 pred = F.softmax(prediction, dim=-1).transpose(2,1)
-                #print(pred)
                 label = target.transpose(2,1)[:, 0, :] #batch_size x num_choices
                 pred = pred[:, 0, :] #batch_size x num_choices
                 th_dict = {}
                 
                 for th in th_list:
-                    #time.sleep(1)
-                    #print("\nth = ", th)
                     cur_pred = (pred>th).float() * logit_mask
                     overlap = torch.sum(cur_pred * label, dim=-1) # batch_size
-                    #print(overlap[0])
                     pr = overlap / (torch.sum(cur_pred, dim=-1) + 1e-5) # batch_size
-                    #print(torch.sum(cur_pred, dim=-1)[0])
                     re = overlap / (torch.sum(label, dim=-1) + 1e-5) # batch_size
-                    #print(torch.sum(label, dim=-1)[0])
                     f1 = 2*pr*re / (pr+re+1e-5)
                     th_dict[th] = [torch.sum(pr).item(), torch.sum(re).item(), torch.sum(f1).item()]
                 return th_dict, pred.detach().cpu()
             
-            print("context_is_img.size() = ", context_is_img.size())
-            print("input_ids.size() = ", input_ids.size())
-            print("context_is_img = ", context_is_img)
-            time.sleep(2)
+            #print("vis_pe.size() = ", vis_pe.size())
+            #print("vis_feats.size() = ", vis_feats.size())
+            #print("input_ids.size() = ", input_ids.size())
+            #print("cxt_modality_label.size() = ", np.array(cxt_modality_label).size) 
+            if context in ['img', 'both']: assert cxt_modality_label.size() == vis_feats.size() == vis_pe.size()
+            #time.sleep(2)
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
-                                            attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
+                                            attention_mask, context[0], cxt_modality_label, output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
             # calculate classification loss for filter function
             # vqa2_embed = pooled_output
             cls_embed = sequence_output[:, 0] #*sequence_output[:, self.max_len_a+1] 
@@ -1692,9 +1689,8 @@ class BertForWebqa(PreTrainedBertModel):
         else:
             assert masked_lm_labels is not None
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
-                                            attention_mask, context_is_img[0], output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
-            #print("\n", attention_mask[0][10])
-            #print("\n", attention_mask[0][107])
+                                            attention_mask, context[0], output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
+
             def gather_seq_out_by_pos(seq, pos):
                 return torch.gather(seq, 1, pos.unsqueeze(2).expand(-1, -1, seq.size(-1)))
 
@@ -1703,13 +1699,11 @@ class BertForWebqa(PreTrainedBertModel):
                 #filter_mask = torch.ones(mask.size())
                 #filter_mask[do_filter_task.nonzero().squeeze(1), :] = 0
                 #filter_mask = filter_mask.type_as(loss)
-                #print("\nloss before multiplying mask = ", loss)
                 loss = loss * mask
 
                 # Ruotian Luo's drop worst (drop batches with worst losses)
                 # <less_than_B> x max_pred
                 keep_loss, keep_ind = torch.topk(loss.sum(-1), int(loss.size(0)*(1-drop_worst_ratio)), largest=False)
-                #print("\nkeep_loss = ", keep_loss)
                 # denominator = torch.sum(mask) + 1e-5
                 # return (loss / denominator).sum()
                 # each batch has different number of actual predictions
@@ -1724,18 +1718,9 @@ class BertForWebqa(PreTrainedBertModel):
                     print("loss = ", loss)
                     raise
 
-                #print("denominator = ", denominator)
                 return (keep_loss / denominator).sum() # sum losses over <less_than_B> batches
-            '''
-            def clfloss_mask_and_normalize(loss, do_filter_task):
-                filter_mask = torch.zeros(loss.size())
-                filter_mask[do_filter_task.nonzero().squeeze(1)] = 1.
-                filter_mask = filter_mask.type_as(loss)
-                return (loss*filter_mask).mean()
-            '''
+
             # masked lm
-            #print("\n", attention_mask[0][107])
-            #print(attention_mask[0][10])
             if torch.isnan(sequence_output).any().item(): print("\nsequence_output is nan !!")
             sequence_output_masked = gather_seq_out_by_pos(sequence_output, masked_pos) # B x max_pred x hidden
             prediction_scores_masked, _ = self.cls(
@@ -1745,61 +1730,20 @@ class BertForWebqa(PreTrainedBertModel):
                 masked_lm_loss = self.crit_mask_lm_smoothed(
                     F.log_softmax(prediction_scores_masked.float(), dim=-1), masked_lm_labels)
             else:
-                #print("\nprediction_scores_maksed.transpose(1,2) size = ", prediction_scores_masked.transpose(1, 2).float().size())
                 masked_lm_loss = self.crit_mask_lm(
                     prediction_scores_masked.transpose(1, 2).float(), masked_lm_labels)
             if torch.isnan(prediction_scores_masked).any().item(): print("\nprediction_scores_masked is nan !!!!!! ")
             masked_lm_loss = mlmloss_mask_and_normalize(masked_lm_loss.float(), masked_weights, drop_worst_ratio)
             cls_loss= masked_lm_loss.new(1).fill_(0)
-            #print("\n ----------------- before returning from forward(), masked_lm_loss = --------------------")
             if tokenizer is not None:
                 ids = torch.argmax(prediction_scores_masked[0], dim=-1).detach().cpu().numpy() # max_pred x 1
                 sequence = tokenizer.convert_ids_to_tokens([i for i in list(ids) if i>0])
                 print(sequence)
-                #print(masked_lm_loss.item())
                 print(tokenizer.convert_ids_to_tokens([i for i in list(input_ids.detach().cpu().numpy()[0][:]) if i>0]))
                 print(tokenizer.convert_ids_to_tokens([i for i in list(masked_lm_labels.detach().cpu().numpy()[0]) if i>0]))
                 #print("\n")
                 time.sleep(2)
             return masked_lm_loss, cls_loss
-        ''' 
-        # deprecated
-        # vis_feats, vis_pe have been projected to hidden_size dim
-        if mask_image_regions:
-            # Selfie-like pretext
-            # gth img_feats for masked regions
-            masked_vis_feats = torch.gather(vis_feats, 1,
-                (vis_masked_pos-1).unsqueeze(-1).expand((-1, -1, vis_feats.size(-1))))
-            # vis_masked_pos: B x <len_vis_input*vis_mask_prob>
-            # unsqueeze: B x <len_vis_input*vis_mask_prob> x 1
-            # expand: B x <len_vis_input*vis_mask_prob> x hidden
-            # output of this line: B x <len_vis_input*vis_mask_prob> x hidden
-
-            # gth vis_pe for masked regions
-            if self.enable_butd:
-                masked_pos_enc = torch.gather(vis_pe, 1,
-                (vis_masked_pos-1).unsqueeze(-1).expand((-1, -1, vis_pe.size(-1))))
-                # B x <len_vis_input*vis_mask_prob> x hidden
-            else:
-                masked_pos_enc = self.bert.embeddings.position_embeddings(vis_masked_pos)
-
-            # pooled_output: B x hidden
-            # unsqueeze: B x 1 x hidden
-            # expand_as: B x <len_vis_input*vis_mask_prob> x hidden
-            # only pooled_output here gets trained???
-            masked_pos_enc += pooled_output.unsqueeze(1).expand_as(masked_pos_enc) # ? Why add pooled_output to gth masked vis pe?
-            assert(masked_vis_feats.size() == masked_pos_enc.size())
-            # pe of a particular region should be most compatible with vis_feat of that region
-            sim_mat = torch.matmul(masked_pos_enc, masked_vis_feats.permute(0, 2, 1).contiguous())
-            # B x <len_vis_input*vis_mask_prob> x <len_vis_input*vis_mask_prob>
-            sim_mat = F.log_softmax(sim_mat, dim=-1)
-            vis_pretext_loss = []
-            for i in range(sim_mat.size(0)): # gth is the Identity matrix
-                vis_pretext_loss.append(sim_mat[i].diag().mean().view(1)*-1.) # cross entropy for ones
-            vis_pretext_loss = torch.cat(vis_pretext_loss).mean() # mean over B batches??? but masked_lm_loss is sum over batches?
-        else:
-            vis_pretext_loss = masked_lm_loss.new(1).fill_(0)
-        '''
 
         return masked_lm_loss, cls_loss # works better when combined with max_pred=1
 
