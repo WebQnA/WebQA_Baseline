@@ -15,18 +15,24 @@ def get_random_word(vocab_words):
 
 
 def batch_list_to_batch_tensors(batch):
+
     batch_tensors = []
     for x in zip(*batch):
         if x[0] is None:
             batch_tensors.append(torch.zeros(1))
-        
+        elif isinstance(x[0], list) and isinstance(x[0][0], int): # cxt_modality_label
+            batch_tensors.append(x)
         elif isinstance(x[0], torch.Tensor):
             try:
                 batch_tensors.append(torch.stack(x))
             except:
                 print([i.size() for i in x])
+                f = torch.cat(x, dim=0)
+                print("After torch.cat vis_feats, size = ", f.size())
+                batch_tensors.append(f)
         elif isinstance(x[0], str):
             batch_tensors.append(x)
+        
         else:
             try:
                 batch_tensors.append(torch.tensor(x, dtype=torch.long))
