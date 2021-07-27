@@ -20,7 +20,7 @@ def batch_list_to_batch_tensors(batch):
     for x in zip(*batch):
         if x[0] is None:
             batch_tensors.append(torch.zeros(1))
-        elif isinstance(x[0], list) and isinstance(x[0][0], int): # cxt_modality_label
+        elif isinstance(x[0], list) and (len(x[0])==0 or isinstance(x[0][0], int)): # cxt_modality_label
             batch_tensors.append(x)
         elif isinstance(x[0], torch.Tensor):
             try:

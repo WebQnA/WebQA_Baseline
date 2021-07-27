@@ -81,7 +81,7 @@ class webqaDataset_filter(torch.utils.data.Dataset):
                         for fa in datum['SupportingFacts']:
                             gold_facts.append(self.tokenizer.tokenize(fa['fact']))
 
-                        for fa in datum['DistractorFacts']:
+                        for fa in datum['new_negFacts']:
                             distractor_facts.append(self.tokenizer.tokenize(fa['fact']))
                         shuffle(gold_facts)
                         shuffle(distractor_facts)

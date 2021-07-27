@@ -190,7 +190,7 @@ def main():
                         help="max position embeddings")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_J.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0725_random_split.json")
     parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0725.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
@@ -552,6 +552,8 @@ def main():
 
     if args.do_train:
         print("start training")
+        print("sleep 4600 secs")
+        time.sleep(4600)
         if "img" in args.answer_provided_by:
             print("use_img_meta = ", args.use_img_meta)
             print("use_img_content = ", args.use_img_content)
@@ -602,9 +604,9 @@ def main():
                 vis_pe = vis_pe.data
                 # doesn't support scst training for not
                 loss_tuple = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
-                    masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context=context, cxt_modality_label=cxt_modality_label, \
-                        next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
-                            drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0)
+                        masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context=context, \
+                        cxt_modality_label=cxt_modality_label, next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, \
+                        task_idx=task_idx, drop_worst_ratio=args.max_drop_worst_ratio if i_epoch > args.drop_after else 0)
                 mean_reward = loss_tuple[0].new(1).fill_(0)
 
                 # disable pretext_loss_deprecated for now
@@ -774,7 +776,7 @@ def main():
                     if torch.isnan(model.state_dict()[param_tensor]).any().item():
                         print("\n nan exists in ", param_tensor)
                 batch = [t.to(device) if not isinstance(t, list) else t for t in batch ]
-                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, ori_choices, task_idx, img, vis_pe, context_is_img, example_ids = batch
+                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, ori_choices, task_idx, img, vis_pe, context, cxt_modality_label, example_ids = batch
                 if args.fp16:
                     img = img.half()
                     vis_pe = vis_pe.half()
@@ -783,9 +785,9 @@ def main():
                 vis_pe = vis_pe.data
                 # doesn't support scst training for not
                 loss_tuple = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
-                    masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
-                        next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
-                            drop_worst_ratio=0)
+                    masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context=context, \
+                        cxt_modality_label=cxt_modality_label, next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, \
+                        task_idx=task_idx, drop_worst_ratio=0)
                 mean_reward = loss_tuple[0].new(1).fill_(0)
 
                 # disable pretext_loss_deprecated for now
@@ -866,7 +868,7 @@ def main():
                     if torch.isnan(model.state_dict()[param_tensor]).any().item():
                         print("\n nan exists in ", param_tensor)
                 batch = [t.to(device) if not isinstance(t, list) else t for t in batch ]
-                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, ori_choices, task_idx, img, vis_pe, context_is_img, example_ids = batch
+                input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, ori_choices, task_idx, img, vis_pe, context, cxt_modality_label, example_ids = batch
                 if args.fp16:
                     img = img.half()
                     vis_pe = vis_pe.half()
@@ -876,9 +878,9 @@ def main():
 
                 # doesn't support scst training for not
                 cur_batch_score, pred = model(vis_feats=conv_feats, vis_pe=vis_pe, input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, \
-                        masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context_is_img=context_is_img, \
-                        next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, task_idx=task_idx, \
-                        drop_worst_ratio=0, filter_infr_th=th_list)
+                        masked_lm_labels=masked_ids, do_filter_task=do_filter_task, filter_label=filter_label, logit_mask=logit_mask, context=context, \
+                        cxt_modality_label=cxt_modality_label, next_sentence_label=is_next, masked_pos=masked_pos, masked_weights=masked_weights, \
+                        task_idx=task_idx, drop_worst_ratio=0, filter_infr_th=th_list)
                 assert len(cur_batch_score) == len(th_list)
                 Pred.append(pred)
                 Filter_labels.append(filter_label.detach().cpu())

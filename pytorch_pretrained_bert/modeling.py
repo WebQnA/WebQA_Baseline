@@ -1612,9 +1612,10 @@ class BertForWebqa(PreTrainedBertModel):
 
             # If different batches have different number of imgs, then vis_feats, vis_pe will be flattened (by torch.cat) in collate function
             # Otherwise, reshape them here:
-            vis_seq_len, vis_dim = vis_feats.size()[-2:]
-            vis_feats = vis_feats.view(-1, vis_seq_len, vis_dim)
-            vis_pe = vis_pe.view(-1, vis_seq_len, vis_dim)
+            if context[0] in ['img', 'both']: 
+                vis_seq_len, vis_dim = vis_feats.size()[-2:]
+                vis_feats = vis_feats.view(-1, vis_seq_len, vis_dim)
+                vis_pe = vis_pe.view(-1, vis_seq_len, vis_dim)
 
             proc_cxt_modality_label = []
             offset = 0

@@ -3,15 +3,20 @@
 #--gradient_accumulation_steps 64 --save_loss_curve --num_train_epochs 5 --output_dir tmp/filter_full_data \
 #--local_rank 0 --global_rank 0 --world_size 2 &
 
-#CUDA_VISIBLE_DEVICES=2,3 python run_webqa.py --new_segment_ids --do_train --train_batch_size 128 --split train \
-#--answer_provided_by 'img|txt' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 \
-#--gradient_accumulation_steps 64 --save_loss_curve --num_train_epochs 5 --output_dir tmp/filter_full_data \
-#--local_rank 1 --global_rank 1 --world_size 2
+#CUDA_VISIBLE_DEVICES=2 python run_webqa.py --new_segment_ids --do_train --train_batch_size 128 --split train --answer_provided_by 'txt' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 64 --save_loss_curve --num_train_epochs 6 --output_dir light_output/filter_txt_neg_ranked_by_IoU --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_txt_neg_ranked_by_IoU
+
+CUDA_VISIBLE_DEVICES=3 python run_webqa.py --new_segment_ids --do_train --train_batch_size 128 --split train --answer_provided_by 'txt' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 16 --save_loss_curve --num_train_epochs 8 --output_dir light_output/filter_txt_neg_ranked_by_RE_8 --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_txt_neg_ranked_by_RE_8 --txt_dataset_json_path /home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0725_ranked_by_RE.json && CUDA_VISIBLE_DEVICES=3 python run_webqa.py --new_segment_ids --do_train --train_batch_size 128 --split train --answer_provided_by 'txt' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 32 --save_loss_curve --num_train_epochs 8 --output_dir light_output/filter_txt_neg_ranked_by_RE_16 --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_txt_neg_ranked_by_RE_16 --txt_dataset_json_path /home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0725_ranked_by_RE.json --txt_filter_max_choices 16
+
+CUDA_VISIBLE_DEVICES=1 python run_webqa.py --new_segment_ids --do_train --train_batch_size 128 --split train --answer_provided_by 'txt' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 16 --save_loss_curve --num_train_epochs 8 --output_dir light_output/filter_txt_neg_ranked_by_IoU_8 --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_txt_neg_ranked_by_IoU_8 && CUDA_VISIBLE_DEVICES=1 python run_webqa.py --new_segment_ids --do_train --train_batch_size 128 --split train --answer_provided_by 'txt' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 32 --save_loss_curve --num_train_epochs 8 --output_dir light_output/filter_txt_neg_ranked_by_IoU_16 --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_txt_neg_ranked_by_IoU_16 --txt_filter_max_choices 16
+
+
+--local_rank 1 --global_rank 1 --world_size 2
 #CUDA_VISIBLE_DEVICES=3 python run_webqa.py --new_segment_ids --train_batch_size 16 --split ood_test --answer_provided_by 'img' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 8 --save_loss_curve --output_dir tmp/img_filter --recover_ori_ckpt &
 
+#filter infr
 #CUDA_VISIBLE_DEVICES=3 python run_webqa.py --new_segment_ids --train_batch_size 16 --split ood_test --answer_provided_by 'img' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 8 --save_loss_curve --output_dir tmp/img_filter &
 
-#CUDA_VISIBLE_DEVICES=0 python run_webqa.py --new_segment_ids --train_batch_size 16 --split ind_test --answer_provided_by 'img' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 8 --save_loss_curve --output_dir tmp/img_filter --recover_ori_ckpt &
+#CUDA_VISIBLE_DEVICES=2 python run_webqa.py --new_segment_ids --train_batch_size 16 --split ind_test --answer_provided_by 'img' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 2 --save_loss_curve --output_dir light_output/filter_img_x --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_img_x --recover_step 4 --use_x_distractors
 
 #CUDA_VISIBLE_DEVICES=2 python run_webqa.py --new_segment_ids --train_batch_size 16 --split ind_test --answer_provided_by 'img' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 8 --save_loss_curve --output_dir tmp/img_filter &
 
