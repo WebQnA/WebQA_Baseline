@@ -1,0 +1,36 @@
+21-07-27 11:47:30
+Error when downloading id=20020053, https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Iran_Central_Bank_Tower.jpg/401px-Iran_Central_Bank_Tower.jpg
+21-07-27 11:49:21
+Error when downloading id=20080677, https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Windows_NT_Workstation_4.0_Installation_Disc.jpg/593px-Windows_NT_Workstation_4.0_Installation_Disc.jpg
+21-07-27 11:49:46
+Error when downloading id=20090783, https://upload.wikimedia.org/wikipedia/en/thumb/7/73/Mahmud_Hasan_Deobandi.jpg/220px-Mahmud_Hasan_Deobandi.jpg
+21-07-27 11:53:35
+Error when downloading id=20032059, https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/1907_Postcard_with_Navajo_Swastica_Good_Luck.jpg/800px-1907_Postcard_with_Navajo_Swastica_Good_Luck.jpg
+21-07-27 11:54:16
+Error when downloading id=20012291, https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/E6uS2JFWYA4BGlm.jpg/800px-E6uS2JFWYA4BGlm.jpg
+21-07-27 11:55:24
+Error when downloading id=20002804, https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Adan_Canto.png/448px-Adan_Canto.png
+21-07-27 11:56:58
+Error when downloading id=20053166, https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Elizabeth_Angela_Marguerite_Bowes-Lyon%2C_c._1907.jpg/483px-Elizabeth_Angela_Marguerite_Bowes-Lyon%2C_c._1907.jpg
+21-07-27 11:57:02
+Error when downloading id=20083075, https://upload.wikimedia.org/wikipedia/en/thumb/e/ea/Atalla1963.png/174px-Atalla1963.png
+21-07-27 11:57:03
+Error when downloading id=20083080, https://upload.wikimedia.org/wikipedia/en/thumb/e/ea/Atalla1963.png/170px-Atalla1963.png
+21-07-27 11:57:43
+Error when downloading id=20033356, https://upload.wikimedia.org/wikipedia/en/thumb/3/31/PedigreechartC.png/290px-PedigreechartC.png
+21-07-27 11:59:37
+Error when downloading id=20094021, https://upload.wikimedia.org/wikipedia/en/thumb/d/de/Wiki_airbull.JPG/350px-Wiki_airbull.JPG
+21-07-27 12:01:04
+Error when downloading id=20014583, https://upload.wikimedia.org/wikipedia/commons/5/50/Alix_Champagne_sceau_anvers.png
+21-07-27 12:01:50
+Error when downloading id=20084638, https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Omar_Mokhtar---Embalo.JPG/399px-Omar_Mokhtar---Embalo.JPG
+21-07-27 12:04:59
+Error when downloading id=20025765, https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Sacha_Baron_Cohen_at_the_Golden_Globes_2020_%28cropped%29.jpg/446px-Sacha_Baron_Cohen_at_the_Golden_Globes_2020_%28cropped%29.jpg
+21-07-27 12:05:22
+Error when downloading id=20045857, 
+21-07-27 12:07:08
+Error when downloading id=20036503, https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Davido_-_A_Better_Time.jpg/600px-Davido_-_A_Better_Time.jpg
+21-07-27 12:09:24
+Error when downloading id=20037252, https://upload.wikimedia.org/wikipedia/en/thumb/3/30/Blue_Mountain.jpg/288px-Blue_Mountain.jpg
+21-07-27 12:09:52
+Error when downloading id=20027340, https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Kuba_Ka_in_training_at_Santino_Bros._Pro_Wrestling_School.jpg/600px-Kuba_Ka_in_training_at_Santino_Bros._Pro_Wrestling_School.jpg

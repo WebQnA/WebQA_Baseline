@@ -552,8 +552,8 @@ def main():
 
     if args.do_train:
         print("start training")
-        print("sleep 4600 secs")
-        time.sleep(4600)
+        #print("sleep 4600 secs")
+        #time.sleep(4600)
         if "img" in args.answer_provided_by:
             print("use_img_meta = ", args.use_img_meta)
             print("use_img_content = ", args.use_img_content)

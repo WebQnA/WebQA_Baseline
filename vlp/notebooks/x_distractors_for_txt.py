@@ -28,7 +28,7 @@ parser.add_argument("--end", type=int)
 parser.add_argument('--disable_print', action='store_true')
 args = parser.parse_args()
 assert args.end > args.start
-args.boundary = ((args.end-1) // 1000 + 1) * 1000
+args.boundary = ((args.end-1) // 2000 + 1) * 2000
 if args.disable_print:
     sys.stdout = open(os.devnull, 'w')
 
@@ -78,12 +78,68 @@ url_blocklist = ['seal', 'sign ', 'pdf', 'gif', 'icon', 'notice', 'cartoon', 'pu
 pos_list = ['NUM', 'NOUN', 'ADJ', 'PROPN']
 pattern = re.compile(r'\b(' + r'|'.join(stopwords.words('english')) + r')\b\s*|\(|\)|-')
 PUNCTUATIONS = set(string.punctuation)
-new_txt_data = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/output_mine_all_schema.json", "r"))
+new_txt_data = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0728_16k_new.json", "r"))
 
 def IoU(A, B):
     intersection = len(A.intersection(B))
     union = len(A.union(B))
     return round(intersection / (union+1e-7), 2)
+
+def contentUrl_to_displayUrl(contentUrl):
+    if 'commons' in contentUrl:
+        prefix = 'https://commons.wikimedia.org/wiki/'
+    else:
+        prefix = 'https://en.wikipedia.org/wiki/'
+    tokens = contentUrl.split('/')
+    if 'px-' in tokens[-1]:
+        return prefix + 'File:'+tokens[-2]
+    else:
+        return prefix + 'File:'+tokens[-1]
+    
+def displayUrl_to_imgUrl(html):
+
+    soup = BeautifulSoup(html, 'html.parser')
+    result = soup.find_all('a',class_= "mw-thumbnail-link", limit=10)
+    idx = 0
+    default = ""
+    for r in result:
+        soup_short = BeautifulSoup(str(r), 'html.parser')
+        for a in soup_short.find_all('a', href=True):
+            href = a['href']
+            if idx == 0: 
+                default = a['href']
+                idx += 1
+            if '800px' in href:
+                return href, "GOOD"
+    if len(default)>0: return default, "GOOD"
+    else:
+        result = soup.find_all('div',class_= "fullImageLink", limit=1)
+        for r in result:
+            soup_short = BeautifulSoup(str(r), 'html.parser')
+            for im in soup_short.find_all('img'):
+                if max(int(im['width']), int(im['height']))>=600 and min(int(im['width']), int(im['height']))>=400:
+                    return im['src'], "GOOD"
+                return im['src'], "SIZE"
+    return "", "FIELD_NONEXIST"
+
+
+def get_display_page_html(desurl):
+    try:
+        req = urllib.request.Request(desurl, headers = {'User-Agent': random.choice(USER_AGENT_LIST)})
+        with urllib.request.urlopen(req) as f:
+            html = f.read().decode('utf-8')
+        return html
+    except KeyboardInterrupt:
+        raise
+    except:
+        return ""
+    
+def normalize_imgUrl(url):
+    if not 'commons' in url: return "https:"+url
+    displayUrl = contentUrl_to_displayUrl(url)
+    html = get_display_page_html(displayUrl)
+    imgUrl, status = displayUrl_to_imgUrl(html)
+    return imgUrl
 
 def _wiki_request(params):
   
@@ -129,6 +185,8 @@ def get_imgs_and_captions(html):
     captions = []
     for l in links:
         imgUrl = l.get('src')
+        if "maps.wikimedia.org" in imgUrl: continue
+        
         try: 
             width = int(l['width'])
             height = int(l['height'])
@@ -292,7 +350,7 @@ def __load(title):
 
     return title
 
-def find_sentences_from_page(title, page, keywords, answerwords, goldfactwords):
+def find_sentences_from_page(title, page, keywords, answerwords, goldfactwords, threshold=0.06):
     try: 
         cont = content(title)
         paragraphs = cont[:cont.find('== References ==')].split('\n')
@@ -311,7 +369,7 @@ def find_sentences_from_page(title, page, keywords, answerwords, goldfactwords):
 
                 IoU_Q = IoU(set(nouns_in_s), keywords)
                 IoU_A = IoU(set(nouns_in_s), answerwords)
-                if IoU_Q -  IoU_A > 0.06:
+                if IoU_Q -  IoU_A > threshold:
                     #print(IoU_Q, IoU_A, s.text)
                     IoU_G = IoU(set(nouns_in_s), goldfactwords)
                     sen2score[s.text] = {'scores': (IoU_Q, IoU_A, IoU_G, IoU_Q - IoU_A, IoU_Q - IoU_A - IoU_G), 'link': page, 'title': title}
@@ -328,7 +386,7 @@ def find_sentences_from_page(title, page, keywords, answerwords, goldfactwords):
 
                 IoU_Q = IoU(set(nouns_in_s), keywords)
                 IoU_A = IoU(set(nouns_in_s), answerwords)
-                if IoU_Q -  IoU_A >= 0.06:
+                if IoU_Q -  IoU_A > threshold:
                     #print(IoU_Q, IoU_A, " ".join([s1.text, s2.text]))
                     IoU_G = IoU(set(nouns_in_s), goldfactwords)
                     sen2score[" ".join([s1.text, s2.text])] = {'scores': (IoU_Q, IoU_A, IoU_G, IoU_Q - IoU_A, IoU_Q - IoU_A - IoU_G), 'link': page, 'title': title}
@@ -353,7 +411,7 @@ def find_imgs_from_page(title, page, keywords, answerwords, goldfactwords):
         IoU_A = IoU(set(nouns_in_s), answerwords)
         if IoU_Q -  IoU_A > 0.0: #0.06
             IoU_G = IoU(set(nouns_in_s), goldfactwords)
-            cap2score[doc.text] = {'scores': (IoU_Q, IoU_A, IoU_G, IoU_Q - IoU_A, IoU_Q - IoU_A - IoU_G), 'img':im, 'link': page, 'title': title}    
+            cap2score[doc.text] = {'scores': (IoU_Q, IoU_A, IoU_G, IoU_Q - IoU_A, IoU_Q - IoU_A - IoU_G), 'img':normalize_imgUrl(im), 'link': page, 'title': title}    
     return cap2score
 
 def get_sen2score_from_indx(k):
@@ -377,6 +435,30 @@ def get_sen2score_from_indx(k):
     print("total num of imgs found = ", len(cap2score))
     
     word_lists = (titlewords, keywords, goldfactwords, answerwords)
+    
+    if len(sen2score) > 5 and len(cap2score) > 5: 
+        return sen2score, cap2score, word_lists, anchor2page
+    
+    ### If the above alg doesn't work, try finding relevant pages by noun chunks in Q
+    new_anchor2page = get_pages_from_Q_via_noun_chunks(Q)
+    
+    for title in new_anchor2page:
+        sen2score.update(find_sentences_from_page(title, new_anchor2page[title], keywords, answerwords, goldfactwords, 0.0))
+        cap2score.update(find_imgs_from_page(title, new_anchor2page[title], keywords, answerwords, goldfactwords))
+    
+    print("total num of sentences found = ", len(sen2score))
+    print("total num of imgs found = ", len(cap2score))
+    if len(sen2score) == 0:
+        for title in anchor2page: sen2score.update(find_sentences_from_page(title, anchor2page[title], keywords.union(titlewords), answerwords, goldfactwords, 0.0))
+        for title in new_anchor2page: sen2score.update(find_sentences_from_page(title, new_anchor2page[title], keywords.union(titlewords), answerwords, goldfactwords, 0.0))
+        print("After accepting overlap with titlewords, total num of sentences found = ", len(sen2score))
+    if len(cap2score) == 0:
+        for title in anchor2page: cap2score.update(find_imgs_from_page(title, anchor2page[title], keywords.union(titlewords), answerwords, goldfactwords))
+        for title in new_anchor2page: cap2score.update(find_imgs_from_page(title, new_anchor2page[title], keywords.union(titlewords), answerwords, goldfactwords))
+        print("After accepting overlap with titlewords, total num of imgs found = ", len(cap2score))
+    sen2score = dict(sorted(sen2score.items(), key=lambda x: x[1]['scores'][-1], reverse=True))
+    cap2score = dict(sorted(cap2score.items(), key=lambda x: x[1]['scores'][-1], reverse=True))
+    anchor2page.update(new_anchor2page)
     return sen2score, cap2score, word_lists, anchor2page
 
 def dummy_get_sen2score_from_indx(k):
@@ -440,7 +522,7 @@ def get_pages_from_Q_via_noun_chunks(Q):
             pages = pages.union(wikipedia.search(chunk))
         chunks = chunks.union(more_chunks)
     
-    print("num of pages: ", len(pages))
+    #print("num of pages: ", len(pages))
     anchor2page = {}
     for title in pages:
         try: anchor2page[__load(t)] = "https://en.wikipedia.org/wiki/" + urllib.parse.quote("_".join(t.split())) 
@@ -496,17 +578,19 @@ def add_html_row(k, sen2score, cap2score, word_lists, colors = ["(223, 255, 238)
     return html.encode('ascii', 'xmlcharrefreplace').decode("utf-8")
 
 ### Mining + Save as json
-try: upd_txt_data = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_txt_data/upd_txt_data_{}.json".format(args.boundary), "r"))
+try: upd_txt_data = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_txt_data_16k/upd_txt_data_16k_{}.json".format(args.boundary), "r"))
 except: upd_txt_data = {}
 for k in range(args.start, args.end):
-    if k%1 == 0: json.dump(upd_txt_data, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_txt_data/upd_txt_data_{}.json".format(args.boundary), "w"), indent=4)
-    #if str(k) in upd_txt_data: continue
-    #upd_txt_data[str(k)] = copy.deepcopy(new_txt_data[str(k)])
+    if str(k) in upd_txt_data or str(k) not in new_txt_data: continue
+    if k%1 == 0: json.dump(upd_txt_data, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_txt_data_16k/upd_txt_data_16k_{}.json".format(args.boundary), "w"), indent=4)
+    upd_txt_data[str(k)] = copy.deepcopy(new_txt_data[str(k)])
     #if len(upd_txt_data[str(k)]['new_negFacts']) >= 5 and len(upd_txt_data[str(k)]['img_negFacts']) >= 5: continue
-    if str(k) in upd_txt_data and 'word_lists' in upd_txt_data[str(k)]: continue
-    try: sen2score, cap2score, word_lists, anchor2page = dummy_get_sen2score_from_indx(k)
+    #if str(k) in upd_txt_data and 'word_lists' in upd_txt_data[str(k)]: continue
+    try: sen2score, cap2score, word_lists, anchor2page = get_sen2score_from_indx(k)
     except KeyboardInterrupt: raise
     except: raise
+    upd_txt_data[str(k)]['new_negFacts'] = []
+    upd_txt_data[str(k)]['img_negFacts'] = []
     upd_txt_data[str(k)]['word_lists'] = {
         'titlewords': " || ".join(word_lists[0]), 
         'keywords': " || ".join(word_lists[1]), 
@@ -517,7 +601,7 @@ for k in range(args.start, args.end):
     new_negFacts_count = len(upd_txt_data[str(k)]['new_negFacts'])
     for s in sen2score:
         if new_negFacts_count >= 40: break
-        if sen2score[s]['scores'][2] == 0.0 and sen2score[s]['scores'][1] == 0.0 and len(s.split()) in range(22, 60):
+        if sen2score[s]['scores'][2] == 0.0 and sen2score[s]['scores'][1] == 0.0 and len(s.split()) in range(22, 100):
             upd_txt_data[str(k)]['new_negFacts'].append({
                 'title': sen2score[s]['title'],
                 'scores': str(sen2score[s]['scores']),
@@ -538,7 +622,7 @@ for k in range(args.start, args.end):
         })
         img_negFacts_count += 1
 
-json.dump(upd_txt_data, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_txt_data/upd_txt_data_{}.json".format(args.boundary), "w"), indent=4)
+json.dump(upd_txt_data, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/upd_txt_data_16k/upd_txt_data_16k_{}.json".format(args.boundary), "w"), indent=4)
 print("finish")
 '''
 ### Mining + Create demo
