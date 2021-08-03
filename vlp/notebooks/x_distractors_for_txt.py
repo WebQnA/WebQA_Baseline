@@ -255,7 +255,8 @@ def get_keywords_and_relevant_pages_from_txt_sample(k):
     anchor2page = {}
     for f in new_txt_data[str(k)]['SupportingFacts']:
         if not 'wikipedia' in f['url']: continue
-        fact_title_raw = ' '.join(urllib.parse.unquote(f['url']).split('/')[-1].split('_'))
+        fact_title_raw = ' '.join(urllib.parse.unquote(f['url']).split('/')[-1].split('_')) 
+        if not fact_title_raw: continue
         fact_title = pattern.sub('', fact_title_raw)
         titlewords = titlewords.union(fact_title.split())
         for title in wikipedia.search(fact_title_raw):
