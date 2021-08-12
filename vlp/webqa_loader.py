@@ -1051,12 +1051,12 @@ class Preprocess4webqaDecoder(Pipeline):
         print("loader.use_img_content = ", use_img_content)
 
     def __call__(self, instance, filter_max_choices=None, device=None):
-        _, __, ___, ____, _____, ______, do_filter_task, context_is_img, example_id = instance
+        _, __, ___, ____, _____, ______, do_filter_task, context, example_id = instance
         if do_filter_task:
             raise ValueError("Processor for decoder does not support filter task. \nFor filter task inference, please use run_webqa.py by setting args.do_train=False")
         else:
             if context_is_img:
-                gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, _, do_filter_task, context_is_img, example_id = instance # '_' as a placeholder for 'A'
+                gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, _, do_filter_task, context, example_id = instance # '_' as a placeholder for 'A'
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
                 cxt = sum(gold_cxt_list, [])
 
@@ -1104,6 +1104,11 @@ class Preprocess4webqaDecoder(Pipeline):
                 # Tokens in A can attend to previous tokens in A
                 pred_st, pred_end = len(tokens), self.max_len
                 input_mask[pred_st:pred_end, pred_st:pred_end].copy_(self._tril_matrix[:pred_end-pred_st, :pred_end-pred_st])
+                
+                # Convert some inputs to tensors
+                input_ids = torch.LongTensor(input_ids)
+                segment_ids = torch.LongTensor(segment_ids)
+                position_ids = torch.LongTensor(position_ids)
 
                 img_list = []
                 vis_pe_list = []
@@ -1154,13 +1159,13 @@ class Preprocess4webqaDecoder(Pipeline):
                 assert vis_pe.size(0) == self.max_len_img_cxt
                 assert img.size(0) == self.max_len_img_cxt
 
-                # schema: (input_ids, segment_ids, input_mask, self.task_idx, img, vis_pe, context_is_img)
-                return (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context_is_img, example_id)
+                # schema: (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return    (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
                 
             
             else: # qa task, context is txt
                 #raise NotImplementedError
-                gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img, example_id = instance
+                gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
                 tokens_a = []
                 if self.use_txt_fact: tokens_a = sum(gold_facts, [])
                 tokens_b = Q.copy()
@@ -1170,7 +1175,6 @@ class Preprocess4webqaDecoder(Pipeline):
                 tokens_b += ['[PAD]'] * n_pad
 
                 tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b
-                #print("\n", tokens)
                 if self.new_segment_ids:
                     segment_ids = [4] * (len(tokens_a)+2) + [5] * len(tokens_b) + [5] * (self.max_len - len(tokens))
                 else:
@@ -1184,7 +1188,6 @@ class Preprocess4webqaDecoder(Pipeline):
                     position_ids.append(0)
                 for i in range(len(tokens), self.max_len):
                     position_ids.append(i - len(tokens) + len(tokens_a) + 2 + ori_Q_len)
-                #print(position_ids)
                 #time.sleep(2)
 
                 input_ids = self.indexer(tokens)
@@ -1194,8 +1197,13 @@ class Preprocess4webqaDecoder(Pipeline):
                 pred_st, pred_end = len(tokens), self.max_len
                 input_mask[pred_st:pred_end, pred_st:pred_end].copy_(self._tril_matrix[:pred_end-pred_st, :pred_end-pred_st])
                 
-                # schema: (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context_is_img, example_id)
-                return (input_ids, segment_ids, position_ids, input_mask, self.task_idx, None, None, context_is_img, example_id)
+                # Convert some inputs to tensors
+                input_ids = torch.LongTensor(input_ids)
+                segment_ids = torch.LongTensor(segment_ids)
+                position_ids = torch.LongTensor(position_ids)
+                
+                # schema: (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return    (input_ids, segment_ids, position_ids, input_mask, self.task_idx, None, None, context, cxt_modality_label, example_id)
                 raise NotImplementedError
 
 

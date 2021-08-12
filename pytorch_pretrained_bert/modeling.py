@@ -869,18 +869,16 @@ class BertModelIncr(BertModel):
     def __init__(self, config):
         super(BertModelIncr, self).__init__(config)
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context_is_img, 
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context=None, cxt_modality_label=None, 
                 prev_embedding=None, prev_encoded_layers=None, output_all_encoded_layers=True, max_len_img_cxt=200):
         
         extended_attention_mask = self.get_extended_attention_mask(
             input_ids, token_type_ids, attention_mask)
-        #if prev_embedding is None:
-            #print("\nattention_mask: ", attention_mask[0][10])
-            #print("\nextended_attention_mask.size() = ", extended_attention_mask.size())
+        
         prev_is_None = prev_embedding is None
         #print(prev_is_None)
         embedding_output = self.embeddings(
-            vis_feats, vis_pe, input_ids, token_type_ids, position_ids=position_ids, context_is_img=context_is_img, max_len_img_cxt=max_len_img_cxt, prev_is_None=prev_is_None)
+            vis_feats, vis_pe, input_ids, token_type_ids, position_ids=position_ids, context=context, cxt_modality_label=cxt_modality_label, max_len_img_cxt=max_len_img_cxt, prev_is_None=prev_is_None)
         
         encoded_layers = self.encoder(embedding_output,
                                       extended_attention_mask,
@@ -889,12 +887,7 @@ class BertModelIncr(BertModel):
                                       output_all_encoded_layers=output_all_encoded_layers)
         sequence_output = encoded_layers[-1]
         pooled_output = self.pooler(sequence_output)
-        #if prev_is_None:
-            #print(embedding_output[0][-1][:10])
-            #print("encoded_layers[0].size() = ", encoded_layers[0].size())
-            #print(encoded_layers[0][0][-1][:10])
-            #print(encoded_layers[-1][0][-1][:10])
-            #print(pooled_output[0][0][:10])
+
         if not output_all_encoded_layers:
             encoded_layers = encoded_layers[-1]
         return embedding_output, encoded_layers, pooled_output
@@ -1802,13 +1795,16 @@ class BertForWebqaDecoder(PreTrainedBertModel):
     
 
 
-    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context_is_img, task_idx=None, sample_mode='greedy', tokenizer=None):
-        if context_is_img[0]:
+    def forward(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context=None, cxt_modality_label=None, task_idx=None, sample_mode='greedy', tokenizer=None):
+        if context[0] in ['img', 'both']:
             vis_feats = self.vis_embed(vis_feats) # image region features
+            print("\nvis_pe.size() = ", vis_pe.size())
             vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings
+        
+        cxt_modality_label = torch.squeeze(torch.LongTensor(cxt_modality_label), 1)
 
         if self.search_beam_size > 1:
-            return self.beam_search(vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context_is_img, task_idx)
+            return self.beam_search(vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context, cxt_modality_label, task_idx)
         input_shape = list(input_ids.size())
         batch_size = input_shape[0]
         input_length = input_shape[1]
@@ -1834,7 +1830,7 @@ class BertForWebqaDecoder(PreTrainedBertModel):
             curr_position_ids = position_ids[:, start_pos:next_pos + 1]
             new_embedding, new_encoded_layers, _ = \
                 self.bert(vis_feats, vis_pe, x_input_ids, curr_token_type_ids, curr_position_ids, curr_attention_mask, 
-                context_is_img[0], prev_embedding=prev_embedding, prev_encoded_layers=prev_encoded_layers, 
+                context[0], cxt_modality_label, prev_embedding=prev_embedding, prev_encoded_layers=prev_encoded_layers, 
                 output_all_encoded_layers=True, max_len_img_cxt=self.max_len_img_cxt)
 
             last_hidden = new_encoded_layers[-1][:, -1:, :]
@@ -1917,7 +1913,7 @@ class BertForWebqaDecoder(PreTrainedBertModel):
             curr_position_ids = position_ids[:, start_pos:next_pos + 1]
             new_embedding, new_encoded_layers, _ = \
                 self.bert(vis_feats, vis_pe, x_input_ids, curr_token_type_ids, curr_position_ids, curr_attention_mask, 
-                context_is_img[0], prev_embedding=prev_embedding, prev_encoded_layers=prev_encoded_layers, 
+                context[0], cxt_modality_label, prev_embedding=prev_embedding, prev_encoded_layers=prev_encoded_layers, 
                 output_all_encoded_layers=True, max_len_img_cxt=self.max_len_img_cxt)
             # compared with BertModel, BertModelIncr returns an additional embedding_output from forward()
             # new_encoded_layers == sequence_output

@@ -646,9 +646,7 @@ class Preprocess4webqa_VinVL(Pipeline):
                     if self.use_img_content: input_mask[:, :img_end_pos].fill_(1)
                     st, end = 1 + self.max_len_img_cxt, len(tokens_a) + 2 + len(Q)
                     input_mask[:, st:end].fill_(1)
-                    #st, end = 2 + self.max_len_a, 2 + self.max_len_a + len(Q)
-                    #input_mask[:, st:end].fill_(1)
-                    #if i==0: print(input_mask[230])
+
                     input_ids = self.indexer(tokens)
                     n_pad = self.max_len - len(input_ids)
                     input_ids.extend([0] * n_pad)
@@ -957,3 +955,183 @@ class Preprocess4webqa_VinVL(Pipeline):
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
                 return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,       -1,      do_filter_task,      None,      None,       None,         self.task_idx, None, None,  context, None,               example_id)
                 raise NotImplementedError
+
+class Preprocess4webqaDecoder_VinVL(Pipeline):
+
+    def __init__(self, vocab_words, indexer, seed, max_len, len_vis_input, max_len_a, max_len_Q, max_len_img_cxt=200, max_tgt_len=30, new_segment_ids=True, truncate_config={}, use_img_meta=True, use_img_content=True, use_txt_fact=True, ImgDataTsv_dict=None):
+        super().__init__()
+        self.task_idx = 3 # use task_idx for s2s in relaxed projection layer
+        self.len_vis_input = len_vis_input
+        self.vocab_words = vocab_words
+        self.indexer = indexer
+        self.max_len_img_cxt = max_len_img_cxt
+        self._tril_matrix = torch.tril(torch.ones((max_len, max_len), dtype=torch.long))
+        self.always_truncate_tail = truncate_config.get('always_truncate_tail', False)
+        self.max_len_Q = max_len_Q
+        self.max_len_a = max_len_a
+        self.max_len = min(max_len, max_len_a + 2 + max_len_Q + max_tgt_len)
+        self.trunc_seg = truncate_config.get('trunc_seg', None)
+        assert max_len_a+max_len_Q <= max_len, "loader Processor: max_len_a + max_len_b > max_len"
+        self.new_segment_ids = new_segment_ids
+        self.use_img_meta = use_img_meta
+        self.use_img_content = use_img_content
+        self.use_txt_fact = use_txt_fact
+        random.seed(seed)
+        np.random.seed(seed)
+        print("loader.use_img_meta = ", use_img_meta)
+        print("loader.use_img_content = ", use_img_content)
+        
+        self.img_data_tsv = {}
+        for k in ImgDataTsv_dict:
+            self.img_data_tsv[k] = ImgDataTsv(ImgDataTsv_dict[k])
+
+    def __call__(self, instance, filter_max_choices=None, device=None):
+        _, __, ___, ____, _____, ______, do_filter_task, context, example_id = instance
+        if do_filter_task:
+            raise ValueError("Processor for decoder does not support filter task. \nFor filter task inference, please use run_webqa.py by setting args.do_train=False")
+        else:
+            if context in ['img', 'both']:
+                gold_image_ids, distractor_image_ids, gold_cxt_list, distractor_cxt_list, Q, _, do_filter_task, context, example_id = instance # '_' as a placeholder for 'A'
+                tokens_a = ['[UNK]'] * self.max_len_img_cxt
+                cxt = sum(gold_cxt_list, [])
+
+               
+                tokens_b = Q.copy() # without copy Q will change as we modify tokens_b during padding!!!!!
+                truncate_tokens_pair(cxt, tokens_b, max_len=self.max_len_a - self.max_len_img_cxt + self.max_len_Q, max_len_a=self.max_len_a - self.max_len_img_cxt, max_len_b=self.max_len_Q, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
+                if self.use_img_meta: tokens_a += cxt                
+                
+                n_pad = self.max_len_Q + self.max_len_a - len(tokens_a) - len(tokens_b)
+                tokens_b += ['[PAD]'] * n_pad
+
+                tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b # + ['[SEP]'] # start generating right after Q
+                #print(tokens_b)
+                if self.new_segment_ids:
+                    segment_ids = [4] * (len(tokens_a)+2) + [5] * len(tokens_b) + [5] * (self.max_len - len(tokens))
+                else:
+                    segment_ids = [0] * (len(tokens_a)+2) + [1] * len(tokens_b) + [5] * (self.max_len - len(tokens))
+
+                
+                # Q 和 A中间的position_id不连续真的会出问题。。。
+                # position_ids
+                ori_Q_len = min(len(Q), self.max_len_Q)
+                position_ids = []
+                for i in range(len(tokens_a) + 2 + ori_Q_len):
+                    position_ids.append(i)
+                for i in range(len(tokens_a) + 2 + ori_Q_len, len(tokens)):
+                    position_ids.append(0)
+                for i in range(len(tokens), self.max_len):
+                    position_ids.append(i - len(tokens) + len(tokens_a) + 2 + ori_Q_len)
+                #print(position_ids[202:302])
+                
+                
+
+                # Token Indexing
+                input_ids = self.indexer(tokens)
+
+                # self-attention mask
+                num_img = len(gold_image_ids)
+                input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
+
+                img_end_pos = 1 + self.len_vis_input*num_img
+                if self.use_img_content: input_mask[:, :img_end_pos].fill_(1)
+                st, end = 1 + self.max_len_img_cxt, len(tokens_a) + 2 + ori_Q_len # paddings at the end of tokens_b don't need attention
+                input_mask[:, st:end].fill_(1)
+                # Tokens in A can attend to previous tokens in A
+                pred_st, pred_end = len(tokens), self.max_len
+                input_mask[pred_st:pred_end, pred_st:pred_end].copy_(self._tril_matrix[:pred_end-pred_st, :pred_end-pred_st])
+                
+                # Convert some inputs to tensors
+                input_ids = torch.LongTensor(input_ids)
+                segment_ids = torch.LongTensor(segment_ids)
+                position_ids = torch.LongTensor(position_ids)
+
+                img_list = []
+                vis_pe_list = []
+                for image_id in gold_image_ids:
+                    vis_pe, scores, img, cls_label = self.img_data_tsv[image_id//10000000][image_id % 10000000]
+
+                    #img = features['fc1_features'].detach().cpu().float()
+                    #cls_label = features['cls_features'].detach().cpu().float()
+                    #vis_pe = features['pred_boxes'].detach().cpu()
+
+                    # Lazy normalization of the coordinates
+                    w_est = torch.max(vis_pe[:, [0, 2]])*1.+1e-5
+                    h_est = torch.max(vis_pe[:, [1, 3]])*1.+1e-5
+                    vis_pe[:, [0, 2]] /= w_est
+                    vis_pe[:, [1, 3]] /= h_est
+                    assert h_est > 0, 'loader Processor: box h_est should greater than 0! {}'.format(h_est)
+                    assert w_est > 0, 'loader Processor: box w_est should greater than 0! {}'.format(w_est)
+                    rel_area = (vis_pe[:, 3]-vis_pe[:, 1])*(vis_pe[:, 2]-vis_pe[:, 0])
+                    rel_area.clamp_(0)
+
+                    vis_pe = torch.cat((vis_pe[:, :4], rel_area.view(-1, 1), scores.view(-1, 1)), -1)
+                    normalized_coord = F.normalize(vis_pe.data[:, :5] - 0.5, dim=-1)
+                    vis_pe = torch.cat((F.layer_norm(vis_pe, [6]), F.layer_norm(cls_label, [1595])), dim=-1)
+                    
+                    img_list.append(img)
+                    vis_pe_list.append(vis_pe)
+                    if len(img_list) >= 2: break # harded coded, doesn't allow more than 2 imgs
+
+                if len(img_list) == 0:
+                    assert len(vis_pe_list) == 0
+                    img = torch.zeros((self.max_len_img_cxt, 2048)) # 2048 is hard-coded
+                    vis_pe = torch.zeros((self.max_len_img_cxt, 1607)) # 1607 is hard-coded
+                else:
+                    img = torch.cat(img_list, dim=0)
+                    vis_pe = torch.cat(vis_pe_list, dim=0)
+                    assert img.size(0) == vis_pe.size(0), "img features and vis_pe should have the same token length!"
+                    vis_pad = torch.zeros((self.max_len_img_cxt - img.size(0), img.size(-1)))#.to(device)
+                    img = torch.cat((img, vis_pad), dim=0)
+                    vis_pad = torch.zeros((self.max_len_img_cxt - vis_pe.size(0), vis_pe.size(-1)))#.to(device)
+                    vis_pe = torch.cat((vis_pe, vis_pad), dim=0)
+                assert vis_pe.size(0) == self.max_len_img_cxt
+                assert img.size(0) == self.max_len_img_cxt
+
+                cxt_modality_label = [1]
+                # schema: (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return    (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                
+            
+            else: # qa task, context is txt
+                #raise NotImplementedError
+                gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
+                tokens_a = []
+                if self.use_txt_fact: tokens_a = sum(gold_facts, [])
+                tokens_b = Q.copy()
+                truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_Q, max_len_a=self.max_len_a, max_len_b=self.max_len_Q, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
+                
+                n_pad  = self.max_len_Q + self.max_len_a - len(tokens_a) - len(tokens_b)
+                tokens_b += ['[PAD]'] * n_pad
+
+                tokens = ['[CLS]'] + tokens_a + ['[SEP]'] + tokens_b
+                if self.new_segment_ids:
+                    segment_ids = [4] * (len(tokens_a)+2) + [5] * len(tokens_b) + [5] * (self.max_len - len(tokens))
+                else:
+                    segment_ids = [0] * (len(tokens_a)+2) + [1] * len(tokens_b) + [5] * (self.max_len - len(tokens))
+
+                ori_Q_len = min(len(Q), self.max_len_Q)
+                position_ids = []
+                for i in range(len(tokens_a) + 2 + ori_Q_len):
+                    position_ids.append(i)
+                for i in range(len(tokens_a) + 2 + ori_Q_len, len(tokens)):
+                    position_ids.append(0)
+                for i in range(len(tokens), self.max_len):
+                    position_ids.append(i - len(tokens) + len(tokens_a) + 2 + ori_Q_len)
+                #time.sleep(2)
+
+                input_ids = self.indexer(tokens)
+
+                input_mask = torch.zeros(self.max_len, self.max_len, dtype=torch.long)
+                input_mask[:, :len(tokens_a)+2+ori_Q_len].fill_(1)
+                pred_st, pred_end = len(tokens), self.max_len
+                input_mask[pred_st:pred_end, pred_st:pred_end].copy_(self._tril_matrix[:pred_end-pred_st, :pred_end-pred_st])
+                
+                # Convert some inputs to tensors
+                input_ids = torch.LongTensor(input_ids)
+                segment_ids = torch.LongTensor(segment_ids)
+                position_ids = torch.LongTensor(position_ids)
+                
+                # schema: (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return    (input_ids, segment_ids, position_ids, input_mask, self.task_idx, None, None,  context, None,               example_id)
+                raise NotImplementedError
+

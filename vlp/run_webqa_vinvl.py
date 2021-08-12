@@ -679,28 +679,6 @@ def main():
                         for param_group in optimizer.param_groups:
                             param_group['lr'] = lr_this_step
                     optimizer.step()
-                    #if step>0:
-                        #time.sleep(1)
-                        #flat_grads = torch.cat([parms.grad.view(-1) for name, parms in model.named_parameters() if parms.grad is not None])
-                        #print(torch.max(flat_grads))
-                        #print(torch.min(flat_grads))
-                        #flat_grads = torch.cat([x.grad.detach().cpu().view(-1) for x in optimizer.param_groups[0]['params'] if x.grad is not None], dim=0)
-                        #print(torch.sum(torch.isnan(flat_grads)))
-                        #print(torch.max(flat_grads))
-                        #print(torch.min(flat_grads))
-                        #print(torch.mean(flat_grads))
-
-                        #flat_parms = torch.cat([parms.data.view(-1) for name, parms in model.named_parameters() if parms.data is not None], dim=0)
-                        #print(len([parms.data.view(-1) for name, parms in model.named_parameters() if parms.data is not None]))
-                        #print(torch.max(flat_parms))
-                        #print(torch.min(flat_parms))
-                        #flat_parms = torch.cat([x.data.detach().cpu().view(-1) for x in optimizer.param_groups[0]['params'] if x.data is not None], dim=0)
-                        #print(len([x.data.view(-1) for x in optimizer.param_groups[0]['params'] if x.data is not None]))
-                        #print(torch.sum(torch.isnan(flat_parms)))
-                        #print(torch.max(flat_parms))
-                        #print(torch.min(flat_parms))
-                        #print(torch.mean(flat_parms))
-                        #print(flat_parms[:10])
                     optimizer.zero_grad()
                     global_step += 1
                 #print("\n------------------------------ loss.grad ------------------------------\n")
