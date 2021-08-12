@@ -234,7 +234,7 @@ def main():
     parser.add_argument('--gold_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/gold_0_22265/predictions_cor.tsv", type=str)
     parser.add_argument('--neg_img_tsv', default=None, type=str)
     parser.add_argument('--x_neg_img_tsv', default=None, type=str)
-
+    
     parser.add_argument('--world_size', default = 1, type = int,
                         help = 'number of distributed processes')
     parser.add_argument('--dist_url', default='file://[PT_OUTPUT_DIR]/nonexistent_file', type = str,
@@ -444,7 +444,7 @@ def main():
             config_path=args.config_path, task_idx=task_idx_proj,
             max_position_embeddings=args.max_position_embeddings, label_smoothing=args.label_smoothing,
             fp32_embedding=args.fp32_embedding, cache_dir=args.output_dir+'/.pretrained_model_{}'.format(args.global_rank),
-            drop_prob=args.drop_prob, max_len_img_cxt=args.max_len_img_cxt)
+            drop_prob=args.drop_prob, max_len_img_cxt=args.max_len_img_cxt, use_vinvl=True)
         global_step = 0
     else:
         if recover_step:
@@ -470,7 +470,7 @@ def main():
                 config_path=args.config_path, task_idx=task_idx_proj,
                 max_position_embeddings=args.max_position_embeddings, label_smoothing=args.label_smoothing,
                 fp32_embedding=args.fp32_embedding, cache_dir=args.output_dir+'/.pretrained_model_{}'.format(args.global_rank),
-                drop_prob=args.drop_prob, max_len_img_cxt=args.max_len_img_cxt)
+                drop_prob=args.drop_prob, max_len_img_cxt=args.max_len_img_cxt, use_vinvl=True)
         else:
             model = BertForSeq2SeqDecoder.from_pretrained(args.bert_model,
                 max_position_embeddings=args.max_position_embeddings, config_path=args.config_path,
@@ -600,11 +600,12 @@ def main():
                     if torch.isnan(model.state_dict()[param_tensor]).any().item():
                         print("\n nan exists in ", param_tensor)
                 batch = [t.to(device) if not isinstance(t, list) else t for t in batch ]
+
                 input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, ori_choices, task_idx, img, vis_pe, context, cxt_modality_label, example_ids = batch
                 if args.fp16:
                     img = img.half()
                     vis_pe = vis_pe.half()
-                
+
                 conv_feats = img.data # Bx100x2048
                 vis_pe = vis_pe.data
                 # doesn't support scst training for not

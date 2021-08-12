@@ -1554,7 +1554,7 @@ class BertForSeq2SeqDecoder(PreTrainedBertModel):
 class BertForWebqa(PreTrainedBertModel):
     """refer to BertForPreTraining"""
 
-    def __init__(self, config, num_labels=2, max_len_img_cxt=200):
+    def __init__(self, config, num_labels=2, max_len_img_cxt=200, use_vinvl=False):
         super(BertForWebqa, self).__init__(config)
         self.bert = BertModel(config)
         self.cls = BertPreTrainingHeads(
@@ -1571,22 +1571,30 @@ class BertForWebqa(PreTrainedBertModel):
             self.crit_mask_lm_smoothed = None
 
         # will not be initialized when loading BERT weights
-        self.vis_embed = nn.Sequential(nn.Linear(2048, 2048),
-                                       nn.ReLU(),
-                                       nn.Linear(2048, config.hidden_size),
-                                       nn.ReLU(),
-                                       nn.Dropout(config.hidden_dropout_prob)) # use to be 0.3
-        try:
-            self.vis_embed[0].weight.data.copy_(torch.from_numpy(pickle.load(
-                    open('/home/yingshac/CYS/WebQnA/cpts/detectron_weights/fc7_w.pkl', 'rb'))))
-            self.vis_embed[0].bias.data.copy_(torch.from_numpy(pickle.load(
-                    open('/home/yingshac/CYS/WebQnA/cpts/detectron_weights/fc7_b.pkl', 'rb'))))
-        except:
-            raise Exception('Cannot find Detectron fc7 weights! Download from https://dl.fbaipublicfiles.com/ActivityNet-Entities/ActivityNet-Entities/detectron_weights.tar.gz and uncompress under the code root directory.')
+        if use_vinvl:
+            self.vis_embed = nn.Sequential(nn.Linear(2048, config.hidden_size),
+                                        nn.ReLU(),
+                                        nn.Dropout(config.hidden_dropout_prob))
+            self.vis_pe_embed = nn.Sequential(nn.Linear(6+1595, config.hidden_size),
+                                        nn.ReLU(),
+                                        nn.Dropout(config.hidden_dropout_prob))
+        else:
+            self.vis_embed = nn.Sequential(nn.Linear(2048, 2048),
+                                        nn.ReLU(),
+                                        nn.Linear(2048, config.hidden_size),
+                                        nn.ReLU(),
+                                        nn.Dropout(config.hidden_dropout_prob)) # use to be 0.3
+            try:
+                self.vis_embed[0].weight.data.copy_(torch.from_numpy(pickle.load(
+                        open('/home/yingshac/CYS/WebQnA/cpts/detectron_weights/fc7_w.pkl', 'rb'))))
+                self.vis_embed[0].bias.data.copy_(torch.from_numpy(pickle.load(
+                        open('/home/yingshac/CYS/WebQnA/cpts/detectron_weights/fc7_b.pkl', 'rb'))))
+            except:
+                raise Exception('Cannot find Detectron fc7 weights! Download from https://dl.fbaipublicfiles.com/ActivityNet-Entities/ActivityNet-Entities/detectron_weights.tar.gz and uncompress under the code root directory.')
 
-        self.vis_pe_embed = nn.Sequential(nn.Linear(6+1601, config.hidden_size),
-                                       nn.ReLU(),
-                                       nn.Dropout(config.hidden_dropout_prob))
+            self.vis_pe_embed = nn.Sequential(nn.Linear(6+1601, config.hidden_size),
+                                        nn.ReLU(),
+                                        nn.Dropout(config.hidden_dropout_prob))
         
         self.context_classifier = nn.Linear(config.hidden_size, 2) # each choice gets a single logit
         #self.context_crit = nn.BCEWithLogitsLoss()
@@ -1688,8 +1696,10 @@ class BertForWebqa(PreTrainedBertModel):
 
         else:
             assert masked_lm_labels is not None
+            #print("in bert forward, type(input_ids) = ", type(input_ids))
+            cxt_modality_label = torch.squeeze(torch.LongTensor(cxt_modality_label), 1)
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
-                                            attention_mask, context[0], output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
+                                            attention_mask, context[0], cxt_modality_label, output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
 
             def gather_seq_out_by_pos(seq, pos):
                 return torch.gather(seq, 1, pos.unsqueeze(2).expand(-1, -1, seq.size(-1)))
@@ -1754,7 +1764,7 @@ class BertForWebqaDecoder(PreTrainedBertModel):
     def __init__(self, config, mask_word_id=0, num_labels=2,
                  search_beam_size=1, length_penalty=1.0, eos_id=0,
                  forbid_duplicate_ngrams=False, forbid_ignore_set=None,
-                 ngram_size=3, min_len=0, max_len_img_cxt=200):
+                 ngram_size=3, min_len=0, max_len_img_cxt=200, use_vinvl=False):
         super(BertForWebqaDecoder, self).__init__(config)
         self.bert = BertModelIncr(config)
         self.cls = BertPreTrainingHeads(
@@ -1773,14 +1783,22 @@ class BertForWebqaDecoder(PreTrainedBertModel):
         self.min_len = min_len
 
         # will not be initialized when loading BERT weights
-        self.vis_embed = nn.Sequential(nn.Linear(2048, 2048),
-                                       nn.ReLU(),
-                                       nn.Linear(2048, config.hidden_size),
-                                       nn.ReLU(),
-                                       nn.Dropout(config.hidden_dropout_prob))
-        self.vis_pe_embed = nn.Sequential(nn.Linear(6+1601, config.hidden_size),
-                                       nn.ReLU(),
-                                       nn.Dropout(config.hidden_dropout_prob))
+        if use_vinvl:
+            self.vis_embed = nn.Sequential(nn.Linear(2048, config.hidden_size),
+                                        nn.ReLU(),
+                                        nn.Dropout(config.hidden_dropout_prob))
+            self.vis_pe_embed = nn.Sequential(nn.Linear(6+1595, config.hidden_size),
+                                        nn.ReLU(),
+                                        nn.Dropout(config.hidden_dropout_prob))
+        else:
+            self.vis_embed = nn.Sequential(nn.Linear(2048, 2048),
+                                        nn.ReLU(),
+                                        nn.Linear(2048, config.hidden_size),
+                                        nn.ReLU(),
+                                        nn.Dropout(config.hidden_dropout_prob))
+            self.vis_pe_embed = nn.Sequential(nn.Linear(6+1601, config.hidden_size),
+                                        nn.ReLU(),
+                                        nn.Dropout(config.hidden_dropout_prob))
     
 
 

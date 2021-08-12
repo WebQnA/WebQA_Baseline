@@ -479,8 +479,7 @@ class Preprocess4webqa_VinVL(Pipeline):
                             image_id, cxt = gold_img_and_caps.pop()
                         else: # neg img
                             image_id, cxt = distractor_img_and_caps.pop()
-                        assert os.path.exists(img_path), "loader Processor: .pkl file doesn't exist! {}".format(img_path)
-                        ori_choices.append(img_path.split('/')[-1].replace('.pkl', ''))
+                        ori_choices.append(image_id)
 
                         tokens_a = ['[UNK]'] * self.max_len_img_cxt # 200
                         tokens_b = Q+A
@@ -603,7 +602,7 @@ class Preprocess4webqa_VinVL(Pipeline):
                 
 
             elif context == 'img':
-                gold_image_ids, distractor_image_ids, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img, example_id = instance
+                gold_image_ids, distractor_image_ids, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
                 num_gold = len(gold_image_ids)
                 filter_num_choices = num_gold + len(distractor_image_ids)
                 perm = np.random.permutation(filter_num_choices)
@@ -622,7 +621,6 @@ class Preprocess4webqa_VinVL(Pipeline):
                 for i in range(filter_num_choices):
                     cxt = all_choices_cxt_list[i]
                     image_id = all_choices_image_ids[i]
-                    assert os.path.exists(img_path), "loader Processor: .pkl file doesn't exist! {}".format(img_path)
                     tokens_a = ['[UNK]'] * self.max_len_img_cxt # 200
                     tokens_b = Q+A
                     max_len_cxt_meta = self.max_len_a - self.max_len_img_cxt # 200
@@ -714,11 +712,11 @@ class Preprocess4webqa_VinVL(Pipeline):
                 ori_choices = [all_choices_image_ids]
 
                 cxt_modality_label = range(filter_num_choices)
-                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context_is_img, cxt_modality_label, example_id)
-                return (input_ids, segment_ids, input_mask,       None,       None,       None,       -1,       do_filter_task,        label,       logit_mask, ori_choices, self.task_idx, img, vis_pe, context_is_img, cxt_modality_label, example_id)
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return (input_ids, segment_ids, input_mask,       None,       None,       None,       -1,       do_filter_task,        label,       logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
 
             elif context == 'txt': # do_filter_task && context_is_text
-                gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img, example_id = instance
+                gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
                 num_gold = len(gold_facts)
                 filter_num_choices = num_gold + len(distractor_facts)
                 perm = np.random.permutation(filter_num_choices)
@@ -771,13 +769,13 @@ class Preprocess4webqa_VinVL(Pipeline):
                 ori_choices = [' '.join(self.detokenize(c)) for c in all_choices_facts]
 
                 cxt_modality_label = []
-                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context_is_img, cxt_modality_label, example_id)
-                return (input_ids, segment_ids, input_mask,       None,        None,        None,         -1,         do_filter_task,        label, logit_mask, ori_choices, self.task_idx, None, None, context_is_img, cxt_modality_label, example_id)
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return (input_ids, segment_ids, input_mask,       None,        None,        None,         -1,         do_filter_task,        label, logit_mask, ori_choices, self.task_idx, None, None, context, cxt_modality_label, example_id)
                 raise NotImplementedError
         
         else: # qa task
             if context == 'img':
-                gold_image_ids, distractor_image_ids, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img, example_id = instance
+                gold_image_ids, distractor_image_ids, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
                 tokens_b = Q+A
                 
@@ -841,6 +839,13 @@ class Preprocess4webqa_VinVL(Pipeline):
                     masked_ids.extend([0] * n_pad)
                     masked_pos.extend([0] * n_pad)
                     masked_weights.extend([0] * n_pad)
+                
+                # Convert some inputs to tensors
+                input_ids = torch.LongTensor(input_ids)
+                segment_ids = torch.LongTensor(segment_ids)
+                masked_ids = torch.LongTensor(masked_ids)
+                masked_pos = torch.LongTensor(masked_pos)
+                masked_weights = torch.LongTensor(masked_weights)
 
                 img_list = []
                 vis_pe_list = []
@@ -887,12 +892,13 @@ class Preprocess4webqa_VinVL(Pipeline):
                     print("len(Q) = ", len(Q))
                     print("--------------")
                     print(tokens)
-                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context_is_img, example_id)
-                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,      -1,      do_filter_task,        None,        None,        None, self.task_idx, img, vis_pe, context_is_img, example_id)
+                cxt_modality_label = [1]
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,      -1,      do_filter_task,        None,        None,        None,     self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
             
             
             else: # qa task, context is txt
-                gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context_is_img, example_id = instance
+                gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
                 tokens_a = []
                 if self.use_txt_fact: tokens_a = sum(gold_facts, [])
                 tokens_b = Q+A
@@ -940,7 +946,14 @@ class Preprocess4webqa_VinVL(Pipeline):
                     masked_ids.extend([0] * n_pad)
                     masked_pos.extend([0] * n_pad)
                     masked_weights.extend([0] * n_pad)
+
+                # Convert some inputs to tensors
+                input_ids = torch.LongTensor(input_ids)
+                segment_ids = torch.LongTensor(segment_ids)
+                masked_ids = torch.LongTensor(masked_ids)
+                masked_pos = torch.LongTensor(masked_pos)
+                masked_weights = torch.LongTensor(masked_weights)
                 
-                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context_is_img, example_id)
-                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,       -1,      do_filter_task,      None,      None,       None,       self.task_idx, None, None, context_is_img, example_id)
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,       -1,      do_filter_task,      None,      None,       None,         self.task_idx, None, None,  context, None,               example_id)
                 raise NotImplementedError
