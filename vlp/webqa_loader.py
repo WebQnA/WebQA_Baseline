@@ -1055,7 +1055,7 @@ class Preprocess4webqaDecoder(Pipeline):
         if do_filter_task:
             raise ValueError("Processor for decoder does not support filter task. \nFor filter task inference, please use run_webqa.py by setting args.do_train=False")
         else:
-            if context_is_img:
+            if context in ['img', 'both']:
                 gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, _, do_filter_task, context, example_id = instance # '_' as a placeholder for 'A'
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
                 cxt = sum(gold_cxt_list, [])
@@ -1159,6 +1159,7 @@ class Preprocess4webqaDecoder(Pipeline):
                 assert vis_pe.size(0) == self.max_len_img_cxt
                 assert img.size(0) == self.max_len_img_cxt
 
+                cxt_modality_label = [1]
                 # schema: (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
                 return    (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
                 
@@ -1201,9 +1202,9 @@ class Preprocess4webqaDecoder(Pipeline):
                 input_ids = torch.LongTensor(input_ids)
                 segment_ids = torch.LongTensor(segment_ids)
                 position_ids = torch.LongTensor(position_ids)
-                
+
                 # schema: (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
-                return    (input_ids, segment_ids, position_ids, input_mask, self.task_idx, None, None, context, cxt_modality_label, example_id)
+                return    (input_ids, segment_ids, position_ids, input_mask, self.task_idx, None, None, context, Nones, example_id)
                 raise NotImplementedError
 
 

@@ -1,0 +1,29 @@
+
+recover_step = 2, use_num_samples = -1, answer_provided_by = img, task = qa
+1.3465206980705262
+recover_step = 3, use_num_samples = -1, answer_provided_by = img, task = qa
+1.248116959631443
+recover_step = 4, use_num_samples = -1, answer_provided_by = img, task = qa
+1.1671049445867538
+recover_step = 5, use_num_samples = -1, answer_provided_by = img, task = qa
+1.1085852175951003
+recover_step = 6, use_num_samples = -1, answer_provided_by = img, task = qa
+1.0946177557110786
+recover_step = 7, use_num_samples = -1, answer_provided_by = img, task = qa
+1.0677428394556046
+recover_step = 8, use_num_samples = -1, answer_provided_by = img, task = qa
+1.0546620175242425
+recover_step = 9, use_num_samples = -1, answer_provided_by = img, task = qa
+1.0658506259322167
+recover_step = 10, use_num_samples = -1, answer_provided_by = img, task = qa
+1.0511865571141243
+recover_step = 11, use_num_samples = -1, answer_provided_by = img, task = qa
+1.0382351487874986
+recover_step = 12, use_num_samples = -1, answer_provided_by = img, task = qa
+1.050338041782379
+recover_step = 13, use_num_samples = -1, answer_provided_by = img, task = qa
+1.047390441596508
+recover_step = 14, use_num_samples = -1, answer_provided_by = img, task = qa
+1.0545853421092033
+recover_step = 15, use_num_samples = -1, answer_provided_by = img, task = qa
+1.0524055570364

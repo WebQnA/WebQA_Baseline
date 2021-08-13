@@ -1798,7 +1798,6 @@ class BertForWebqaDecoder(PreTrainedBertModel):
     def forward(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context=None, cxt_modality_label=None, task_idx=None, sample_mode='greedy', tokenizer=None):
         if context[0] in ['img', 'both']:
             vis_feats = self.vis_embed(vis_feats) # image region features
-            print("\nvis_pe.size() = ", vis_pe.size())
             vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings
         
         cxt_modality_label = torch.squeeze(torch.LongTensor(cxt_modality_label), 1)
@@ -1878,7 +1877,7 @@ class BertForWebqaDecoder(PreTrainedBertModel):
         #return torch.cat(output_ids, dim=1), torch.cat(output_probs, dim=1)
 
 
-    def beam_search(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context_is_img, task_idx=None):
+    def beam_search(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context, cxt_modality_label, task_idx=None):
 
         input_shape = list(input_ids.size()) # batch_size x (max_len_a+2)
         batch_size = input_shape[0]

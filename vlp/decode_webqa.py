@@ -474,7 +474,7 @@ def main():
             #if step<834: continue
             with torch.no_grad():
                 batch = [t.to(device) if not isinstance(t, list) else t for t in batch ]
-                input_ids, segment_ids, position_ids, input_mask, task_idx, img, vis_pe, context_is_img, example_ids = batch
+                input_ids, segment_ids, position_ids, input_mask, task_idx, img, vis_pe, context, cxt_modality_label, example_ids = batch
                 #print(tokenizer.convert_ids_to_tokens([i for i in list(input_ids.detach().cpu().numpy()[0][202:]) if i>0 and i!=102]))
                 time.sleep(2)
                 if args.fp16:
@@ -484,7 +484,7 @@ def main():
                 conv_feats = img.data # Bx100x2048
                 vis_pe = vis_pe.data
 
-                traces = model(conv_feats, vis_pe, input_ids, segment_ids, position_ids, input_mask, context_is_img, task_idx=task_idx)
+                traces = model(conv_feats, vis_pe, input_ids, segment_ids, position_ids, input_mask, context, cxt_modality_label, task_idx=task_idx)
                     
                 #if args.beam_size > 1:
                     #traces = {k: v.tolist() for k, v in traces.items()}
