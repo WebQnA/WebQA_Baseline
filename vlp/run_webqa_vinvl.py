@@ -190,8 +190,8 @@ def main():
                         help="max position embeddings")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0725_random_split.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0725.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0809.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0812.json")
     parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
     parser.add_argument('--answer_provided_by', type=str, default="img|txt")
@@ -234,6 +234,7 @@ def main():
     parser.add_argument('--gold_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/gold_0_22265/predictions_cor.tsv", type=str)
     parser.add_argument('--neg_img_tsv', default=None, type=str)
     parser.add_argument('--x_neg_img_tsv', default=None, type=str)
+    parser.add_argument('--vis_emb_ft_epc', default=0, type=int)
     
     parser.add_argument('--world_size', default = 1, type = int,
                         help = 'number of distributed processes')
@@ -581,8 +582,26 @@ def main():
             start_epoch = recover_step+1
         else:
             start_epoch = 1
+        
+
         for i_epoch in trange(start_epoch, args.num_train_epochs+1, desc="Epoch"):
-            print(i_epoch)
+
+            print("\nstart epoch ", i_epoch)
+            if i_epoch <= args.vis_emb_ft_epc:
+                print("Train vis_embed and vis_pe_embed only, freeze all params elsewhere")
+                for name, p in model.named_parameters():
+                    if not name in ['vis_embed.0.weight', 'vis_embed.0.bias', 'vis_pe_embed.0.weight', 'vis_pe_embed.0.bias']:
+                        p.requires_grad = False
+                print("\n---------------- Start printing parameter names -----------")
+                for name, p in model.named_parameters():
+                    print(name, p.requires_grad)
+            else:
+                for name, p in model.named_parameters(): p.requires_grad = True
+                print("\n---------------- Start printing parameter names -----------")
+                for name, p in model.named_parameters():
+                    print(name, p.requires_grad)
+
+            
             dataloader_iters = [iter(l) for l in train_dataloaders]
             if args.local_rank >= 0:
                 for train_sampler in train_samplers:

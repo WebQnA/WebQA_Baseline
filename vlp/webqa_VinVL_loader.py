@@ -71,7 +71,7 @@ class webqaDataset_filter(torch.utils.data.Dataset):
         count = 0
         for i in dataset_J:
             datum = dataset_J[i]
-            if datum['split'] in split: # modify here after we create split!
+            if datum['Split'] in split: # modify here after we create split!
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
                         Q = self.tokenizer.tokenize(datum['Q'])
@@ -130,7 +130,7 @@ class webqaDataset_qa(torch.utils.data.Dataset):
         count = 0
         for i in dataset_J:
             datum = dataset_J[i]
-            if datum['split'] in split: # modify here after we have split!!!!
+            if datum['Split'] in split: # modify here after we have split!!!!
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
                         Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))

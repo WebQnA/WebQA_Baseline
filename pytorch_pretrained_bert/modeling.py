@@ -1690,7 +1690,8 @@ class BertForWebqa(PreTrainedBertModel):
         else:
             assert masked_lm_labels is not None
             #print("in bert forward, type(input_ids) = ", type(input_ids))
-            cxt_modality_label = torch.squeeze(torch.LongTensor(cxt_modality_label), 1)
+            #print("\ncxt_modality_label.size() = ", len(cxt_modality_label.size()))
+            if isinstance(cxt_modality_label, list): cxt_modality_label = torch.squeeze(torch.LongTensor(cxt_modality_label), 1)
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
                                             attention_mask, context[0], cxt_modality_label, output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
 
