@@ -228,7 +228,7 @@ class BertEmbeddings(nn.Module):
         words_embeddings = self.word_embeddings(input_ids)
         position_embeddings = self.position_embeddings(position_ids)
 
-        if context in ["img", "both"] and prev_is_None: 
+        if context in ["img", "both"] and prev_is_None and vis_feats.size()[-1] > 1: 
             ## TODO: fit the img feature chunk into words_embeddings with specified indices.
             words_embeddings[cxt_modality_label, 1:1+max_len_img_cxt] = vis_feats
             position_embeddings[cxt_modality_label, 1:1+max_len_img_cxt] = vis_pe
@@ -1596,7 +1596,7 @@ class BertForWebqa(PreTrainedBertModel):
     def forward(self, vis_feats=None, vis_pe=None, input_ids=None, token_type_ids=None, attention_mask=None, masked_lm_labels=None, do_filter_task=None, filter_label=None, logit_mask=None, context=None, cxt_modality_label=None, next_sentence_label=None, masked_pos=None, masked_weights=None, task_idx=None, drop_worst_ratio=0.2, filter_infr_th=None, tokenizer=None):
         
         ## TODO: track the change of context_is_img --> context, pass cxt_modality_label to BertEmbedding
-        if context[0] in ['img', 'both']: 
+        if context[0] in ['img', 'both'] and vis_feats.size()[-1] > 1: 
             vis_feats = self.vis_embed(vis_feats) # image region features (NC1+NC2+ ... +NC_B, 100, hidden_size), NC = num_choices
             vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings (NC1+NC2+ ... +NC_B, 100, hidden_size), NC = num_choices
             # They are flattened in collate function
@@ -1613,7 +1613,7 @@ class BertForWebqa(PreTrainedBertModel):
 
             # If different batches have different number of imgs, then vis_feats, vis_pe will be flattened (by torch.cat) in collate function
             # Otherwise, reshape them here:
-            if context[0] in ['img', 'both']: 
+            if context[0] in ['img', 'both'] and vis_feats.size()[-1] > 1:
                 vis_seq_len, vis_dim = vis_feats.size()[-2:]
                 vis_feats = vis_feats.view(-1, vis_seq_len, vis_dim)
                 vis_pe = vis_pe.view(-1, vis_seq_len, vis_dim)

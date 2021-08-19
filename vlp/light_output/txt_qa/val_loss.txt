@@ -1,0 +1,21 @@
+
+recover_step = 6, use_num_samples = -1, answer_provided_by = txt, task = qa
+2.431816490348853
+recover_step = 7, use_num_samples = -1, answer_provided_by = txt, task = qa
+2.3539635812809103
+recover_step = 8, use_num_samples = -1, answer_provided_by = txt, task = qa
+2.31777808740007
+recover_step = 9, use_num_samples = -1, answer_provided_by = txt, task = qa
+2.315812551625777
+recover_step = 10, use_num_samples = -1, answer_provided_by = txt, task = qa
+2.2913712962054276
+recover_step = 11, use_num_samples = -1, answer_provided_by = txt, task = qa
+2.2925083153799224
+recover_step = 12, use_num_samples = -1, answer_provided_by = txt, task = qa
+2.301940233194867
+recover_step = 13, use_num_samples = -1, answer_provided_by = txt, task = qa
+2.294381105938641
+recover_step = 14, use_num_samples = -1, answer_provided_by = txt, task = qa
+2.306818243929152
+recover_step = 15, use_num_samples = -1, answer_provided_by = txt, task = qa
+2.3022901677930006

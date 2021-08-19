@@ -78,10 +78,10 @@ class webqaDataset_filter(torch.utils.data.Dataset):
                         A = self.tokenizer.tokenize(datum['A'])
                         gold_facts = []
                         distractor_facts = []
-                        for fa in datum['SupportingFacts']:
+                        for fa in datum['txt_posFacts']:
                             gold_facts.append(self.tokenizer.tokenize(fa['fact']))
 
-                        for fa in datum['new_negFacts']:
+                        for fa in datum['txt_negFacts']:
                             distractor_facts.append(self.tokenizer.tokenize(fa['fact']))
                         shuffle(gold_facts)
                         shuffle(distractor_facts)
@@ -137,7 +137,7 @@ class webqaDataset_qa(torch.utils.data.Dataset):
                         A = self.tokenizer.tokenize(datum['A'].replace('"', ""))
                         gold_facts = []
                         distractor_facts = []
-                        for fa in datum['SupportingFacts']:
+                        for fa in datum['txt_posFacts']:
                             gold_facts.append(self.tokenizer.tokenize(fa['fact']))
 
                         self.instance_list.append((gold_facts, [], [], [], Q, A, False, "txt", i)) # do_filter_task, context
@@ -170,7 +170,7 @@ class webqaDataset_qa(torch.utils.data.Dataset):
 
 class webqaDataset_filter_with_img(torch.utils.data.Dataset):
     """ Load image feature path, q, a """
-    def __init__(self, dataset_json_path, img_metadata_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, filter_max_choices=10, device=None):
+    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, filter_max_choices=10, device=None):
         super().__init__()
         self.processor = processor
         self.tokenizer = tokenizer
@@ -180,13 +180,13 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
         if device is not None:
             self.device=device
         assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist!"
-        assert os.path.exists(img_metadata_path), "loader.Dataset: img metadata json file doesn't exist!"
+        #assert os.path.exists(img_metadata_path), "loader.Dataset: img metadata json file doesn't exist!"
         assert os.path.exists(gold_feature_folder), "loader.Dataset: gold feature folder doesn't exist!"
         assert os.path.exists(distractor_feature_folder), "loader.Dataset: distractor feature folder doesn't exist!"
         with open(dataset_json_path, "r") as f:
             dataset_J = json.load(f)
-        with open(img_metadata_path, "r") as f:
-            img_meta = json.load(f)
+        #with open(img_metadata_path, "r") as f:
+            #img_meta = json.load(f)
         count = 0
         for i in dataset_J:
             datum = dataset_J[i]
@@ -203,35 +203,27 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                         gold_img_and_caps = []
                         distractor_img_and_caps = []
 
-                        for im in datum['GoldIds']:
-                            if int(im) < 10000000:
-                                image_feature_path = os.path.join(gold_feature_folder, str(im)+'.pkl')
-                                assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(im)
+                        for im in datum['img_posFacts']:
+                            image_id = im['image_id']
+                            if int(image_id) < 10000000:
+                                image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
+                                assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(image_id)
                             else:
-                                image_feature_path = os.path.join(distractor_feature_folder, str(im)+'.pkl')
+                                image_feature_path = os.path.join(distractor_feature_folder, str(image_id)+'.pkl')
                             #gold_feature_paths.append(image_feature_path)
-                            img_meta_key = str(int(im))
-                            cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
-                            cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
+                            cxt = self.tokenizer.tokenize(im['caption'].strip())
                             #gold_cxt_list.append(cxt)
                             gold_img_and_caps.append((image_feature_path, cxt))
 
-                        for im in datum['DistractorIds']:
-                            if os.path.exists(os.path.join(distractor_feature_folder, str(im)+'.pkl')):
-                                image_feature_path = os.path.join(distractor_feature_folder, str(im)+'.pkl')
-                                img_meta_key = str(int(im))
-                                cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
-                                cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
-                                #distractor_feature_paths.append(image_feature_path)
-                                #distractor_cxt_list.append(cxt)
+                        for im in datum['img_negFacts']:
+                            image_id = im['image_id']
+                            if os.path.exists(os.path.join(distractor_feature_folder, str(image_id)+'.pkl')):
+                                image_feature_path = os.path.join(distractor_feature_folder, str(image_id)+'.pkl')
+                                cxt = self.tokenizer.tokenize(im['caption'].strip())
                                 distractor_img_and_caps.append((image_feature_path, cxt))
-                            elif os.path.exists(os.path.join(gold_feature_folder, str(im)+'.pkl')):
-                                image_feature_path = os.path.join(gold_feature_folder, str(im)+'.pkl')
-                                img_meta_key = str(int(im))
-                                cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
-                                cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
-                                #distractor_feature_paths.append(image_feature_path)
-                                #distractor_cxt_list.append(cxt)
+                            elif os.path.exists(os.path.join(gold_feature_folder, str(image_id)+'.pkl')):
+                                image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
+                                cxt = self.tokenizer.tokenize(im['caption'].strip())
                                 distractor_img_and_caps.append((image_feature_path, cxt))
                         shuffle(gold_img_and_caps)
                         shuffle(distractor_img_and_caps)
@@ -274,7 +266,7 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
 
 class webqaDataset_qa_with_img(torch.utils.data.Dataset):
     """ Load image feature path, q, a """
-    def __init__(self, dataset_json_path, img_metadata_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, device=None):
+    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, device=None):
         super().__init__()
         self.processor = processor
         self.tokenizer = tokenizer
@@ -283,13 +275,13 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
         if device is not None:
             self.device=device
         assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist!"
-        assert os.path.exists(img_metadata_path), "loader.Dataset: img metadata json file doesn't exist!"
+        #assert os.path.exists(img_metadata_path), "loader.Dataset: img metadata json file doesn't exist!"
         assert os.path.exists(gold_feature_folder), "loader.Dataset: gold feature folder doesn't exist!"
         assert os.path.exists(distractor_feature_folder), "loader.Dataset: distractor feature folder doesn't exist!"
         with open(dataset_json_path, "r") as f:
             dataset_J = json.load(f)
-        with open(img_metadata_path, "r") as f:
-            img_meta = json.load(f)
+        #with open(img_metadata_path, "r") as f:
+            #img_meta = json.load(f)
         count = 0
         for i in dataset_J:
             datum = dataset_J[i]
@@ -302,16 +294,15 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
                         #A = self.tokenizer.tokenize(datum['A'])
                         gold_feature_paths = []
                         gold_cxt_list = []
-                        for im in datum['GoldIds']:
-                            if int(im) < 10000000:
-                                image_feature_path = os.path.join(gold_feature_folder, str(im)+'.pkl')
-                                assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(im)
+                        for im in datum['img_posFacts']:
+                            image_id = im['image_id']
+                            if int(image_id) < 10000000:
+                                image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
+                                assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(image_id)
                             else:
-                                image_feature_path = os.path.join(distractor_feature_folder, str(im)+'.pkl')
+                                image_feature_path = os.path.join(distractor_feature_folder, str(image_id)+'.pkl')
                             gold_feature_paths.append(image_feature_path)
-                            img_meta_key = str(int(im))
-                            cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
-                            cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
+                            cxt = self.tokenizer.tokenize(im['caption'].strip())
                             gold_cxt_list.append(cxt)
                         self.instance_list.append((gold_feature_paths, [], gold_cxt_list, [], Q, A, False, "img", i)) # do_filter_task, context )
                         count += 1
@@ -343,7 +334,7 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
 class webqaDataset_filter_with_both(torch.utils.data.Dataset):
     ## TODO: define a new Dataset, return img+cap in a tuple instead of two separate lists
     """ Load image feature path, q, a """
-    def __init__(self, dataset_json_path, img_metadata_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, answer_provided_by, max_snippets=10, max_imgs=10, device=None):
+    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, answer_provided_by, max_snippets=10, max_imgs=10, device=None):
         super().__init__()
         self.processor = processor
         self.tokenizer = tokenizer
@@ -355,13 +346,13 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
         if device is not None:
             self.device=device
         assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist!"
-        assert os.path.exists(img_metadata_path), "loader.Dataset: img metadata json file doesn't exist!"
+        #assert os.path.exists(img_metadata_path), "loader.Dataset: img metadata json file doesn't exist!"
         assert os.path.exists(gold_feature_folder), "loader.Dataset: gold feature folder doesn't exist!"
         assert os.path.exists(distractor_feature_folder), "loader.Dataset: distractor feature folder doesn't exist!"
         with open(dataset_json_path, "r") as f:
             dataset_J = json.load(f)
-        with open(img_metadata_path, "r") as f:
-            img_meta = json.load(f)
+        #with open(img_metadata_path, "r") as f:
+            #img_meta = json.load(f)
         count = 0
         for i in dataset_J:
             datum = dataset_J[i]
@@ -378,9 +369,9 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
                         gold_facts = []
                         distractor_facts = []
 
-                        if 'SupportingFacts' in datum:
-                            for fa in datum['SupportingFacts']: gold_facts.append(self.tokenizer.tokenize(fa['fact']))
-                        for fa in datum['DistractorFacts']:
+                        if 'txt_posFacts' in datum:
+                            for fa in datum['txt_posFacts']: gold_facts.append(self.tokenizer.tokenize(fa['fact']))
+                        for fa in datum['txt_negFacts']:
                             distractor_facts.append(self.tokenizer.tokenize(fa['fact']))
                         shuffle(gold_facts)
                         shuffle(distractor_facts)
@@ -389,36 +380,26 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
                         gold_img_and_caps = []
                         distractor_img_and_caps = []
 
-                        if 'GoldIds' in datum:
-                            for im in datum['GoldIds']:
-                                if int(im) < 10000000:
-                                    image_feature_path = os.path.join(gold_feature_folder, str(im)+'.pkl')
-                                    assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(im)
+                        if 'img_posFacts' in datum:
+                            for im in datum['img_posFacts']:
+                                image_id = im['image_id']
+                                if int(image_id) < 10000000:
+                                    image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
+                                    assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(image_id)
                                 else:
-                                    image_feature_path = os.path.join(distractor_feature_folder, str(im)+'.pkl')
-                                #gold_feature_paths.append(image_feature_path)
-                                img_meta_key = str(int(im))
-                                cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
-                                cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
-                                #gold_cxt_list.append(cxt)
+                                    image_feature_path = os.path.join(distractor_feature_folder, str(image_id)+'.pkl')
+                                cxt = self.tokenizer.tokenize(im['caption'].strip())
                                 gold_img_and_caps.append((image_feature_path, cxt))
 
-                        for im in datum['DistractorIds']:
-                            if os.path.exists(os.path.join(distractor_feature_folder, str(im)+'.pkl')):
-                                image_feature_path = os.path.join(distractor_feature_folder, str(im)+'.pkl')
-                                img_meta_key = str(int(im))
-                                cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
-                                cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
-                                #distractor_feature_paths.append(image_feature_path)
-                                #distractor_cxt_list.append(cxt)
+                        for im in datum['img_negFacts']:
+                            image_id = im['image_id']
+                            if os.path.exists(os.path.join(distractor_feature_folder, str(image_id)+'.pkl')):
+                                image_feature_path = os.path.join(distractor_feature_folder, str(image_id)+'.pkl')
+                                cxt = self.tokenizer.tokenize(im['caption'].strip())
                                 distractor_img_and_caps.append((image_feature_path, cxt))
-                            elif os.path.exists(os.path.join(gold_feature_folder, str(im)+'.pkl')):
-                                image_feature_path = os.path.join(gold_feature_folder, str(im)+'.pkl')
-                                img_meta_key = str(int(im))
-                                cxt = img_meta[img_meta_key]["name"] + img_meta[img_meta_key]["description"]
-                                cxt = self.tokenizer.tokenize(cxt.replace("_", " ").strip())
-                                #distractor_feature_paths.append(image_feature_path)
-                                #distractor_cxt_list.append(cxt)
+                            elif os.path.exists(os.path.join(gold_feature_folder, str(image_id)+'.pkl')):
+                                image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
+                                cxt = self.tokenizer.tokenize(im['caption'].strip())
                                 distractor_img_and_caps.append((image_feature_path, cxt))
                         shuffle(gold_img_and_caps)
                         shuffle(distractor_img_and_caps)
@@ -441,7 +422,7 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
             distractor_img_and_caps = distractor_img_and_caps[:sample_size]
             distractor_facts = distractor_facts[:self.max_snippets]
         elif self.answer_provided_by == 'txt':
-            samples_size = self.max_snippets - len(gold_facts)
+            sample_size = self.max_snippets - len(gold_facts)
             if len(distractor_facts) < sample_size: sample_size = len(distractor_facts)
             distractor_facts = distractor_facts[:sample_size]
             distractor_img_and_caps = distractor_img_and_caps[:self.max_imgs]
@@ -641,8 +622,12 @@ class Preprocess4webqa(Pipeline):
                 input_ids = torch.stack(input_ids_list, dim=0) 
                 segment_ids = torch.stack(segment_ids_list, dim=0)
                 input_mask = torch.stack(input_mask_list, dim=0)
-                img = torch.stack(img_list, dim=0)
-                vis_pe = torch.stack(vis_pe_list, dim=0)
+                if len(img_list) == 0:
+                    img = None
+                    vis_pe = None
+                else:
+                    img = torch.stack(img_list, dim=0)
+                    vis_pe = torch.stack(vis_pe_list, dim=0)
                 logit_mask = torch.tensor(logit_mask)
                 
                 cxt_modality_label = [i for i in range(len(order)) if order[i]%2 == 1]

@@ -190,16 +190,16 @@ def main():
                         help="max position embeddings")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0809.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0812.json")
-    parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0818.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0817_neg_ranked.json")
+    #parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
     parser.add_argument('--answer_provided_by', type=str, default="img|txt")
     parser.add_argument('--use_x_distractors', action='store_true')
     parser.add_argument('--task_to_learn', type=str, default="filter|qa")
 
-    parser.add_argument('--txt_filter_max_choices', type=int, default=8)
-    parser.add_argument('--img_filter_max_choices', type=int, default=8)
+    parser.add_argument('--txt_filter_max_choices', type=int, default=16)
+    parser.add_argument('--img_filter_max_choices', type=int, default=16)
     parser.add_argument('--filter_infr_log', type=str, default="filter_infr_log.txt")
     parser.add_argument("--recover_ori_ckpt", action='store_true',
                         help="Whether to load original VLP checkpoint.")
@@ -231,9 +231,9 @@ def main():
     parser.add_argument('--Qcate', type=str, default=['all'])
 
     # Add VinVL feature support
-    parser.add_argument('--gold_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/gold_0_22265/predictions_cor.tsv", type=str)
-    parser.add_argument('--neg_img_tsv', default=None, type=str)
-    parser.add_argument('--x_neg_img_tsv', default=None, type=str)
+    parser.add_argument('--gold_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/gold_0_22265/predictions.tsv", type=str)
+    parser.add_argument('--neg_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/neg_imgs_0_338842/predictions.tsv", type=str)
+    parser.add_argument('--x_neg_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/x_neg_imgs_0_240661/predictions.tsv", type=str)
     parser.add_argument('--vis_emb_ft_epc', default=0, type=int)
     
     parser.add_argument('--world_size', default = 1, type = int,
@@ -356,7 +356,7 @@ def main():
         if "txt" in args.answer_provided_by:
             if args.use_x_distractors:
                 train_dataset = webqa_VinVL_loader.webqaDataset_filter_with_both(dataset_json_path=args.txt_dataset_json_path, \
-                    img_metadata_path=args.img_metadata_path, split=args.split, Qcate=args.Qcate, \
+                    split=args.split, Qcate=args.Qcate, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
                     processor=processor, answer_provided_by='txt', max_snippets=args.txt_filter_max_choices, max_imgs=args.img_filter_max_choices, device=device)
             else:
@@ -371,11 +371,11 @@ def main():
         if "img" in args.answer_provided_by:
             if args.use_x_distractors:
                 train_dataset = webqa_VinVL_loader.webqaDataset_filter_with_both(dataset_json_path=args.img_dataset_json_path, \
-                    img_metadata_path=args.img_metadata_path, split=args.split, Qcate=args.Qcate, \
+                    split=args.split, Qcate=args.Qcate, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
                     processor=processor, answer_provided_by='img', max_snippets=args.txt_filter_max_choices, max_imgs=args.img_filter_max_choices, device=device)
             else:
-                train_dataset = webqa_VinVL_loader.webqaDataset_filter_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, Qcate=args.Qcate, \
+                train_dataset = webqa_VinVL_loader.webqaDataset_filter_with_img(dataset_json_path=args.img_dataset_json_path, split=args.split, Qcate=args.Qcate, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
                     processor=processor, filter_max_choices=args.img_filter_max_choices, device=device)
             train_dataloader, train_sampler = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
@@ -393,7 +393,7 @@ def main():
             train_samplers.append(train_sampler)
         
         if "img" in args.answer_provided_by:
-            train_dataset = webqa_VinVL_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, img_metadata_path=args.img_metadata_path, split=args.split, Qcate=args.Qcate, \
+            train_dataset = webqa_VinVL_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, split=args.split, Qcate=args.Qcate, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
                     processor=processor, device=device)
             train_dataloader, train_sampler = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
@@ -597,9 +597,9 @@ def main():
                     print(name, p.requires_grad)
             else:
                 for name, p in model.named_parameters(): p.requires_grad = True
-                print("\n---------------- Start printing parameter names -----------")
-                for name, p in model.named_parameters():
-                    print(name, p.requires_grad)
+                #print("\n---------------- Start printing parameter names -----------")
+                #for name, p in model.named_parameters():
+                    #print(name, p.requires_grad)
 
             
             dataloader_iters = [iter(l) for l in train_dataloaders]
