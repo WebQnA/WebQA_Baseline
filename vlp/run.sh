@@ -19,7 +19,7 @@ filter infr
 filter both with x_distractors
 CUDA_VISIBLE_DEVICES=1 python run_webqa_vinvl.py --new_segment_ids --train_batch_size 128 --split ind_test --answer_provided_by 'img|txt' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 64 --save_loss_curve --output_dir light_output/filter_both_x_debug --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_both_x_debug --use_x_distractors
 
-CUDA_VISIBLE_DEVICES=0 python run_webqa.py --new_segment_ids --train_batch_size 128 --split train --answer_provided_by 'img|txt' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 128 --save_loss_curve --output_dir light_output/filter_both_x_detectron --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_both_x_detectron --use_x_distractors --do_train --num_train_epochs 6
+CUDA_VISIBLE_DEVICES=0 python run_webqa.py --new_segment_ids --train_batch_size 128 --split train --answer_provided_by 'img|txt' --task_to_learn 'filter' --num_workers 4 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 128 --save_loss_curve --output_dir light_output/filter_both_x_detectron --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_both_x_detectron --use_x_distractors --do_train --num_train_epochs 6
 
 #CUDA_VISIBLE_DEVICES=2 python run_webqa.py --new_segment_ids --train_batch_size 16 --split ind_test --answer_provided_by 'img' --task_to_learn 'filter' --num_workers 8 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 8 --save_loss_curve --output_dir tmp/img_filter &
 

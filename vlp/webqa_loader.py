@@ -71,7 +71,7 @@ class webqaDataset_filter(torch.utils.data.Dataset):
         count = 0
         for i in dataset_J:
             datum = dataset_J[i]
-            if datum['Split'] in split: # modify here after we create split!
+            if datum['split'] in split: # modify here after we create split!
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
                         Q = self.tokenizer.tokenize(datum['Q'])
@@ -130,7 +130,7 @@ class webqaDataset_qa(torch.utils.data.Dataset):
         count = 0
         for i in dataset_J:
             datum = dataset_J[i]
-            if datum['Split'] in split: # modify here after we have split!!!!
+            if datum['split'] in split: # modify here after we have split!!!!
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
                         Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
@@ -741,8 +741,8 @@ class Preprocess4webqa(Pipeline):
                     input_mask_list.extend([input_mask_list[-1]] * num_placeholder)
 
                     # TODO: 其实有了cxt_modality_label之后img_feats&vix_pe就不需要补placeholder了，后面把这里删了试试
-                    img_list.extend([img_list[-1]] * num_placeholder)
-                    vis_pe_list.extend([vis_pe_list[-1]] * num_placeholder)
+                    #img_list.extend([img_list[-1]] * num_placeholder)
+                    #vis_pe_list.extend([vis_pe_list[-1]] * num_placeholder)
                     logit_mask.extend([0.] * num_placeholder)
                     label = torch.cat([label, torch.tensor([[0., 0.]] * num_placeholder)], dim=0)
                 input_ids = torch.stack(input_ids_list, dim=0)
