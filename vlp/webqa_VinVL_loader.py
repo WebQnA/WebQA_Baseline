@@ -692,8 +692,8 @@ class Preprocess4webqa_VinVL(Pipeline):
                     input_mask_list.extend([input_mask_list[-1]] * num_placeholder)
 
                     # TODO: 其实有了cxt_modality_label之后img_feats&vix_pe就不需要补placeholder了，后面把这里删了试试
-                    img_list.extend([img_list[-1]] * num_placeholder)
-                    vis_pe_list.extend([vis_pe_list[-1]] * num_placeholder)
+                    #img_list.extend([img_list[-1]] * num_placeholder)
+                    #vis_pe_list.extend([vis_pe_list[-1]] * num_placeholder)
                     logit_mask.extend([0.] * num_placeholder)
                     label = torch.cat([label, torch.tensor([[0., 0.]] * num_placeholder)], dim=0)
                 input_ids = torch.stack(input_ids_list, dim=0)
