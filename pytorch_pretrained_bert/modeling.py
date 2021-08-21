@@ -1797,11 +1797,12 @@ class BertForWebqaDecoder(PreTrainedBertModel):
 
 
     def forward(self, vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context=None, cxt_modality_label=None, task_idx=None, sample_mode='greedy', tokenizer=None):
-        if context[0] in ['img', 'both']:
-            vis_feats = self.vis_embed(vis_feats) # image region features
-            vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings
+        if context[0] in ['img', 'both'] and vis_feats.size()[-1] > 1: 
+            vis_feats = self.vis_embed(vis_feats) # image region features (NC1+NC2+ ... +NC_B, 100, hidden_size), NC = num_choices
+            vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings (NC1+NC2+ ... +NC_B, 100, hidden_size), NC = num_choices
+            # They are flattened in collate function
         
-        cxt_modality_label = torch.squeeze(torch.LongTensor(cxt_modality_label), 1)
+        if isinstance(cxt_modality_label, list): cxt_modality_label = torch.squeeze(torch.LongTensor(cxt_modality_label), 1)
 
         if self.search_beam_size > 1:
             return self.beam_search(vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context, cxt_modality_label, task_idx)

@@ -105,7 +105,7 @@ class Evaluate(object):
         return final_scores
 
     def evaluate(self, return_scores=False, **kwargs):
-        ans = kwargs.pop('ref', {}) # only support one ans per sample
+        ans = kwargs.pop('ref', {}) # support a list of references
         cand = kwargs.pop('cand', {}) # only support one cand per sample, but the input cand has size batch_size x K
 
         hypo = {}
@@ -113,7 +113,7 @@ class Evaluate(object):
         i = 0
         for i in range(len(cand)):
             hypo[i] = [cand[i][0]]
-            ref[i] = [ans[i]]
+            ref[i] = ans[i]
         
         final_scores = self.score(ref, hypo)
         print ('Bleu_1:\t', final_scores['Bleu_1'])
@@ -260,8 +260,8 @@ def main():
                         help="maximum length of target sequence")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_J.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/dataset_J_split_update0721.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0820_addKA.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0819_16neg.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
     #parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
@@ -466,6 +466,7 @@ def main():
     output_confidence = []
     output_Q = []
     output_A = []
+    output_Keywords_A = []
     for infr_dataloader in infr_dataloaders:
         nbatches = len(infr_dataloader)
         
@@ -510,13 +511,14 @@ def main():
                     # buf_id[i] = img_idx (global idx across chunks)
                 iter_bar.set_description('Step = {}'.format(step))
 
-        Q, A = infr_dataloader.dataset.get_QA_list()
-        Q, A = [' '.join(detokenize(q)) for q in Q], [' '.join(detokenize(a)) for a in A]
-        assert len(Q) == len(A)
+        Q, A, Keywords_A = infr_dataloader.dataset.get_QA_list()
+        Q = [' '.join(detokenize(q)) for q in Q]
+        assert len(Q) == len(A) == len(Keywords_A)
         
         output_Q.extend(Q)
         output_A.extend(A)
-        assert len(output_lines) == len(output_confidence) == len(output_Q) == len(output_A)
+        output_Keywords_A.extend(Keywords_A)
+        assert len(output_lines) == len(output_confidence) == len(output_Q) == len(output_A) == len(output_Keywords_A)
 
 
     eval_f = Evaluate()
@@ -530,7 +532,7 @@ def main():
     PR_scores = []
     F1_avg_bertscores = []
     F1_max_bertscores = []
-    for cands, a in zip(output_lines, output_A):
+    for cands, a in zip(output_lines, output_Keywords_A):
         assert len(cands)==args.beam_size
         F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics([cands[0]], a)
         F1_avg_scores.append(F1_avg)
@@ -560,6 +562,8 @@ def main():
     print("F1_avg_bertscore = {}".format(F1_avg_bertscore))
     print("F1_max_bertscore = {}".format(F1_max_bertscore))
 
+    print("RE * BLEU4 = {}".format(RE_avg * scores['Bleu_4']))
+
     filename = "{}_qainfr_{}_beam{}".format(args.split, args.use_num_samples, args.beam_size)
     if "img" in args.answer_provided_by:
         filename += "_{}_{}_{}".format("img", args.use_img_content, args.use_img_meta)
@@ -580,10 +584,12 @@ def main():
         f.write('\n\n')
         f.write('\n'.join(["F1_avg_bertscore = {}".format(F1_avg_bertscore)]))
         f.write('\n\n')
+        f.write('\n'.join(["RE * BLEU4 = {}".format(RE_avg * scores['Bleu_4'])]))
+        f.write('\n\n')
         f.write('-----Starting writing results:-----')
-        for q, a, oc, o in zip(output_Q, output_A, output_confidence, output_lines):
+        for q, a, ka, oc, o in zip(output_Q, output_A, output_Keywords_A, output_confidence, output_lines):
             f.write("\n\n")
-            f.write("\n".join([q, a, oc, '\n'.join(o)]))
+            f.write("\n".join([q, '\n'.join(a), 'Keywords_A = '+ka, oc, '\n'.join(o)]))
                 
 
 if __name__ == "__main__":

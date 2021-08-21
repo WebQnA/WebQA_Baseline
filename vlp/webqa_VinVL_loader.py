@@ -71,11 +71,11 @@ class webqaDataset_filter(torch.utils.data.Dataset):
         count = 0
         for i in dataset_J:
             datum = dataset_J[i]
-            if datum['Split'] in split: # modify here after we create split!
+            if datum['split'] in split: # modify here after we create split!
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
-                        Q = self.tokenizer.tokenize(datum['Q'])
-                        A = self.tokenizer.tokenize(datum['A'])
+                        Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
+                        A = self.tokenizer.tokenize(datum['A'][0].replace('"', ""))
                         gold_facts = []
                         distractor_facts = []
                         for fa in datum['txt_posFacts']:
@@ -130,17 +130,20 @@ class webqaDataset_qa(torch.utils.data.Dataset):
         count = 0
         for i in dataset_J:
             datum = dataset_J[i]
-            if datum['Split'] in split: # modify here after we have split!!!!
+            if datum['split'] in split: # modify here after we have split!!!!
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
                         Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
-                        A = self.tokenizer.tokenize(datum['A'].replace('"', ""))
+                        A = self.tokenizer.tokenize(datum['A'][0].replace('"', ""))
+                        A_list = [a.replace('"', "") for a in datum['A']]
+                        try: Keywords_A = datum['Keywords_A'].replace('"', "")
+                        except: Keywords_A = "TBD"
                         gold_facts = []
                         distractor_facts = []
                         for fa in datum['txt_posFacts']:
                             gold_facts.append(self.tokenizer.tokenize(fa['fact']))
 
-                        self.instance_list.append((gold_facts, [], [], [], Q, A, False, "txt", i)) # do_filter_task, context
+                        self.instance_list.append((gold_facts, [], [], [], Q, A, Keywords_A, A_list, False, "txt", i)) # do_filter_task, context
                         
                         count += 1
 
@@ -150,7 +153,8 @@ class webqaDataset_qa(torch.utils.data.Dataset):
         return len(self.instance_list)
 
     def __getitem__(self, idx):
-        instance = self.instance_list[idx]
+        gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, Keywords_A, A_list, do_filter_task, context, example_id = self.instance_list[idx]
+        instance = (gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id)
         instance = self.processor(instance, self.device)
         # Processor returns:
         # (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, 
@@ -166,7 +170,7 @@ class webqaDataset_qa(torch.utils.data.Dataset):
             yield batch_list_to_batch_tensors(batch)
 
     def get_QA_list(self):
-        return [i[4] for i in self.instance_list], [i[5] for i in self.instance_list]
+        return [i[4] for i in self.instance_list], [i[7] for i in self.instance_list], [i[6] for i in self.instance_list]
 
 class webqaDataset_filter_with_img(torch.utils.data.Dataset):
     """ Load image feature path, q, a """
@@ -191,8 +195,8 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
             if datum['split'] in split:
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
-                        Q = self.tokenizer.tokenize(datum['Q'])
-                        A = self.tokenizer.tokenize(datum['A'])
+                        Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
+                        A = self.tokenizer.tokenize(datum['A'][0].replace('"', ""))
 
                         gold_img_and_caps = []
                         distractor_img_and_caps = []
@@ -269,7 +273,10 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
                         Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
-                        A = self.tokenizer.tokenize(datum['A'].replace('"', ""))
+                        A = self.tokenizer.tokenize(datum['A'][0].replace('"', ""))
+                        A_list = [a.replace('"', "") for a in datum['A']]
+                        try: Keywords_A = datum['Keywords_A'].replace('"', "")
+                        except: Keywords_A = "TBD"
                         gold_image_ids = []
                         gold_cxt_list = []
                         for im in datum['img_posFacts']:
@@ -277,7 +284,7 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
                             gold_image_ids.append(image_id)
                             cxt = self.tokenizer.tokenize(im['caption'].strip())
                             gold_cxt_list.append(cxt)
-                        self.instance_list.append((gold_image_ids, [], gold_cxt_list, [], Q, A, False, "img", i)) # do_filter_task, context )
+                        self.instance_list.append((gold_image_ids, [], gold_cxt_list, [], Q, A, Keywords_A, A_list, False, "img", i)) # do_filter_task, context )
                         count += 1
 
         print("Load {} instances from {} samples".format(len(self.instance_list), count))
@@ -286,7 +293,8 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
         return len(self.instance_list)
 
     def __getitem__(self, idx):
-        instance = self.instance_list[idx]
+        gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, Keywords_A, A_list, do_filter_task, context, example_id = self.instance_list[idx]
+        instance = (gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id)
         instance = self.processor(instance, self.device)
         # Processor returns:
         # (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, 
@@ -302,7 +310,7 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
             yield batch_list_to_batch_tensors(batch)
 
     def get_QA_list(self):
-        return [i[4] for i in self.instance_list], [i[5] for i in self.instance_list]
+        return [i[4] for i in self.instance_list], [i[7] for i in self.instance_list], [i[6] for i in self.instance_list]
 
 class webqaDataset_filter_with_both(torch.utils.data.Dataset):
     ## TODO: define a new Dataset, return img+cap in a tuple instead of two separate lists
@@ -330,8 +338,8 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
             if datum['split'] in split:
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
-                        Q = self.tokenizer.tokenize(datum['Q'])
-                        A = self.tokenizer.tokenize(datum['A'])
+                        Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
+                        A = self.tokenizer.tokenize(datum['A'][0].replace('"', ""))
 
                         gold_facts = []
                         distractor_facts = []
