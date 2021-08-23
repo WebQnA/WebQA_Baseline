@@ -1,29 +1,22 @@
-
-recover_step = 2, use_num_samples = -1, answer_provided_by = img, task = qa
-1.3465206980705262
-recover_step = 3, use_num_samples = -1, answer_provided_by = img, task = qa
-1.248116959631443
-recover_step = 4, use_num_samples = -1, answer_provided_by = img, task = qa
-1.1671049445867538
-recover_step = 5, use_num_samples = -1, answer_provided_by = img, task = qa
-1.1085852175951003
 recover_step = 6, use_num_samples = -1, answer_provided_by = img, task = qa
-1.0946177557110786
+1.1071367755532264
 recover_step = 7, use_num_samples = -1, answer_provided_by = img, task = qa
-1.0677428394556046
+1.07460076212883
 recover_step = 8, use_num_samples = -1, answer_provided_by = img, task = qa
-1.0546620175242425
+1.050588795542717
 recover_step = 9, use_num_samples = -1, answer_provided_by = img, task = qa
-1.0658506259322167
+1.0417967692017556
 recover_step = 10, use_num_samples = -1, answer_provided_by = img, task = qa
-1.0511865571141243
+1.0253756150603295
 recover_step = 11, use_num_samples = -1, answer_provided_by = img, task = qa
-1.0382351487874986
+1.046830913424492
 recover_step = 12, use_num_samples = -1, answer_provided_by = img, task = qa
-1.050338041782379
+1.0310741513967514
 recover_step = 13, use_num_samples = -1, answer_provided_by = img, task = qa
-1.047390441596508
+1.0494127169251442
 recover_step = 14, use_num_samples = -1, answer_provided_by = img, task = qa
-1.0545853421092033
+1.0398043766617775
 recover_step = 15, use_num_samples = -1, answer_provided_by = img, task = qa
-1.0524055570364
+1.0453825563192367
+recover_step = 16, use_num_samples = -1, answer_provided_by = img, task = qa
+1.0734045788645745

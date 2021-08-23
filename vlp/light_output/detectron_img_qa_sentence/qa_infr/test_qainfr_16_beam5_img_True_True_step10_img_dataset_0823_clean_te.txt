@@ -1,0 +1,245 @@
+21-08-23 19:36:47
+Decoding ... -------------------- recover from step 10 -----------------------
+-------------------- QA Decoding ------------------------
+use_img_content = True
+use_img_meta = True
+split = test
+use_num_samples = 16
+ --------------------- metrics -----------------------
+F1_avg = 0.18749906250468748
+EM = 0.1875
+
+RE_avg = 0.1875
+PR_avg = 0.1875
+
+bleu4_avg = 0.5350072604226639
+mul_avg = 0.11682372137760949
+
+-----Starting writing results:-----
+
+dc5048ccd46f11ebba07a504a20e7724 --- YesNo
+Are both the Original Playboy Mansion and Gage Park High School made of brick ?
+Yes, both the Original Playboy Mansion and Gage Park High School are made of brick.
+Yes, both the Original Playboy Mansion and Gage Park High School made of brick.
+Yes, both the Original Playboy Mansion and Gage Park High School are made of brick.
+Yes, both buildings are made of brick.
+Keywords_A = Yes
+[-2.701122283935547, -3.046344757080078, -3.5523386001586914, -9.200311660766602, -16.07677459716797]
+Yes , both the Original Playboy Mansion and Gage Park High School are made of brick .
+Both the Original Playboy Mansion and Gage Park High School are made of brick .
+No , both the Original Playboy Mansion and Gage Park High School are made of brick .
+No , both the Original Playboy Mansion and Gage Park High School are not made of brick
+No , both the Original Playboy Mansion and Gage Park High School are not made of brick . Yes .
+
+dc504c96d46f11ebba07a504a20e7724 --- YesNo
+Are there bears in the background of the painting Greek Landscape ?
+There are no bears in the background of the painting Greek Landscape.
+There are no bears in the background of the painting 'Greek Landscape'.
+No, there are not any bears in the background of the painting Greek Landscape.
+There are no bears in the background of the painting Greek Landscape.
+No, there are no bears in the background of the painting Greek Landscape.
+No, there are no bears present in the painting.
+Keywords_A = No
+[-0.8925819396972656, -3.223605155944824, -3.523284912109375, -5.174278259277344, -10.392807006835938]
+There are bears in the background of the painting Greek Landscape .
+No , there are bears in the background of the painting Greek Landscape .
+There are bears .
+Yes , there are bears in the background .
+Yes , there are bears in the background of the painting Greek Landscape by Jean - Victor Bertin
+
+dc505394d46f11ebba07a504a20e7724 --- YesNo
+Are there flowering trees in front of both the Georgia Tech Library and the Newman Library at Virginia Tech ?
+No, there are not flowering trees in front of both the Georgia Tech Library and the Newman Library at Virginia Tech.
+No, there are only flowering trees in front of the Newman Library at Virginia Tech.
+No, only the Georgia Tech Library features flowering trees, those by the Newman Library at Virginia Tech do not bear flowers.
+Keywords_A = No.
+[-0.9892187118530273, -3.287923812866211, -3.9430980682373047, -4.214463233947754, -20.344966888427734]
+There are flowering trees in front of both the Georgia Tech Library and the Newman Library at Virginia Tech .
+Yes , there are flowering trees in front of the Georgia Tech Library and the Newman Library at Virginia Tech .
+Yes , there are flowering trees .
+There are flowering trees .
+No , there are not flowering trees in front of both the Georgia Tech Library and the Newman Library at Virginia Tech in front of the Georgia Tech Library at
+
+dc50a74ad46f11ebba07a504a20e7724 --- YesNo
+Do all support columns have grooves in them at the entrance to large buildings or museums
+No, not all support columns have grooves in them at the entrance to large buildings or museums.
+No, all support columns do not have grooves in them at the entrances to large buildings or museums.
+No, not all support columns at the entrance to large buildings or museums have grooves in them.
+No, some of them are smooth.
+No, not all of the support columns have grooves in them at the entrance to large buildings or museums
+No, not all columns have grooves in them.
+Keywords_A = No
+[-1.9864168167114258, -2.708150863647461, -3.9941911697387695, -9.369129180908203, -9.499287605285645]
+do not have grooves in them at the entrance to large buildings .
+have grooves in them at the entrance to large buildings .
+do not have grooves in them at the entrance to large museums .
+do not have grooves in them at the entrance to large buildings or museums have grooves .
+do not have grooves in them at the entrance to large buildings or museums do not have grooves in it .
+
+dc50b316d46f11ebba07a504a20e7724 --- YesNo
+Is Old Brick Building I at the Tokyo University of the Arts made with the same materials as Voorhees Hall at Huron College ?
+Yes the Old Brick Building I at the Tokyo University of the Arts is made from the same material as the Voorhees Hall at Huron College.
+Yes, Old Brick Building I at the Tokyo University of the Arts is made with the same materials as Voorhees Hall at Huron College
+Yes, Old Brick Building I at the Tokyo University of the Arts is made with the same materials as Voorhees Hall at Huron College.
+Yes, both are made of brick.
+Yes, both are made from bricks.
+Yes, both buildings are made with the same materials.
+Keywords_A = yes
+[-1.4863548278808594, -2.9013166427612305, -3.0129661560058594, -3.160590171813965, -3.463808059692383]
+No , Old Brick Building I at the Tokyo University of the Arts is not made with the same materials as Voorhees Hall at Huron College .
+No , the Old Brick Building I at the Tokyo University of the Arts is not made with the same materials as Voorhees Hall at Huron College
+No , Old Brick Building I at the Tokyo University of the Arts is not made of the same materials as Voorhees Hall at Huron College .
+The Old Brick Building I at the Tokyo University of the Arts is not made with the same materials as Voorhees Hall at Huron College .
+No , Old Brick Building I at the Tokyo University of the Arts is made with the same materials as Voorhees Hall at Huron College .
+
+dc50c040d46f11ebba07a504a20e7724 --- YesNo
+Does the Old Wembley Stadium in London , England have more than two levels of concourses ?
+No, the Old Wembley Stadium in London, England does not have more than two levels of concourses.
+No, the stadium does not have more than two levels of concourse.
+No, the stadium has two levels.
+Keywords_A = No
+[-0.6561927795410156, -2.2002811431884766, -3.1902360916137695, -3.4048643112182617, -5.3400373458862305]
+Yes , the Old Wembley Stadium in London , England has more than two levels of concourses .
+The Old Wembley Stadium in London , England has more than two levels of concourses .
+Yes , there are more than two levels of concourses .
+Yes , it has more than two levels of concourses .
+Yes , there are more than two levels of concourses at the Old Wembley Stadium in London .
+
+dc50cd4cd46f11ebba07a504a20e7724 --- YesNo
+Is the bridge with at least 3 arches outside Todmorden Market gray in color ?
+No, the bridge with at least 3 arches outside Todmorden Market is beige.
+No, the bridge is brick-colored, brown.
+No, the bridge is brown, not grey.
+Keywords_A = No
+[-1.9946222305297852, -2.3424625396728516, -2.793826103210449, -2.9538707733154297, -3.0432701110839844]
+Yes , the bridge with at least 3 arches outside Todmorden Market is gray in color .
+Yes , the bridge with at least three arches outside Todmorden Market is gray in color .
+Yes , the bridge with at least 3 arches outside Todmorden Market are gray in color .
+Yes , the bridge with at least three arches outside Todmorden Market are gray in color .
+The bridge with at least 3 arches outside Todmorden Market is gray in color .
+
+dc50dd64d46f11ebba07a504a20e7724 --- YesNo
+Can the petals of the Ballerina rose have more than one color in the same flower ?
+Yes, the petals of the Ballerina rose can have more than one color in the same flower.
+Yes, the petals can have more than one color in the same flower.
+Yes, the petals of the Ballerina rose have more than one color in the same flower.
+Yes, the Ballerina rose can be comprised of petals of multiple colors.
+Yes, the petals of the Ballerina rose can have multiple colors in the same flower.
+Keywords_A = Yes
+[-0.9621915817260742, -1.9625654220581055, -3.3707351684570312, -7.039772033691406, -8.790094375610352]
+Yes , the petals of the Ballerina rose have more than one color in the same flower .
+The petals of the Ballerina rose have more than one color in the same flower .
+No , the petals of the Ballerina rose have more than one color in the same flower .
+Yes , the petals of the Ballerina rose have more than one color in the same flower
+Yes , the petals of the Ballerina rose can have more than one color in the same flower
+
+dc511180d46f11ebba07a504a20e7724 --- YesNo
+Are walking streets in Thailand busy at night ?
+Yes, the streets are busy at night.
+Yes, walking streets in Thailand are busy at night.
+Yes, the Thailand walking streets are busy in the evening.
+Yes, the walking streets in Thailand are busy at night.
+Keywords_A = Yes.
+[-2.292959213256836, -3.1236801147460938, -3.5630149841308594, -6.673445701599121, -7.746150970458984]
+Walking streets in Bangkok are not busy at night .
+Walking streets in Thailand are not busy at night .
+Yes , walking streets in Bangkok are busy at night .
+No , walking streets in Bangkok are not busy at night
+No , walking streets in Thailand are not busy at night
+
+dc512292d46f11ebba07a504a20e7724 --- YesNo
+Are the chapter houses in Haughmond Abbey and Howden Minster well preserved ?
+No, the chapter houses in Haughmond Abbey and Howden Minster are not well preserved.
+No, the chapter houses in Haughmond Abbey and Howden Minster are not well preserved.
+No, some parts of the chapter houses in Haughmond Abbey and Howden Minster are missing, making them unfit to be considered well preserved.
+Keywords_A = No.
+[-2.0344972610473633, -2.1091365814208984, -2.594470977783203, -4.109785079956055, -5.146516799926758]
+The chapter houses in Haughmond Abbey and Howden Minster are well preserved .
+The chapter houses in Haughmond Abbey and Howden Minster are well restored .
+The chapter houses in Haughmond Abbey and Howden Minster are well maintained .
+Chapter houses in Haughmond Abbey and Howden Minster are well restored .
+The chapter houses are well restored .
+
+dc51330ed46f11ebba07a504a20e7724 --- YesNo
+Are the land dinosaurs guarded by rail in both the Display Museum of Natural History in University of Michigan and the Museo Jurassic de Asturias ?
+Yes, there are railings guarding both skeletons.
+Yes, both the Museum of Natural History in University of Michigan and the Museo del Jurásico de Asturias use guarded rails around the land dinosaurs.
+Yes, the dinosaurs are guarded by rail in both the Display Museum of Natural History in University of Michigan and the Museo Jurassic de Asturias.
+Yes, there is railing around the land dinosaurs in both the Display Museum of Natural History at the University of Michigan and in the Museo Jurassic de Asturias.
+Keywords_A = Yes
+[-2.0277185440063477, -2.101877212524414, -2.8774232864379883, -3.2197303771972656, -3.2737083435058594]
+No , the land dinosaurs are not guarded by rail .
+No , the land dinosaurs are not guarded by rail in both the Display Museum of Natural History in University of Michigan and the Museo Jurassic de As
+The land dinosaurs are not guarded by rail in both the Display Museum of Natural History in University of Michigan and the Museo Jurassic de Asturias
+Yes , the land dinosaurs are guarded by rail in both the Display Museum of Natural History in University of Michigan and the Museo Jurassic de Astur
+The land dinosaurs are guarded by rail .
+
+dc513386d46f11ebba07a504a20e7724 --- YesNo
+Are the walk of fame stars barricaded ?
+No, the walk of fame stars aren't barricaded.
+No, the walk of fame stars are not barricaded.
+No, people can freely walk over them.
+No, the stars at the walk of fame are not barricaded or blocked off - people walk freely among them.
+No, they are not.
+Keywords_A = No
+[-1.353653907775879, -1.943181037902832, -2.108257293701172, -3.3461551666259766, -11.751806259155273]
+Yes , the Walk of fame stars are barricaded .
+Yes , the Walk of fame stars barricaded .
+The Walk of fame stars are barricaded .
+The Walk of fame stars barricaded .
+Yes , the Walk of fame stars are barricaded on the Walk .
+
+dc51407ed46f11ebba07a504a20e7724 --- YesNo
+If you attended the Teignmouth Classic Car Show , 21 April 2013 , was there anything preventing people from touching the cars on display , like velvet ropes or fencing ?
+If you went to the Teignmouth Classic Car Show on April 21, 2013, there would have been no velvet ropes or fence stopping visitors from touching the automobiles on exhibit.
+No, there is no velvet ropes or fencing preventing people from touching the cars on display.
+No, there wasn't anything preventing people from touching the cars on display.
+No, there was no barrier preventing people from touching the cars on display.
+Keywords_A = no
+[-5.980816841125488, -6.109737396240234, -6.133552551269531, -7.164122581481934, -7.928189277648926]
+There were no fences separating people from touching the cars on display at the Teignmouth Classic Car Show in 21 April 2013 .
+There were no fences separating people from touching the cars on display .
+There were no fences separating people from touching the cars on display at the Teignmouth Classic Car Show , 21 April 2013 .
+There were no any fences separating people from touching the cars on display at the Teignmouth Classic Car Show in 21 April 2013 .
+Yes , there was a fence separating people from touching the cars on display .
+
+dc514b46d46f11ebba07a504a20e7724 --- YesNo
+Do the Old Fort in New Delhi and the Great Mosque in New Delhi both have rows of 5 archways of the same size ?
+Yes, the Old Fort in New Delhi and the Great Mosque in New Delhi both have rows of 5 archways of the same size.
+Yes, the Old Fort in New Delhi and the Great Mosque in New Delhi both have rows of 5 archways of the same size.
+Yes, they have rows of five archways of the same size.
+Keywords_A = yes
+[-1.332270622253418, -2.708981513977051, -3.2101516723632812, -4.423128128051758, -6.694792747497559]
+The Old Fort in New Delhi and the Great Mosque in New Delhi do not both have rows of 5 archways of the same size .
+The Old Fort in New Delhi and the Great Mosque in New Delhi don ' t both have rows of 5 archways of the same size .
+Yes , the Old Fort in New Delhi and the Great Mosque in New Delhi both have rows of 5 archways of the same size .
+No , they do not have rows of 5 archways of the same size .
+No , the Old Fort in New Delhi and the Great Mosque in New Delhi do not both have rows of 5 archways of the same size
+
+dc518020d46f11ebba07a504a20e7724 --- YesNo
+Does a female Violet crowned woodnymph have a beak that is thicker than its eyeball ?
+No, the female Violet crowned woodnymph does not have a beak that is thicker than its eyeball.
+No, the female Violet crowned woodnymph's beak is not thicker than its eyeball.
+No, the female Violet crowned woodnymph does not have a beak that is thicker than its eyeball
+Keywords_A = No
+[-1.2373123168945312, -1.7490835189819336, -2.2778196334838867, -6.519143104553223, -9.287360191345215]
+Yes , a female Violet crowned woodnymph has a beak that is thicker than its eyeball .
+A female Violet crowned woodnymph has a beak that is thicker than its eyeball .
+The female Violet crowned woodnymph has a beak that is thicker than its eyeball .
+Yes , a female Violet crowned woodnymph has a beak that is thicker than its eyeball
+No , a female Violet crowned woodnymph has a beak that is thicker than its eyeball does
+
+dc51ab86d46f11ebba07a504a20e7724 --- YesNo
+Are there any buildings near the Shanghai tower which are less than 50 % of its height ?
+Yes, there are buildings less than 50% of the height of the Shanghai tower around it.
+Yes, there is a building near the Shanghai tower that is less than 50% of its height.
+Yes, there are buildings near the Shanghai Tower that are less than 50 percent of its height.
+Yes, there are some buildings near this tower that are less than half as tall.
+Yes, there are buildings near the Shanghai tower which are less than 50% of its height.
+Keywords_A = Yes
+[-2.711162567138672, -2.8839292526245117, -3.309000015258789, -3.80572509765625, -19.50020408630371]
+No , there are not buildings near the Shanghai tower which are less than 50 % of its height .
+There are not buildings near the Shanghai tower which are less than 50 % of its height .
+There are no buildings near the Shanghai tower which are less than 50 % of its height .
+No , there are buildings near the Shanghai tower which are less than 50 % of its height .
+No , there are not buildings near the Shanghai tower which are less than 50 % of its height . Yes , there are buildings taller than 50 % .

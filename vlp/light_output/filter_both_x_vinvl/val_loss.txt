@@ -1,0 +1,11 @@
+
+recover_step = 1, use_num_samples = -1, answer_provided_by = img|txt, task = filter
+0.22002097267142445
+recover_step = 2, use_num_samples = -1, answer_provided_by = img|txt, task = filter
+0.1831656642425865
+recover_step = 3, use_num_samples = -1, answer_provided_by = img|txt, task = filter
+0.1727441268047719
+recover_step = 4, use_num_samples = -1, answer_provided_by = img|txt, task = filter
+0.172908747778349
+recover_step = 5, use_num_samples = -1, answer_provided_by = img|txt, task = filter
+0.17623318337694624
