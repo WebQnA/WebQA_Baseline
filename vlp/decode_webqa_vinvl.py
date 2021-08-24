@@ -47,7 +47,18 @@ from collections import Counter
 import spacy
 nlp = spacy.load("en_core_web_sm", disable=["ner","textcat","parser"])
 # SPECIAL_TOKEN = ["[UNK]", "[PAD]", "[CLS]", "[MASK]"]
+COLOR_SET = {'orangebrown', 'spot', 'yellow', 'blue', 'rainbow', 'ivory', 'brown', 'gray', 'teal', 'bluewhite', 'orangepurple', 'black', 'white', 'gold', 'redorange', 'pink', 'blonde', 'tan', 'turquoise', 'grey', 'beige', 'golden', 'orange', 'bronze', 'maroon', 'purple', 'bluere', 'red', 'rust', 'violet', 'transparent', 'yes', 'silver', 'chrome', 'green', 'aqua'}
+SHAPE_SET = {'globular', 'octogon', 'ring', 'hoop', 'octagon', 'concave', 'flat', 'wavy', 'shamrock', 'cross', 'cylinder', 'cylindrical', 'pentagon', 'point', 'pyramidal', 'crescent', 'rectangular', 'hook', 'tube', 'cone', 'bell', 'spiral', 'ball', 'convex', 'square', 'arch', 'h', 'cuboid', 'step', 'rectangle', 'dot', 'oval', 'circle', 'star', 'crosse', 'crest', 'octagonal', 'cube', 'triangle', 'semicircle', 'domeshape', 'obelisk', 'corkscrew', 'curve', 'circular', 'xs', 'slope', 'pyramid', 'round', 'bow', 'straight', 'triangular', 'heart', 'fork', 'teardrop', 'fold', 'curl', 'spherical', 'diamond', 'keyhole', 'conical', 'dome', 'sphere', 'bellshaped', 'rounded', 'hexagon', 'flower', 'globe', 'torus'}
+YESNO_SET = {'yes', 'no'}
+
+def detectNum(l):
+    result = []
+    for w in l:
+        try: result.append(str(int(w)))
+        except: pass
+    return result
 def toNum(word):
+    if word == 'point': return word
     try: return w2n.word_to_num(word)
     except:
         return word
@@ -85,7 +96,7 @@ class Evaluate(object):
     def __init__(self):
         self.scorers = [
             (Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]),
-            (Meteor(), "METEOR"),
+            #(Meteor(), "METEOR"),
             (Rouge(), "ROUGE_L"),
             #(Cider(), "CIDEr"),
             #(Spice(), "Spice")
@@ -94,18 +105,19 @@ class Evaluate(object):
     def score(self, ref, hypo):
         final_scores = {}
         for scorer, method in self.scorers:
-            score, scores = scorer.compute_score(ref, hypo)
+            if type(method) == list: score, scores = scorer.compute_score(ref, hypo, verbose=0)
+            else: score, scores = scorer.compute_score(ref, hypo)
             if type(score) == list:
                 for m, s in zip(method, score):
-                    print(m)
+                    #print(m)
                     final_scores[m] = s
             else:
-                print(method)
+                #print(method)
                 final_scores[method] = score
         return final_scores
 
     def evaluate(self, return_scores=False, **kwargs):
-        ans = kwargs.pop('ref', {}) # only support one ans per sample
+        ans = kwargs.pop('ref', {}) # support a list of references
         cand = kwargs.pop('cand', {}) # only support one cand per sample, but the input cand has size batch_size x K
 
         hypo = {}
@@ -113,15 +125,15 @@ class Evaluate(object):
         i = 0
         for i in range(len(cand)):
             hypo[i] = [cand[i][0]]
-            ref[i] = [ans[i]]
+            ref[i] = ans[i]
         
         final_scores = self.score(ref, hypo)
-        print ('Bleu_1:\t', final_scores['Bleu_1'])
-        print ('Bleu_2:\t', final_scores['Bleu_2'])
-        print ('Bleu_3:\t', final_scores['Bleu_3'])
-        print ('Bleu_4:\t', final_scores['Bleu_4'])
-        print ('METEOR:\t', final_scores['METEOR'])
-        print ('ROUGE_L:', final_scores['ROUGE_L'])
+        #print ('Bleu_1:\t', final_scores['Bleu_1'])
+        #print ('Bleu_2:\t', final_scores['Bleu_2'])
+        #print ('Bleu_3:\t', final_scores['Bleu_3'])
+        #print ('Bleu_4:\t', final_scores['Bleu_4'])
+        #print ('METEOR:\t', final_scores['METEOR'])
+        #print ('ROUGE_L:', final_scores['ROUGE_L'])
         #print ('CIDEr:\t', final_scores['CIDEr'])
         #print ('Spice:\t', final_scores['Spice'])
 
@@ -129,23 +141,30 @@ class Evaluate(object):
             return final_scores
 
 # BertScore
-from datasets import load_metric
-METRIC = load_metric("bertscore")
-def compute_bertscore(cands, a):
-    METRIC.add_batch(predictions = cands, references = [a]*len(cands))
-    score = METRIC.compute(lang='en')
-    return np.mean(score['f1']), np.max(score['f1'])
+#from datasets import load_metric
+#METRIC = load_metric("bertscore")
+#def compute_bertscore(cands, a):
+    #METRIC.add_batch(predictions = cands, references = [a]*len(cands))
+    #score = METRIC.compute(lang='en')
+    #return np.mean(score['f1']), np.max(score['f1'])
 
 # VQA Eval (SQuAD style EM, F1)
-def compute_vqa_metrics(cands, a):
+def compute_vqa_metrics(cands, a, exclude="", domain=None):
     if len(cands) == 0: return (0,0,0)
     bow_a = normalize_text(a).split()
     F1 = []
     EM = 0
     RE = []
     PR = []
+    e = normalize_text(exclude).split() # set exclude=['Q'] if we want to exclude question words
     for c in cands:
-        bow_c = normalize_text(c).split()
+        bow_c = [w for w in normalize_text(c).split() if not w in e]
+        if domain == {"NUMBER"}: bow_c = detectNum(bow_c)
+        elif domain is not None: 
+            bow_c = list(domain.intersection(bow_c))
+            bow_a = list(domain.intersection(bow_a))
+        #print("bow_a = ", bow_a)
+        #print("bow_c = ", bow_c)
         if bow_c == bow_a:
             EM = 1
         common = Counter(bow_a) & Counter(bow_c)
@@ -260,8 +279,8 @@ def main():
                         help="maximum length of target sequence")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_J.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/dataset_J_split_update0721.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0823_clean_te.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0823_clean_te.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
     #parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
@@ -476,6 +495,9 @@ def main():
     output_confidence = []
     output_Q = []
     output_A = []
+    output_Keywords_A = []
+    output_Guid = []
+    output_Qcate = []
     for infr_dataloader in infr_dataloaders:
         nbatches = len(infr_dataloader)
         
@@ -512,17 +534,22 @@ def main():
                     # buf_id[i] = img_idx (global idx across chunks)
                 iter_bar.set_description('Step = {}'.format(step))
 
-        Q, A = infr_dataloader.dataset.get_QA_list()
-        Q, A = [' '.join(detokenize(q)) for q in Q], [' '.join(detokenize(a)) for a in A]
-        assert len(Q) == len(A)
+        Q, A, Keywords_A = infr_dataloader.dataset.get_QA_list()
+        Q = [' '.join(detokenize(q)) for q in Q]
+        Guid = infr_dataloader.dataset.get_guid_list()
+        Qcate= infr_dataloader.dataset.get_Qcate_list()
+        assert len(Q) == len(A) == len(Keywords_A) == len(Guid) == len(Qcate)
         
         output_Q.extend(Q)
         output_A.extend(A)
-        assert len(output_lines) == len(output_confidence) == len(output_Q) == len(output_A)
+        output_Keywords_A.extend(Keywords_A)
+        output_Guid.extend(Guid)
+        output_Qcate.extend(Qcate)
+        assert len(output_lines) == len(output_confidence) == len(output_Q) == len(output_A) == len(output_Keywords_A) == len(output_Guid) == len(output_Qcate)
 
 
     eval_f = Evaluate()
-    scores = eval_f.evaluate(cand=output_lines, ref=output_A, return_scores=True)
+    #scores = eval_f.evaluate(cand=output_lines, ref=output_A, return_scores=True)
         
     # SQuAD style vqa eval: EM, F1
     F1_avg_scores = []
@@ -530,20 +557,37 @@ def main():
     EM_scores = []
     RE_scores = []
     PR_scores = []
-    F1_avg_bertscores = []
-    F1_max_bertscores = []
-    for cands, a in zip(output_lines, output_A):
+    bleu4_scores = []
+    mul_scores = []
+    #F1_avg_bertscores = []
+    #F1_max_bertscores = []
+    for cands, A, KA, Qcate in zip(output_lines, output_A, output_Keywords_A, output_Qcate):
         assert len(cands)==args.beam_size
-        F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics([cands[0]], a)
+        C = [cands[0]]
+        scores = eval_f.evaluate(cand=[C], ref=[A], return_scores=True)
+        #print()
+        #print("C = ", C)
+        #print("Keywords = ", KA)
+        #print("A = ", A)
+        #print("scores = ", scores['Bleu_4'])
+        if Qcate == 'color': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA, "", COLOR_SET)
+        elif Qcate == 'shape': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA, "", SHAPE_SET)
+        elif Qcate == 'YesNo': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA, "", YESNO_SET)
+        elif Qcate == 'number': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA, "", {"NUMBER"})
+        else: F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA)
+        bleu4_scores.append(scores['Bleu_4'])
+        if Qcate in ['choose', 'Others']: mul_scores.append(RE_avg * scores['Bleu_4'])
+        else: mul_scores.append(F1_avg * scores['Bleu_4'])
+        #print(F1_avg, RE_avg, scores['Bleu_4'])
         F1_avg_scores.append(F1_avg)
         F1_max_scores.append(F1_max)
         EM_scores.append(EM)
         RE_scores.append(RE_avg)
         PR_scores.append(PR_avg)
 
-        F1_avg_bertscore, F1_max_bertscore = compute_bertscore([cands[0]], a)
-        F1_avg_bertscores.append(F1_avg_bertscore)
-        F1_max_bertscores.append(F1_max_bertscore)
+        #F1_avg_bertscore, F1_max_bertscore = compute_bertscore([cands[0]], a)
+        #F1_avg_bertscores.append(F1_avg_bertscore)
+        #F1_max_bertscores.append(F1_max_bertscore)
 
     F1_avg = np.mean(F1_avg_scores)
     F1_max = np.mean(F1_max_scores)
@@ -551,16 +595,23 @@ def main():
     RE_avg = np.mean(RE_scores)
     PR_avg = np.mean(PR_scores)
 
-    F1_avg_bertscore = np.mean(F1_avg_bertscores)
-    F1_max_bertscore = np.mean(F1_max_bertscores)
-    print("F1_avg = {}".format(F1_avg))
-    print("F1_max = {}".format(F1_max))
-    print("EM = {}".format(EM))
-    print("RE_avg = {}".format(RE_avg))
-    print("PR_avg = {}".format(PR_avg))
+    bleu4_avg = np.mean(bleu4_scores)
+    mul_avg = np.mean(mul_scores)
 
-    print("F1_avg_bertscore = {}".format(F1_avg_bertscore))
-    print("F1_max_bertscore = {}".format(F1_max_bertscore))
+    #F1_avg_bertscore = np.mean(F1_avg_bertscores)
+    #F1_max_bertscore = np.mean(F1_max_bertscores)
+    print("F1_avg = {}".format(F1_avg))
+    #print("F1_max = {}".format(F1_max))
+    #print("EM = {}".format(EM))
+    print("RE_avg = {}".format(RE_avg))
+    #print("PR_avg = {}".format(PR_avg))
+    print("bleu4_avg = {}".format(bleu4_avg))
+    print("mul_avg = {}".format(mul_avg))
+
+    #print("F1_avg_bertscore = {}".format(F1_avg_bertscore))
+    #print("F1_max_bertscore = {}".format(F1_max_bertscore))
+
+    #print("RE * BLEU4 = {}".format(RE_avg * scores['Bleu_4']))
 
     filename = "{}_qainfr_{}_beam{}".format(args.split, args.use_num_samples, args.beam_size)
     if "img" in args.answer_provided_by:
@@ -574,19 +625,22 @@ def main():
         f.write(datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
         f.write("\n".join(log_txt_content))
         f.write('\n --------------------- metrics -----------------------\n')
-        f.write(str(scores))
-        f.write('\n\n')
+        #f.write(str(scores))
+        #f.write('\n\n')
         f.write('\n'.join(["F1_avg = {}".format(F1_avg), "EM = {}".format(EM)]))
         f.write('\n\n')
         f.write('\n'.join(["RE_avg = {}".format(RE_avg), "PR_avg = {}".format(PR_avg)]))
         f.write('\n\n')
-        f.write('\n'.join(["F1_avg_bertscore = {}".format(F1_avg_bertscore)]))
+        #f.write('\n'.join(["F1_avg_bertscore = {}".format(F1_avg_bertscore)]))
+        #f.write('\n\n')
+        f.write('\n'.join(["bleu4_avg = {}".format(bleu4_avg), "mul_avg = {}".format(mul_avg)]))
         f.write('\n\n')
         f.write('-----Starting writing results:-----')
-        for q, a, oc, o in zip(output_Q, output_A, output_confidence, output_lines):
+        for guid, qcate, q, a, ka, oc, o in zip(output_Guid, output_Qcate, output_Q, output_A, output_Keywords_A, output_confidence, output_lines):
             f.write("\n\n")
-            f.write("\n".join([q, a, oc, '\n'.join(o)]))
+            f.write("\n".join(['Guid === {} --- {}'.format(guid, qcate), 'Question === '+q, '\n'.join(a), 'Keywords_A === '+ka, 'Confidence === '+oc, '\n'.join(o)]))
                 
+
 
 if __name__ == "__main__":
     main()

@@ -98,7 +98,7 @@ class Evaluate(object):
     def __init__(self):
         self.scorers = [
             (Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]),
-            (Meteor(), "METEOR"),
+            #(Meteor(), "METEOR"),
             (Rouge(), "ROUGE_L"),
             #(Cider(), "CIDEr"),
             #(Spice(), "Spice")
@@ -165,8 +165,8 @@ def compute_vqa_metrics(cands, a, exclude="", domain=None):
         elif domain is not None: 
             bow_c = list(domain.intersection(bow_c))
             bow_a = list(domain.intersection(bow_a))
-        print("bow_a = ", bow_a)
-        print("bow_c = ", bow_c)
+        #print("bow_a = ", bow_a)
+        #print("bow_c = ", bow_c)
         if bow_c == bow_a:
             EM = 1
         common = Counter(bow_a) & Counter(bow_c)
@@ -564,9 +564,11 @@ def main():
         assert len(cands)==args.beam_size
         C = [cands[0]]
         scores = eval_f.evaluate(cand=[C], ref=[A], return_scores=True)
-        
-        print("C = ", C)
-        print("Keywords = ", KA)
+        #print()
+        #print("C = ", C)
+        #print("Keywords = ", KA)
+        #print("A = ", A)
+        #print("scores = ", scores['Bleu_4'])
         if Qcate == 'color': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA, "", COLOR_SET)
         elif Qcate == 'shape': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA, "", SHAPE_SET)
         elif Qcate == 'YesNo': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA, "", YESNO_SET)
@@ -575,7 +577,7 @@ def main():
         bleu4_scores.append(scores['Bleu_4'])
         if Qcate in ['choose', 'Others']: mul_scores.append(RE_avg * scores['Bleu_4'])
         else: mul_scores.append(F1_avg * scores['Bleu_4'])
-        print(F1_avg, RE_avg, scores['Bleu_4'])
+        #print(F1_avg, RE_avg, scores['Bleu_4'])
         F1_avg_scores.append(F1_avg)
         F1_max_scores.append(F1_max)
         EM_scores.append(EM)
@@ -635,7 +637,7 @@ def main():
         f.write('-----Starting writing results:-----')
         for guid, qcate, q, a, ka, oc, o in zip(output_Guid, output_Qcate, output_Q, output_A, output_Keywords_A, output_confidence, output_lines):
             f.write("\n\n")
-            f.write("\n".join(['{} --- {}'.format(guid, qcate), q, '\n'.join(a), 'Keywords_A = '+ka, oc, '\n'.join(o)]))
+            f.write("\n".join(['Guid === {} --- {}'.format(guid, qcate), 'Question === '+q, '\n'.join(a), 'Keywords_A === '+ka, 'Confidence === '+oc, '\n'.join(o)]))
                 
 
 if __name__ == "__main__":
