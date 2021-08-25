@@ -576,8 +576,8 @@ def main():
         elif Qcate == 'number': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA, "", {"NUMBER"})
         else: F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA)
         bleu4_scores.append(scores['Bleu_4'])
-        if Qcate in ['choose', 'Others']: mul_scores.append(RE_avg * scores['Bleu_4'])
-        else: mul_scores.append(F1_avg * scores['Bleu_4'])
+        if Qcate in ['color', 'number', 'shape', 'YesNo']: mul_scores.append(F1_avg * scores['Bleu_4'])
+        else: mul_scores.append(RE_avg * scores['Bleu_4'])
         #print(F1_avg, RE_avg, scores['Bleu_4'])
         F1_avg_scores.append(F1_avg)
         F1_max_scores.append(F1_max)
@@ -636,10 +636,14 @@ def main():
         f.write('\n'.join(["bleu4_avg = {}".format(bleu4_avg), "mul_avg = {}".format(mul_avg)]))
         f.write('\n\n')
         f.write('-----Starting writing results:-----')
-        for guid, qcate, q, a, ka, oc, o in zip(output_Guid, output_Qcate, output_Q, output_A, output_Keywords_A, output_confidence, output_lines):
+        for guid, qcate, q, a, ka, oc, o, re, f1, b, m in zip(output_Guid, output_Qcate, output_Q, output_A, output_Keywords_A, output_confidence, output_lines, RE_scores, F1_avg_scores, bleu4_scores, mul_scores):
             f.write("\n\n")
-            f.write("\n".join(['Guid === {} --- {}'.format(guid, qcate), 'Question === '+q, '\n'.join(a), 'Keywords_A === '+ka, 'Confidence === '+oc, '\n'.join(o)]))
-                
+            f.write("\n".join(['Guid === {} --- {}'.format(guid, qcate), 
+            'Question === '+q, '\n'.join(a), 
+            'Keywords_A === '+ka, 'Confidence === '+oc, '\n'.join(o), 
+            'First Candidate BLUE4 === {}'.format(b), 
+            'RE === {}'.format(re), 'F1 === {}'.format(f1),
+            "mul === {}".format(m),]))
 
 
 if __name__ == "__main__":

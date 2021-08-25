@@ -22,4 +22,4 @@ CUDA_VISIBLE_DEVICES=1 python decode_webqa_vinvl.py --new_segment_ids --batch_si
 CUDA_VISIBLE_DEVICES=2 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "img" --beam_size 5 --split "test" --num_workers 8 --output_dir light_output/detectron_img_qa_sentence --ckpts_dir /data/yingshac/MMMHQA/ckpts/detectron_img_qa_sentence --recover_step 10
 
 txt qa decoding
-CUDA_VISIBLE_DEVICES=3 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "txt" --beam_size 5 --split "test" --num_workers 8 --output_dir light_output/txt_qa --ckpts_dir /data/yingshac/MMMHQA/ckpts/txt_qa --recover_step 10
+CUDA_VISIBLE_DEVICES=3 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "txt" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/txt_qa --ckpts_dir /data/yingshac/MMMHQA/ckpts/txt_qa --recover_step 10

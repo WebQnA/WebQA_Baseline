@@ -9,3 +9,5 @@ recover_step = 4, use_num_samples = -1, answer_provided_by = img|txt, task = fil
 0.172908747778349
 recover_step = 5, use_num_samples = -1, answer_provided_by = img|txt, task = filter
 0.17623318337694624
+recover_step = 6, use_num_samples = -1, answer_provided_by = img|txt, task = filter
+0.199160729238458

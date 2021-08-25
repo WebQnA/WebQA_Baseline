@@ -1,0 +1,19 @@
+21-08-24 09:36:31
+Decoding ... -------------------- recover from step 10 -----------------------
+-------------------- QA Decoding ------------------------
+use_img_content = True
+use_img_meta = True
+split = test
+use_num_samples = -1
+ --------------------- metrics -----------------------
+{'Bleu_1': 0.0, 'Bleu_2': 0.0, 'Bleu_3': 0.0, 'Bleu_4': 0.0}
+
+F1_avg = nan
+EM = nan
+
+RE_avg = nan
+PR_avg = nan
+
+RE * BLEU4 = nan
+
+-----Starting writing results:-----
