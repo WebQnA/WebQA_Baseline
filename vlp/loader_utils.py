@@ -21,11 +21,15 @@ def batch_list_to_batch_tensors(batch):
     #input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next, do_filter_task, filter_label, logit_mask, ori_choices, task_idx, img, vis_pe, context, cxt_modality_label, example_ids
     #batch_tensors.append(input_lists[0])
     for x in zip(*batch):
-        if x[0] is None:
+        if all(y is None for y in x):
             batch_tensors.append(torch.zeros(1))
             #batch_tensors.append(None)
+        elif any(y is None for y in x):
+            z = [y for y in x if y is not None]
+            batch_tensors.append(torch.cat(z, dim=0))
         elif isinstance(x[0], list) and (len(x[0])==0 or isinstance(x[0][0], int)): # cxt_modality_label
             batch_tensors.append(x)
+
         elif isinstance(x[0], torch.Tensor):
             try:
                 batch_tensors.append(torch.stack(x))

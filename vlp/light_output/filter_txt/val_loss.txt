@@ -1,4 +1,17 @@
-
+recover_step = 1, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.3104875660859622
+recover_step = 2, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.23993337612885696
+recover_step = 3, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.2415028650027055
+recover_step = 4, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.24297397449994698
+recover_step = 5, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.25269110844685483
+recover_step = 6, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.23255642484395933
+recover_step = 7, use_num_samples = -1, answer_provided_by = txt, task = filter
+0.2456093824062592
 recover_step = 8, use_num_samples = -1, answer_provided_by = txt, task = filter
 0.22450995290434206
 recover_step = 9, use_num_samples = -1, answer_provided_by = txt, task = filter

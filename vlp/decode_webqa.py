@@ -326,6 +326,8 @@ def main():
     # available Qcate in txt data: ### TBD
     parser.add_argument('--Qcate', type=str, default=['all'])
 
+    parser.add_argument('--no_eval', action='store_true')
+
     parser.add_argument('--drop_prob', default=0.1, type=float)
     parser.add_argument('--enable_butd', action='store_true',
                         help='set to take in region features')
@@ -548,6 +550,26 @@ def main():
         output_Qcate.extend(Qcate)
         assert len(output_lines) == len(output_confidence) == len(output_Q) == len(output_A) == len(output_Keywords_A) == len(output_Guid) == len(output_Qcate)
 
+    if args.no_eval:
+        filename = "{}_qainfr_no_eval_{}_beam{}".format(args.split, args.use_num_samples, args.beam_size)
+        if "img" in args.answer_provided_by:
+            filename += "_{}_{}_{}".format("img", args.use_img_content, args.use_img_meta)
+        if "txt" in args.answer_provided_by:
+            filename += "_{}_{}".format("txt", args.use_txt_fact)
+        filename += "_step{}_{}".format(recover_step, args.output_suffix)
+
+
+        with open(os.path.join(args.output_dir, 'qa_infr', "{}.tsv".format(filename)), "w") as f:
+            header = ['Guid', 'Qcate', 'Q', 'A', 'Keywords_A', 'Output_conf', 'Output']
+            v = '{0}\n'.format('\t'.join(map(str, header)))
+            f.write(v)
+            #for guid, qcate, q, a, ka, oc, o, re, f1, b, m in zip(output_Guid, output_Qcate, output_Q, output_A, output_Keywords_A, output_confidence, output_lines, RE_scores, F1_avg_scores, bleu4_scores, mul_scores):
+            for guid, qcate, q, a, ka, oc, o in zip(output_Guid, output_Qcate, output_Q, output_A, output_Keywords_A, output_confidence, output_lines):
+                row = [guid, qcate, q, json.dumps(a), ka, json.dumps(oc), json.dumps(o)]
+                v = '{0}\n'.format('\t'.join(map(str, row)))
+                f.write(v)
+        return
+        
 
     eval_f = Evaluate()
     #scores = eval_f.evaluate(cand=output_lines, ref=output_A, return_scores=True)
@@ -622,7 +644,8 @@ def main():
     filename += "_step{}_{}".format(recover_step, args.output_suffix)
 
 
-    with open(os.path.join(args.output_dir, 'qa_infr', "{}.txt".format(filename)), "w") as f:
+    with open(os.path.join(args.output_dir, 'qa_infr', "{}.tsv".format(filename)), "w") as f:
+        
         f.write(datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
         f.write("\n".join(log_txt_content))
         f.write('\n --------------------- metrics -----------------------\n')
@@ -637,7 +660,10 @@ def main():
         f.write('\n'.join(["bleu4_avg = {}".format(bleu4_avg), "mul_avg = {}".format(mul_avg)]))
         f.write('\n\n')
         f.write('-----Starting writing results:-----')
+        
+        
         for guid, qcate, q, a, ka, oc, o, re, f1, b, m in zip(output_Guid, output_Qcate, output_Q, output_A, output_Keywords_A, output_confidence, output_lines, RE_scores, F1_avg_scores, bleu4_scores, mul_scores):
+        
             f.write("\n\n")
             f.write("\n".join(['Guid === {} --- {}'.format(guid, qcate), 
             'Question === '+q, '\n'.join(a), 
@@ -645,6 +671,7 @@ def main():
             'First Candidate BLUE4 === {}'.format(b), 
             'RE === {}'.format(re), 'F1 === {}'.format(f1),
             "mul === {}".format(m),]))
+            
                 
 
 if __name__ == "__main__":

@@ -1,0 +1,32 @@
+recover_step = 1, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.7851542279690125
+recover_step = 2, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.5982229468188707
+recover_step = 3, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.5069940791854375
+recover_step = 4, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.4602696103385733
+recover_step = 5, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.4351499933230727
+recover_step = 6, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.4193988465055636
+recover_step = 7, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.421343697022788
+recover_step = 8, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.4219390048256404
+recover_step = 9, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.4379350414758996
+recover_step = 10, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.461338580409183
+recover_step = 11, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.4681343594683876
+recover_step = 12, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.4816193814519085
+recover_step = 13, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.4935249060015137
+recover_step = 14, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.5123655833775485
+recover_step = 15, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.541755644580986
+recover_step = 16, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.5637335739558256
