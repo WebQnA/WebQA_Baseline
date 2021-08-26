@@ -838,6 +838,8 @@ class Preprocess4webqa(Pipeline):
         else: # qa task
             if context == 'img':
                 gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
+                gold_feature_paths = gold_feature_paths[:2]
+                gold_cxt_list = gold_cxt_list[:2]
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
                 tokens_b = Q+A
                 
@@ -1062,6 +1064,8 @@ class Preprocess4webqaDecoder(Pipeline):
         else:
             if context in ['img', 'both']:
                 gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, _, do_filter_task, context, example_id = instance # '_' as a placeholder for 'A'
+                gold_feature_paths = gold_feature_paths[:2]
+                gold_cxt_list = gold_cxt_list[:2]
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
                 cxt = sum(gold_cxt_list, [])
 

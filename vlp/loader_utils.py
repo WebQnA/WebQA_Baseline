@@ -34,9 +34,9 @@ def batch_list_to_batch_tensors(batch):
             try:
                 batch_tensors.append(torch.stack(x))
             except:
-                #print([i.size() for i in x])
+                print([i.size() for i in x])
                 f = torch.cat(x, dim=0)
-                #print("After torch.cat vis_feats, size = ", f.size())
+                print("After torch.cat vis_feats, size = ", f.size())
                 batch_tensors.append(f)
         elif isinstance(x[0], str):
             batch_tensors.append(x)

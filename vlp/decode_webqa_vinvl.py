@@ -326,8 +326,8 @@ def main():
 
     # Add VinVL feature support
     parser.add_argument('--gold_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/gold_0_22265/predictions_cor.tsv", type=str)
-    parser.add_argument('--neg_img_tsv', default=None, type=str)
-    parser.add_argument('--x_neg_img_tsv', default=None, type=str)
+    parser.add_argument('--neg_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/neg_imgs_0_338842/predictions.tsv", type=str)
+    parser.add_argument('--x_neg_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/x_neg_imgs_0_240661/predictions.tsv", type=str)
 
 
     parser.add_argument('--drop_prob', default=0.1, type=float)

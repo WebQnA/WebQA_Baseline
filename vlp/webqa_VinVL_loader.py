@@ -789,6 +789,8 @@ class Preprocess4webqa_VinVL(Pipeline):
         else: # qa task
             if context == 'img':
                 gold_image_ids, distractor_image_ids, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
+                gold_image_ids = gold_image_ids[:2]
+                gold_cxt_list = gold_cxt_list[:2]
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
                 tokens_b = Q+A
                 
@@ -1007,6 +1009,8 @@ class Preprocess4webqaDecoder_VinVL(Pipeline):
         else:
             if context in ['img', 'both']:
                 gold_image_ids, distractor_image_ids, gold_cxt_list, distractor_cxt_list, Q, _, do_filter_task, context, example_id = instance # '_' as a placeholder for 'A'
+                gold_image_ids = gold_image_ids[:2]
+                gold_cxt_list = gold_cxt_list[:2]
                 tokens_a = ['[UNK]'] * self.max_len_img_cxt
                 cxt = sum(gold_cxt_list, [])
 
@@ -1063,8 +1067,11 @@ class Preprocess4webqaDecoder_VinVL(Pipeline):
                 img_list = []
                 vis_pe_list = []
                 for image_id in gold_image_ids:
-                    vis_pe, scores, img, cls_label = self.img_data_tsv[image_id//10000000][image_id % 10000000]
-
+                    try: vis_pe, scores, img, cls_label = self.img_data_tsv[image_id//10000000][image_id % 10000000]
+                    except:
+                        print("\n have keys: {}\n".format(self.img_data_tsv.keys()))
+                        print("\nimage_id = {}\n".format(image_id))
+                        raise
                     #img = features['fc1_features'].detach().cpu().float()
                     #cls_label = features['cls_features'].detach().cpu().float()
                     #vis_pe = features['pred_boxes'].detach().cpu()
@@ -1090,7 +1097,7 @@ class Preprocess4webqaDecoder_VinVL(Pipeline):
                 if len(img_list) == 0:
                     assert len(vis_pe_list) == 0
                     img = torch.zeros((self.max_len_img_cxt, 2048)) # 2048 is hard-coded
-                    vis_pe = torch.zeros((self.max_len_img_cxt, 1607)) # 1607 is hard-coded
+                    vis_pe = torch.zeros((self.max_len_img_cxt, 1601)) # 1607 is hard-coded
                 else:
                     img = torch.cat(img_list, dim=0)
                     vis_pe = torch.cat(vis_pe_list, dim=0)
