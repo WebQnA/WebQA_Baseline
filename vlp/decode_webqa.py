@@ -34,24 +34,24 @@ from misc.data_parallel import DataParallelImbalance
 import vlp.webqa_loader as webqa_loader
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 
-from pycocoevalcap.spice.spice import Spice
-from pycocoevalcap.bleu.bleu import Bleu
-from pycocoevalcap.rouge.rouge import Rouge
-from pycocoevalcap.meteor.meteor import Meteor
-from pycocoevalcap.cider.cider import Cider
+#from pycocoevalcap.spice.spice import Spice
+#from pycocoevalcap.bleu.bleu import Bleu
+#from pycocoevalcap.rouge.rouge import Rouge
+#from pycocoevalcap.meteor.meteor import Meteor
+#from pycocoevalcap.cider.cider import Cider
 
 from datetime import datetime
 from pytz import timezone
-from word2number import w2n
+#from word2number import w2n
 import string, re
 from collections import Counter
-import spacy
-nlp = spacy.load("en_core_web_sm", disable=["ner","textcat","parser"])
+#import spacy
+#nlp = spacy.load("en_core_web_sm", disable=["ner","textcat","parser"])
 # SPECIAL_TOKEN = ["[UNK]", "[PAD]", "[CLS]", "[MASK]"]
 
-COLOR_SET = {'orangebrown', 'spot', 'yellow', 'blue', 'rainbow', 'ivory', 'brown', 'gray', 'teal', 'bluewhite', 'orangepurple', 'black', 'white', 'gold', 'redorange', 'pink', 'blonde', 'tan', 'turquoise', 'grey', 'beige', 'golden', 'orange', 'bronze', 'maroon', 'purple', 'bluere', 'red', 'rust', 'violet', 'transparent', 'yes', 'silver', 'chrome', 'green', 'aqua'}
-SHAPE_SET = {'globular', 'octogon', 'ring', 'hoop', 'octagon', 'concave', 'flat', 'wavy', 'shamrock', 'cross', 'cylinder', 'cylindrical', 'pentagon', 'point', 'pyramidal', 'crescent', 'rectangular', 'hook', 'tube', 'cone', 'bell', 'spiral', 'ball', 'convex', 'square', 'arch', 'h', 'cuboid', 'step', 'rectangle', 'dot', 'oval', 'circle', 'star', 'crosse', 'crest', 'octagonal', 'cube', 'triangle', 'semicircle', 'domeshape', 'obelisk', 'corkscrew', 'curve', 'circular', 'xs', 'slope', 'pyramid', 'round', 'bow', 'straight', 'triangular', 'heart', 'fork', 'teardrop', 'fold', 'curl', 'spherical', 'diamond', 'keyhole', 'conical', 'dome', 'sphere', 'bellshaped', 'rounded', 'hexagon', 'flower', 'globe', 'torus'}
-YESNO_SET = {'yes', 'no'}
+#COLOR_SET = {'orangebrown', 'spot', 'yellow', 'blue', 'rainbow', 'ivory', 'brown', 'gray', 'teal', 'bluewhite', 'orangepurple', 'black', 'white', 'gold', 'redorange', 'pink', 'blonde', 'tan', 'turquoise', 'grey', 'beige', 'golden', 'orange', 'bronze', 'maroon', 'purple', 'bluere', 'red', 'rust', 'violet', 'transparent', 'yes', 'silver', 'chrome', 'green', 'aqua'}
+#SHAPE_SET = {'globular', 'octogon', 'ring', 'hoop', 'octagon', 'concave', 'flat', 'wavy', 'shamrock', 'cross', 'cylinder', 'cylindrical', 'pentagon', 'point', 'pyramidal', 'crescent', 'rectangular', 'hook', 'tube', 'cone', 'bell', 'spiral', 'ball', 'convex', 'square', 'arch', 'h', 'cuboid', 'step', 'rectangle', 'dot', 'oval', 'circle', 'star', 'crosse', 'crest', 'octagonal', 'cube', 'triangle', 'semicircle', 'domeshape', 'obelisk', 'corkscrew', 'curve', 'circular', 'xs', 'slope', 'pyramid', 'round', 'bow', 'straight', 'triangular', 'heart', 'fork', 'teardrop', 'fold', 'curl', 'spherical', 'diamond', 'keyhole', 'conical', 'dome', 'sphere', 'bellshaped', 'rounded', 'hexagon', 'flower', 'globe', 'torus'}
+#YESNO_SET = {'yes', 'no'}
 
 def detectNum(l):
     result = []

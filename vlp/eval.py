@@ -21,17 +21,15 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--Qcate_breakdown", type=str, default='["all"]')
 parser.add_argument("--file", type=str)
-parser.add_argument("--mod", type=str)
 parser.add_argument('--no_norm', action='store_true')
 args = parser.parse_args()
 
 import sys
 sys.path.append("/home/yingshac/CYS/WebQnA/VLP/BARTScore")
 from bart_score import BARTScorer
-#bart_scorer = BARTScorer(device='cuda:0', checkpoint='facebook/bart-large-cnn')
 
 bart_scorer_ParaBank = BARTScorer(device='cuda:0', checkpoint='facebook/bart-large-cnn')
-bart_scorer_ParaBank.load(path='/home/yingshac/CYS/WebQnA/VLP/BARTScore/bart.pth')
+bart_scorer_ParaBank.load(path='/home/yingshac/CYS/WebQnA/VLP/BARTScore/bart.pth') # Please change the path to bart.pth
 
 
 def detectNum(l):
@@ -116,12 +114,9 @@ color_set= {'orangebrown', 'spot', 'yellow', 'blue', 'rainbow', 'ivory', 'brown'
 shape_set = {'globular', 'octogon', 'ring', 'hoop', 'octagon', 'concave', 'flat', 'wavy', 'shamrock', 'cross', 'cylinder', 'cylindrical', 'pentagon', 'point', 'pyramidal', 'crescent', 'rectangular', 'hook', 'tube', 'cone', 'bell', 'spiral', 'ball', 'convex', 'square', 'arch', 'h', 'cuboid', 'step', 'rectangle', 'dot', 'oval', 'circle', 'star', 'crosse', 'crest', 'octagonal', 'cube', 'triangle', 'semicircle', 'domeshape', 'obelisk', 'corkscrew', 'curve', 'circular', 'xs', 'slope', 'pyramid', 'round', 'bow', 'straight', 'triangular', 'heart', 'fork', 'teardrop', 'fold', 'curl', 'spherical', 'diamond', 'keyhole', 'conical', 'dome', 'sphere', 'bellshaped', 'rounded', 'hexagon', 'flower', 'globe', 'torus'}
 yesno_set = {'yes', 'no'}
 
-#def compute_bartscore(c, a, switch=False):
-    #if switch: score = np.exp(bart_scorer.score(c, a))
-    #else: score = np.exp(bart_scorer.score(a, c))
-    #return score
+
 TABLE = str.maketrans(dict.fromkeys(string.punctuation)) 
-def normalize_text_for_bart(x):
+def normalize_text_for_bart(x): # Light text normalization for WebQA eval: white space fix + punctuation removal
     return " ".join(x.translate(TABLE).split())
 
 def compute_bartscore_ParaBank(c, a, switch=False):
@@ -130,26 +125,13 @@ def compute_bartscore_ParaBank(c, a, switch=False):
     if switch: score = np.exp(bart_scorer_ParaBank.score(c_removepunc, a_removepunc))
     else: score = np.exp(bart_scorer_ParaBank.score(a_removepunc, c_removepunc))
     return score
-
-
-
-if args.mod == 'img': 
-    guid2norm = {}
-    img_dataset_0825_bartscorePB_te = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0825_bartscorePB_te.json", "r"))
-    for k in img_dataset_0825_bartscorePB_te:
-        if not img_dataset_0825_bartscorePB_te[k]['split'] == 'test': continue
-        guid2norm[img_dataset_0825_bartscorePB_te[k]['Guid']] = json.loads(img_dataset_0825_bartscorePB_te[k]['bartscore_normalizer'])
-elif args.mod == 'txt':
-    guid2norm = {}
-    txt_dataset_0825_bartscorePB_te = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0825_bartscorePB_te.json", "r"))
-    for k in txt_dataset_0825_bartscorePB_te:
-        if not txt_dataset_0825_bartscorePB_te[k]['split'] == 'test': continue
-        guid2norm[txt_dataset_0825_bartscorePB_te[k]['Guid']] = json.loads(txt_dataset_0825_bartscorePB_te[k]['bartscore_normalizer'])
-    
+        
 Qcate_breakdown = json.loads(args.Qcate_breakdown)
 
 print("Use categories: ", Qcate_breakdown)
 print("Use normalization = ", not args.no_norm)
+
+# Please change the path to your output folder
 with open(os.path.join("/home/yingshac/CYS/WebQnA/VLP/vlp/light_output/", args.file), "r") as fp:
     lines = fp.readlines()
     header = lines[0].strip().split('\t')
@@ -182,7 +164,8 @@ for r in tqdm(rows):
     C = [O[0]]
     Keywords_A = datum[key['Keywords_A']]
     A = json.loads(datum[key['A']])
-    normalizer = guid2norm[datum[key['Guid']]]
+    #normalizer = guid2norm[datum[key['Guid']]]
+    normalizer = compute_bartscore_ParaBank(A, A)
     
     output_Q.append(datum[key['Q']])
     output_A.append(A)

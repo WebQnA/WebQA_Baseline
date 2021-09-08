@@ -64,14 +64,14 @@ def get_description_by_url(desurl):
     req = urllib.request.Request(desurl, headers = {'User-Agent': random.choice(USER_AGENT_LIST)})
     try:
         with urllib.request.urlopen(req) as f:
-                html = f.read().decode('utf-8')
+            html = f.read().decode('utf-8')
+    except KeyboardInterrupt: raise
     except:
         return "NOTFOUND"
 
     soup = BeautifulSoup(html, 'html.parser')
     des = ""
-    result = soup.find_all('td',class_= "description")
-        
+    result = soup.find_all('div', class_="description mw-content-ltr en")
     for r in result:
         row = r.text.strip()
         if row[:8] == 'English:':
@@ -80,7 +80,8 @@ def get_description_by_url(desurl):
     des = des.strip()
         
     if len(des) == 0:
-        result = soup.find_all('div', class_="description mw-content-ltr en")
+        result = soup.find_all('td',class_= "description")
+        
         for r in result:
             row = r.text.strip()
             if row[:8] == 'English:':
@@ -95,7 +96,7 @@ parser.add_argument("--end", type=int)
 parser.add_argument('--disable_print', action='store_true')
 args = parser.parse_args()
 assert args.end > args.start
-args.boundary = ((args.end-1) // 30000 + 1) * 30000
+args.boundary = ((args.end-1) // 20000 + 1) * 20000
 if args.disable_print:
     sys.stdout = open(os.devnull, 'w')
 
@@ -103,7 +104,7 @@ with open("/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", "r") 
     img_meta = json.load(f)
 print(len(img_meta))
 
-try: result = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_meta_upd/img_meta_{}.json".format(args.boundary), "r"))
+try: result = json.load(open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_meta_upd2/img_meta_{}.json".format(args.boundary), "r"))
 except: result = {}
 count = 0
 before = 0
@@ -124,6 +125,7 @@ for k in sorted(list(img_meta.keys()))[args.start: args.end]:
         print(count, before, after)
         before = 0
         after = 0
-        json.dump(result, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_meta_upd/img_meta_{}.json".format(args.boundary), "w"), indent=4)
+        json.dump(result, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_meta_upd2/img_meta_{}.json".format(args.boundary), "w"), indent=4)
+json.dump(result, open("/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_meta_upd2/img_meta_{}.json".format(args.boundary), "w"), indent=4)
 print("Finish!!! {}".format(args.boundary))
 

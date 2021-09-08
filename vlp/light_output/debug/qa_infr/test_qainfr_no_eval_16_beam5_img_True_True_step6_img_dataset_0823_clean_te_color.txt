@@ -1,0 +1,87 @@
+21-09-03 16:12:42
+
+Use Q categories: ['color']
+Use normalization = True
+#Eval_samples = 3
+
+ --------------------- metrics -----------------------
+F1_avg = 0.0
+EM = 0.0
+
+RE_avg = 0.0
+PR_avg = 0.0
+
+fluency_avg = 0.004282482895510832
+acc_avg = 0.0
+mul_avg = 0.0
+
+-----Starting writing results:-----
+
+Guid === dc506a96d46f11ebba07a504a20e7724
+ Qcate === color
+Q === What is the color of the dome of the Isfahan Royal Mosque ?
+Keywords_A === Blue
+
+The dome of the Isfahan Royal Mosque is blue.
+The dome of the Isfahan Royal Mosque is blue.
+The Isfahan Royal Mosque has a blue dome.
+The dome is blue.
+Normalizer === [0.4446 0.4446 0.4075 0.3776]
+
+i
+by person
+the pattern of the pattern
+the pattern of a pattern
+it is a the pattern
+RE === 0
+F1 === 0
+Fluency === 0.004496114091518103
+Accuracy === 0
+mul === 0.0
+
+Guid === dc506c9ed46f11ebba07a504a20e7724
+ Qcate === color
+Q === What color is the roof of the studio art building at Reed College ?
+Keywords_A === Blue
+
+The roof of the studio art building at Reed College is blue.
+The roof of the studio art building is blue.
+The roof of the studio art building at Reed College is blue.
+Blue is the color the roof of the studio art building is at Reed College.
+Blue is the color of the roof of the studio art building at Reed College
+The color of the roof of the studio art building at Reed College is blue.
+Normalizer === [0.4257 0.4179 0.4257 0.4488 0.555  0.4588]
+
+by visual artist , person
+by visual artist , visual artist visual artist
+by visual artist , person .
+by visual artist , visual artist person .
+by visual artist , visual artist visual artist . . . . .
+RE === 0
+F1 === 0
+Fluency === 0.003030782265677657
+Accuracy === 0
+mul === 0.0
+
+Guid === dc508616d46f11ebba07a504a20e7724
+ Qcate === color
+Q === When the Olympic Stadium in Montreal is vacant , what colour are the seats ?
+Keywords_A === Blue and yellow
+
+The seats are blue and yellow.
+The Olympic Stadium in Montreal has blue and yellow seats.
+The seats at the Olympic Stadium in Montreal are blue and yellow
+The seats in Olympic Stadium in Montreal has teal, yellow and blue seats when it is vacant.
+Blue and yellow are the colors of the seats at the Olympic Stadium in Montreal.
+Normalizer === [0.3504 0.4001 0.4296 0.3232 0.5372]
+
+what do you think ?
+what do you mean ?
+what do you see in the text ?
+what do you see in this picture ? what do i mean ?
+what do you see in this picture ? what do you see in the picture ?
+RE === 0
+F1 === 0
+Fluency === 0.005320552329336735
+Accuracy === 0
+mul === 0.0

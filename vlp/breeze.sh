@@ -2,12 +2,12 @@
 #CUDA_VISIBLE_DEVICES=0 python run_webqa.py --new_segment_ids --do_train --train_batch_size 128 --split train --answer_provided_by 'img' --task_to_learn 'qa' --num_workers 8 --max_pred 50 --mask_prob 1.0 --learning_rate 1e-4 --gradient_accumulation_steps 4 --save_loss_curve --num_train_epochs 12 --output_dir light_output/adv_split/split2 --ckpts_dir /data/yingshac/MMMHQA/ckpts/adv_split/split2 --img_dataset_json_path /home/yingshac/CYS/WebQnA/WebQnA_data_new/img_binary_10_split/img_binary_split_2.jsons
 #CUDA_VISIBLE_DEVICES=1 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "img" --beam_size 5 --split "val" --output_dir light_output/qa_img_mask_at_least_3 --ckpts_dir /data/yingshac/MMMHQA/ckpts/qa_img_mask_at_least_3 --num_workers 8 --recover_step 3 &&
 
-
-CUDA_VISIBLE_DEVICES=2 python run_webqa.py --new_segment_ids --do_train --train_batch_size 128 --split train --answer_provided_by 'img|txt' --task_to_learn 'qa' --num_workers 4 --max_pred 50 --mask_prob 0.5 --learning_rate 1e-4 --gradient_accumulation_steps 8 --save_loss_curve --num_train_epochs 15 --output_dir light_output/detectron_both_qa_sentence --ckpts_dir /data/yingshac/MMMHQA/ckpts/detectron_both_qa_sentence 
+train detectron qa both
+CUDA_VISIBLE_DEVICES=2 python run_webqa.py --new_segment_ids --do_train --train_batch_size 128 --split train --answer_provided_by 'img|txt' --task_to_learn 'qa' --num_workers 4 --max_pred 50 --mask_prob 0.5 --learning_rate 1e-4 --gradient_accumulation_steps 8 --save_loss_curve --num_train_epochs 15 --output_dir light_output/detectron_both_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/detectron_both_qa_upd 
 
 
 vinvl qa
-CUDA_VISIBLE_DEVICES=2 python run_webqa_vinvl.py --new_segment_ids --do_train --train_batch_size 128 --split train --answer_provided_by 'img|txt' --task_to_learn 'qa' --num_workers 8 --max_pred 50 --mask_prob 0.5 --learning_rate 1e-4 --gradient_accumulation_steps 4 --save_loss_curve --num_train_epochs 15 --output_dir light_output/vinvl_both_qa_sentence --ckpts_dir /data/yingshac/MMMHQA/ckpts/vinvl_both_qa_sentence --recover_ori_ckpt
+CUDA_VISIBLE_DEVICES=1 python run_webqa_vinvl.py --new_segment_ids --do_train --train_batch_size 128 --split train --answer_provided_by 'img|txt' --task_to_learn 'qa' --num_workers 4 --max_pred 50 --mask_prob 0.5 --learning_rate 1e-4 --gradient_accumulation_steps 8 --save_loss_curve --num_train_epochs 15 --output_dir light_output/vinvl_both_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/vinvl_both_qa_upd --recover_ori_ckpt
 
 CUDA_VISIBLE_DEVICES=1 python run_webqa_vinvl.py --new_segment_ids --do_train --train_batch_size 128 --split train --answer_provided_by 'img' --task_to_learn 'qa' --num_workers 8 --max_pred 50 --mask_prob 0.5 --learning_rate 1e-4 --gradient_accumulation_steps 4 --save_loss_curve --num_train_epochs 15 --output_dir light_output/vinvl_img_qa_sentence --ckpts_dir /data/yingshac/MMMHQA/ckpts/vinvl_img_qa_sentence --recover_ori_ckpt
 

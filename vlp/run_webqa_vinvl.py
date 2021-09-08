@@ -190,8 +190,8 @@ def main():
                         help="max position embeddings")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0820_addKA.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0819_16neg.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0904_remove_duppostxt.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0903_neg_ranked16.json")
     #parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
     parser.add_argument('--answer_provided_by', type=str, default="img|txt")
@@ -231,9 +231,9 @@ def main():
     parser.add_argument('--Qcate', type=str, default=['all'])
 
     # Add VinVL feature support
-    parser.add_argument('--gold_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/gold_0_22265/predictions_cor.tsv", type=str)
-    parser.add_argument('--neg_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/neg_imgs_0_338842/predictions.tsv", type=str)
-    parser.add_argument('--x_neg_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/x_neg_imgs_0_240661/predictions.tsv", type=str)
+    parser.add_argument('--gold_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/gold_0_22265/gold_vinvl.tsv", type=str)
+    parser.add_argument('--neg_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/neg_imgs_0_338842/distractors_vinvl.tsv", type=str)
+    parser.add_argument('--x_neg_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/x_neg_imgs_0_240661/x_distractors_vinvl.tsv", type=str)
     parser.add_argument('--vis_emb_ft_epc', default=0, type=int)
     
     parser.add_argument('--world_size', default = 1, type = int,
