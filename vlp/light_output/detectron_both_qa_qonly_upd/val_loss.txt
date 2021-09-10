@@ -1,0 +1,17 @@
+
+recover_step = 3, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.474769951637918
+recover_step = 4, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.428118647103141
+recover_step = 5, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.415512587767322
+recover_step = 6, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.392853169195905
+recover_step = 7, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.384312762612315
+recover_step = 8, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.4089136197444327
+recover_step = 9, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.400703876156516
+recover_step = 10, use_num_samples = -1, answer_provided_by = img|txt, task = qa
+2.4075296456982467

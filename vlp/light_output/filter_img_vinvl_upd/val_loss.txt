@@ -1,0 +1,19 @@
+
+recover_step = 1, use_num_samples = -1, answer_provided_by = img, task = filter
+0.20626834525337703
+recover_step = 2, use_num_samples = -1, answer_provided_by = img, task = filter
+0.14400387574223023
+recover_step = 3, use_num_samples = -1, answer_provided_by = img, task = filter
+0.1362837446452696
+recover_step = 4, use_num_samples = -1, answer_provided_by = img, task = filter
+0.12772659476422057
+recover_step = 5, use_num_samples = -1, answer_provided_by = img, task = filter
+0.13106106995027275
+recover_step = 6, use_num_samples = -1, answer_provided_by = img, task = filter
+0.13400145723849913
+recover_step = 7, use_num_samples = -1, answer_provided_by = img, task = filter
+0.149590050447968
+recover_step = 8, use_num_samples = -1, answer_provided_by = img, task = filter
+0.1445337198203123
+recover_step = 9, use_num_samples = -1, answer_provided_by = img, task = filter
+0.15987935605682904
