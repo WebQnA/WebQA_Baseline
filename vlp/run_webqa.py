@@ -217,17 +217,9 @@ def main():
     parser.add_argument("--output_suffix", default="", type=str)
     
     # Others for VLP
-    parser.add_argument("--src_file", default=['/mnt/dat/COCO/annotations/dataset_coco.json'],
-                        type=str, nargs='+',
-                        help="The input data file name.")
     parser.add_argument('--enable_visdom', action='store_true')
     parser.add_argument('--save_loss_curve', action='store_true')
-    parser.add_argument('--visdom_port', type=int, default=8887)
-    # parser.add_argument('--resnet_model', type=str, default='imagenet_weights/resnet101.pth')
-    parser.add_argument('--image_root', type=str, default='/mnt/dat/COCO/images')
-    parser.add_argument('--dataset', default='coco', type=str,
-                        help='coco | flickr30k | cc')
-    parser.add_argument('--split', type=str, default=['train', 'val', 'ind_test', 'ood_test'])
+    parser.add_argument('--split', type=str, default=['train', 'val', 'test'])
 
     # available Qcate in img data: {'YesNo': 8432, 'Others': 6748, 'choose': 5240, 'number': 2341, 'color': 2044, 'shape': 662}
     # available Qcate in txt data: ### TBD
@@ -246,16 +238,9 @@ def main():
     parser.add_argument('--max_drop_worst_ratio', default=0, type=float)
     parser.add_argument('--drop_after', default=6, type=int)
 
-    parser.add_argument('--s2s_prob', default=1, type=float,
-                        help="Percentage of examples that are bi-uni-directional LM (seq2seq).")
-    parser.add_argument('--bi_prob', default=0, type=float,
-                        help="Percentage of examples that are bidirectional LM.")
     parser.add_argument('--enable_butd', action='store_true',
                         help='set to take in region features')
-    parser.add_argument('--region_bbox_file', default='coco_detection_vg_thresh0.2_feat_gvd_checkpoint_trainvaltest.h5', type=str)
-    parser.add_argument('--region_det_file_prefix', default='feat_cls_1000/coco_detection_vg_100dets_gvd_checkpoint_trainval', type=str)
-    parser.add_argument('--tasks', default='img2txt',
-                        help='img2txt | vqa2')
+
     parser.add_argument('--relax_projection',
                         action='store_true',
                         help="Use different projection layers for tasks.")
@@ -288,11 +273,6 @@ def main():
         level=logging.INFO)
     logger = logging.getLogger(__name__)
     
-    #print("start sleeping")
-    #logger.info("***** start sleeping *****")
-    #time.sleep(7200)
-    #print("wake up!")
-    #logger.info("***** wake up! *****")
     if args.local_rank == -1 or args.no_cuda:
         device = torch.device(
             "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
@@ -432,8 +412,6 @@ def main():
     if (recover_step is None) and (args.model_recover_path is None):
         print("----------------------- nothing to recover -------------------------")
         log_txt_content.append("----------------------- nothing to recover -------------------------")
-        # if _state_dict == {}, the parameters are randomly initialized
-        # if _state_dict == None, the parameters are initialized with bert-init
         assert args.scst == False, 'must init from maximum likelihood training'
         _state_dict = {} if args.from_scratch else None
         model = BertForWebqa.from_pretrained(
@@ -498,9 +476,7 @@ def main():
         model = DDP(model, device_ids = [args.local_rank], output_device = args.local_rank, find_unused_parameters=True)
     elif n_gpu > 1:
         model = torch.nn.DataParallel(model, device_ids=[1, 0])
-        #pass
         print("\nn_gpu = ", n_gpu)
-        #model = DataParallelImbalance(model, device_ids=[0,1])
 
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())
@@ -555,8 +531,6 @@ def main():
 
     if args.do_train:
         print("start training")
-        #print("sleep 4600 secs")
-        #time.sleep(4600)
         if "img" in args.answer_provided_by:
             print("use_img_meta = ", args.use_img_meta)
             print("use_img_content = ", args.use_img_content)
@@ -567,8 +541,6 @@ def main():
             print("\ntxt Filter_max_choices: {}".format(args.txt_filter_max_choices))
             if args.use_x_distractors: print("\nimg Filter_max_choices: {}".format(args.img_filter_max_choices))
 
-        #for param_tensor in model.state_dict():
-            #print(param_tensor, "\t", model.state_dict()[param_tensor].size())
         logger.info("***** Running training *****")
         logger.info("  Batch size = %d", args.train_batch_size)
         logger.info("  Num steps = %d", t_total)
@@ -618,7 +590,6 @@ def main():
                     masked_lm_loss = masked_lm_loss.mean()
                     cls_loss = cls_loss.mean()
                 loss = masked_lm_loss + cls_loss
-                #print("\nloss.item = ", loss.item())
                 # logging for each step (i.e., before normalization by args.gradient_accumulation_steps)
                 iter_bar.set_description('Iter (loss={:.3f}) loader_idx={}'.format(loss.item(), loader_idx))
                 qa_loss.append(masked_lm_loss.item())
@@ -676,33 +647,9 @@ def main():
                         for param_group in optimizer.param_groups:
                             param_group['lr'] = lr_this_step
                     optimizer.step()
-                    #if step>0:
-                        #time.sleep(1)
-                        #flat_grads = torch.cat([parms.grad.view(-1) for name, parms in model.named_parameters() if parms.grad is not None])
-                        #print(torch.max(flat_grads))
-                        #print(torch.min(flat_grads))
-                        #flat_grads = torch.cat([x.grad.detach().cpu().view(-1) for x in optimizer.param_groups[0]['params'] if x.grad is not None], dim=0)
-                        #print(torch.sum(torch.isnan(flat_grads)))
-                        #print(torch.max(flat_grads))
-                        #print(torch.min(flat_grads))
-                        #print(torch.mean(flat_grads))
-
-                        #flat_parms = torch.cat([parms.data.view(-1) for name, parms in model.named_parameters() if parms.data is not None], dim=0)
-                        #print(len([parms.data.view(-1) for name, parms in model.named_parameters() if parms.data is not None]))
-                        #print(torch.max(flat_parms))
-                        #print(torch.min(flat_parms))
-                        #flat_parms = torch.cat([x.data.detach().cpu().view(-1) for x in optimizer.param_groups[0]['params'] if x.data is not None], dim=0)
-                        #print(len([x.data.view(-1) for x in optimizer.param_groups[0]['params'] if x.data is not None]))
-                        #print(torch.sum(torch.isnan(flat_parms)))
-                        #print(torch.max(flat_parms))
-                        #print(torch.min(flat_parms))
-                        #print(torch.mean(flat_parms))
-                        #print(flat_parms[:10])
+                    
                     optimizer.zero_grad()
                     global_step += 1
-                #print("\n------------------------------ loss.grad ------------------------------\n")
-                #print(loss.grad)
-                #print("\n")
 
             print(qa_loss)
             print(filter_loss)

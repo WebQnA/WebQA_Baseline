@@ -131,25 +131,9 @@ class Evaluate(object):
             ref[i] = ans[i]
         
         final_scores = self.score(ref, hypo)
-        #print ('Bleu_1:\t', final_scores['Bleu_1'])
-        #print ('Bleu_2:\t', final_scores['Bleu_2'])
-        #print ('Bleu_3:\t', final_scores['Bleu_3'])
-        #print ('Bleu_4:\t', final_scores['Bleu_4'])
-        #print ('METEOR:\t', final_scores['METEOR'])
-        #print ('ROUGE_L:', final_scores['ROUGE_L'])
-        #print ('CIDEr:\t', final_scores['CIDEr'])
-        #print ('Spice:\t', final_scores['Spice'])
 
         if return_scores:
             return final_scores
-
-# BertScore
-#from datasets import load_metric
-#METRIC = load_metric("bertscore")
-#def compute_bertscore(cands, a):
-    #METRIC.add_batch(predictions = cands, references = [a]*len(cands))
-    #score = METRIC.compute(lang='en')
-    #return np.mean(score['f1']), np.max(score['f1'])
 
 # VQA Eval (SQuAD style EM, F1)
 def compute_vqa_metrics(cands, a, exclude="", domain=None):
@@ -162,7 +146,9 @@ def compute_vqa_metrics(cands, a, exclude="", domain=None):
     e = normalize_text(exclude).split() # set exclude=['Q'] if we want to exclude question words
     for c in cands:
         bow_c = [w for w in normalize_text(c).split() if not w in e]
-        if domain == {"NUMBER"}: bow_c = detectNum(bow_c)
+        if domain == {"NUMBER"}: 
+            bow_c = detectNum(bow_c)
+            bow_a = detectNum(bow_a)
         elif domain is not None: 
             bow_c = list(domain.intersection(bow_c))
             bow_a = list(domain.intersection(bow_a))
@@ -204,7 +190,6 @@ def ascii_print(text):
     print(text)
 
 def _get_loader_from_dataset(infr_dataset, infr_batch_size, num_workers, collate_fn):
-    #train_sampler = RandomSampler(train_dataset, replacement=False)
     print("\nSequentialSampler")
     infr_sampler = SequentialSampler(infr_dataset)
 
@@ -477,8 +462,6 @@ def main():
     if args.fp16:
         model.half()
     model.to(device)
-    #if n_gpu > 1:
-        #model = torch.nn.DataParallel(model)
 
     torch.cuda.empty_cache()
     model.eval()
@@ -526,7 +509,6 @@ def main():
                     output_confidence.append(str(list(traces[i].keys())))
                     for w_ids in traces[i].values():
                         output_buf = tokenizer.convert_ids_to_tokens(w_ids)
-                        #output_buf = tokenizer.convert_ids_to_tokens([i for i in w_ids if i>0 and i!=102])
                         output_tokens = []
                         for t in output_buf:
                             if t in ("[SEP]", "[PAD]"):
@@ -535,8 +517,6 @@ def main():
                         output_sequences.append(' '.join(detokenize(output_tokens)))
                     
                     output_lines.append(output_sequences)
-                    #print("\noutput_sequence for cur batch = ", output_sequence)
-                    # buf_id[i] = img_idx (global idx across chunks)
                 iter_bar.set_description('Step = {}'.format(step))
 
         Q, A, Keywords_A = infr_dataloader.dataset.get_QA_list()
@@ -573,7 +553,7 @@ def main():
                 f.write(v)
         return
 
-
+'''
     eval_f = Evaluate()
     #scores = eval_f.evaluate(cand=output_lines, ref=output_A, return_scores=True)
         
@@ -585,17 +565,11 @@ def main():
     PR_scores = []
     bleu4_scores = []
     mul_scores = []
-    #F1_avg_bertscores = []
-    #F1_max_bertscores = []
+    
     for cands, A, KA, Qcate in zip(output_lines, output_A, output_Keywords_A, output_Qcate):
         assert len(cands)==args.beam_size
         C = [cands[0]]
         scores = eval_f.evaluate(cand=[C], ref=[A], return_scores=True)
-        #print()
-        #print("C = ", C)
-        #print("Keywords = ", KA)
-        #print("A = ", A)
-        #print("scores = ", scores['Bleu_4'])
         if Qcate == 'color': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA, "", COLOR_SET)
         elif Qcate == 'shape': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA, "", SHAPE_SET)
         elif Qcate == 'YesNo': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, KA, "", YESNO_SET)
@@ -604,16 +578,13 @@ def main():
         bleu4_scores.append(scores['Bleu_4'])
         if Qcate in ['color', 'number', 'shape', 'YesNo']: mul_scores.append(F1_avg * scores['Bleu_4'])
         else: mul_scores.append(RE_avg * scores['Bleu_4'])
-        #print(F1_avg, RE_avg, scores['Bleu_4'])
         F1_avg_scores.append(F1_avg)
         F1_max_scores.append(F1_max)
         EM_scores.append(EM)
         RE_scores.append(RE_avg)
         PR_scores.append(PR_avg)
 
-        #F1_avg_bertscore, F1_max_bertscore = compute_bertscore([cands[0]], a)
-        #F1_avg_bertscores.append(F1_avg_bertscore)
-        #F1_max_bertscores.append(F1_max_bertscore)
+        
 
     F1_avg = np.mean(F1_avg_scores)
     F1_max = np.mean(F1_max_scores)
@@ -624,8 +595,7 @@ def main():
     bleu4_avg = np.mean(bleu4_scores)
     mul_avg = np.mean(mul_scores)
 
-    #F1_avg_bertscore = np.mean(F1_avg_bertscores)
-    #F1_max_bertscore = np.mean(F1_max_bertscores)
+    
     print("F1_avg = {}".format(F1_avg))
     #print("F1_max = {}".format(F1_max))
     #print("EM = {}".format(EM))
@@ -634,11 +604,7 @@ def main():
     print("bleu4_avg = {}".format(bleu4_avg))
     print("mul_avg = {}".format(mul_avg))
 
-    #print("F1_avg_bertscore = {}".format(F1_avg_bertscore))
-    #print("F1_max_bertscore = {}".format(F1_max_bertscore))
-
-    #print("RE * BLEU4 = {}".format(RE_avg * scores['Bleu_4']))
-
+    
     filename = "{}_qainfr_{}_beam{}".format(args.split, args.use_num_samples, args.beam_size)
     if "img" in args.answer_provided_by:
         filename += "_{}_{}_{}".format("img", args.use_img_content, args.use_img_meta)
@@ -670,7 +636,7 @@ def main():
             'First Candidate BLUE4 === {}'.format(b), 
             'RE === {}'.format(re), 'F1 === {}'.format(f1),
             "mul === {}".format(m),]))
-
+'''
 
 if __name__ == "__main__":
     main()
