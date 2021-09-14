@@ -74,18 +74,25 @@ class webqaDataset_filter(torch.utils.data.Dataset):
             if datum['split'] in split: # modify here after we create split!
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
+                        Guid = datum['Guid']
                         Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
                         A = self.tokenizer.tokenize(datum['A'][0].replace('"', ""))
                         gold_facts = []
                         distractor_facts = []
                         for fa in datum['txt_posFacts']:
-                            gold_facts.append(self.tokenizer.tokenize(fa['fact']))
+                            gold_facts.append({
+                                'fact': self.tokenizer.tokenize(fa['fact']),
+                                'snippet_id': fa['snippet_id']
+                            })
 
                         for fa in datum['txt_negFacts']:
-                            distractor_facts.append(self.tokenizer.tokenize(fa['fact']))
+                            distractor_facts.append({
+                                'fact': self.tokenizer.tokenize(fa['fact']),
+                                'snippet_id': fa['snippet_id']
+                            })
                         shuffle(gold_facts)
                         shuffle(distractor_facts)
-                        self.instance_list.append((gold_facts, distractor_facts, [], [], Q, A, True, "txt", i)) # do_filter_task, context
+                        self.instance_list.append((gold_facts, distractor_facts, [], [], Q, A, True, "txt", Guid)) # do_filter_task, context
                         
                         count += 1
 
@@ -201,6 +208,7 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
             if datum['split'] in split:
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
+                        Guid = datum['Guid']
                         Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
                         A = self.tokenizer.tokenize(datum['A'][0].replace('"', ""))
 
@@ -208,12 +216,12 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                         distractor_img_and_caps = []
 
                         for im in datum['img_posFacts']:
-                            image_id = int(im['image_id'])
+                            image_id = im['image_id']
                             cxt = self.tokenizer.tokenize(im['caption'].strip())
                             gold_img_and_caps.append((image_id, cxt))
 
                         for im in datum['img_negFacts']:
-                            image_id = int(im['image_id'])
+                            image_id = im['image_id']
                             cxt = self.tokenizer.tokenize(im['caption'].strip())
                             distractor_img_and_caps.append((image_id, cxt))
                             
@@ -225,7 +233,7 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                         gold_cxt_list = [x[1] for x in gold_img_and_caps]
                         distractor_cxt_list = [x[1] for x in distractor_img_and_caps]
                         
-                        self.instance_list.append((gold_image_ids, distractor_image_ids, gold_cxt_list, distractor_cxt_list, Q, A, True, "img", i)) # do_filter_task, context
+                        self.instance_list.append((gold_image_ids, distractor_image_ids, gold_cxt_list, distractor_cxt_list, Q, A, True, "img", Guid)) # do_filter_task, context
                         
                         count += 1
 
@@ -288,7 +296,7 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
                         gold_image_ids = []
                         gold_cxt_list = []
                         for im in datum['img_posFacts']:
-                            image_id = int(im['image_id'])
+                            image_id = im['image_id']
                             gold_image_ids.append(image_id)
                             cxt = self.tokenizer.tokenize(im['caption'].strip())
                             gold_cxt_list.append(cxt)
@@ -350,6 +358,7 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
             if datum['split'] in split:
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
+                        Guid = datum['Guid']
                         Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
                         A = self.tokenizer.tokenize(datum['A'][0].replace('"', ""))
 
@@ -357,9 +366,16 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
                         distractor_facts = []
 
                         if 'txt_posFacts' in datum:
-                            for fa in datum['txt_posFacts']: gold_facts.append(self.tokenizer.tokenize(fa['fact']))
+                            for fa in datum['txt_posFacts']: 
+                                gold_facts.append({
+                                    'fact': self.tokenizer.tokenize(fa['fact']),
+                                    'snippet_id': fa['snippet_id']
+                                })
                         for fa in datum['txt_negFacts']:
-                            distractor_facts.append(self.tokenizer.tokenize(fa['fact']))
+                            distractor_facts.append({
+                                'fact': self.tokenizer.tokenize(fa['fact']),
+                                'snippet_id': fa['snippet_id']
+                            })
                         shuffle(gold_facts)
                         shuffle(distractor_facts)
 
@@ -368,19 +384,19 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
 
                         if 'img_posFacts' in datum:
                             for im in datum['img_posFacts']:
-                                image_id = int(im['image_id'])
+                                image_id = im['image_id']
                                 cxt = self.tokenizer.tokenize(im['caption'].strip())
                                 gold_img_and_caps.append((image_id, cxt))
 
                         for im in datum['img_negFacts']:
-                            image_id = int(im['image_id'])
+                            image_id = im['image_id']
                             cxt = self.tokenizer.tokenize(im['caption'].strip())
                             distractor_img_and_caps.append((image_id, cxt))
                             
                         shuffle(gold_img_and_caps)
                         shuffle(distractor_img_and_caps)
 
-                        self.instance_list.append((gold_facts, distractor_facts, gold_img_and_caps, distractor_img_and_caps, Q, A, True, "both", i)) # do_filter_task, context
+                        self.instance_list.append((gold_facts, distractor_facts, gold_img_and_caps, distractor_img_and_caps, Q, A, True, "both", Guid)) # do_filter_task, context
                         
                         count += 1
 
@@ -490,7 +506,7 @@ class Preprocess4webqa_VinVL(Pipeline):
                         else: # neg img
                             image_id, cxt = distractor_img_and_caps.pop()
                         ori_choices.append(image_id)
-
+                        image_id = int(image_id)
                         tokens_a = ['[UNK]'] * self.max_len_img_cxt # 200
                         tokens_b = Q+A
                         max_len_cxt_meta = self.max_len_a - self.max_len_img_cxt # 200
@@ -561,10 +577,13 @@ class Preprocess4webqa_VinVL(Pipeline):
                         tokens_a = []
                         if self.use_txt_fact:
                             if o == 0: # pos snippet
-                                tokens_a = gold_facts.pop()
+                                f = gold_facts.pop()
+                                tokens_a = f['fact']
+                                ori_choices.append(f['snippet_id'])
                             else: # neg snippet
-                                tokens_a = distractor_facts.pop()
-                        ori_choices.append(' '.join(self.detokenize(tokens_a)))
+                                f = distractor_facts.pop()
+                                tokens_a = f['fact']
+                                ori_choices.append(f['snippet_id'])
                         
                         tokens_b = Q+A
                         truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_b, max_len_a=self.max_len_a, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
@@ -635,7 +654,7 @@ class Preprocess4webqa_VinVL(Pipeline):
                 vis_pe_list = []
                 for i in range(filter_num_choices):
                     cxt = all_choices_cxt_list[i]
-                    image_id = all_choices_image_ids[i]
+                    image_id = int(all_choices_image_ids[i])
                     tokens_a = ['[UNK]'] * self.max_len_img_cxt # 200
                     tokens_b = Q+A
                     max_len_cxt_meta = self.max_len_a - self.max_len_img_cxt # 200
@@ -733,8 +752,10 @@ class Preprocess4webqa_VinVL(Pipeline):
                 num_gold = len(gold_facts)
                 filter_num_choices = num_gold + len(distractor_facts)
                 perm = np.random.permutation(filter_num_choices)
-                all_choices_facts = gold_facts + distractor_facts
+                all_choices_facts = [f['fact'] for f in gold_facts + distractor_facts]
                 all_choices_facts = [all_choices_facts[p] for p in perm]
+                all_choices_ids = [f['snippet_id'] for f in gold_facts + distractor_facts]
+                all_choices_ids = [all_choices_ids[p] for p in perm]
                 #print(all_choices_facts)
                 label = torch.tensor([1. if p<num_gold else 0. for p in perm])
                 label = torch.stack([label, 1-label], dim=0).transpose(1,0)

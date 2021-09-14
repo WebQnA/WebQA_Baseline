@@ -81,10 +81,16 @@ class webqaDataset_filter(torch.utils.data.Dataset):
                         gold_facts = []
                         distractor_facts = []
                         for fa in datum['txt_posFacts']:
-                            gold_facts.append(self.tokenizer.tokenize(fa['fact']))
+                            gold_facts.append({
+                                'fact': self.tokenizer.tokenize(fa['fact']),
+                                'snippet_id': fa['snippet_id']
+                            })
 
                         for fa in datum['txt_negFacts']:
-                            distractor_facts.append(self.tokenizer.tokenize(fa['fact']))
+                            distractor_facts.append({
+                                'fact': self.tokenizer.tokenize(fa['fact']),
+                                'snippet_id': fa['snippet_id']
+                            })
                         shuffle(gold_facts)
                         shuffle(distractor_facts)
                         self.instance_list.append((gold_facts, distractor_facts, [], [], Q, A, True, "txt", Guid)) # do_filter_task, context
@@ -386,9 +392,17 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
                         distractor_facts = []
 
                         if 'txt_posFacts' in datum:
-                            for fa in datum['txt_posFacts']: gold_facts.append(self.tokenizer.tokenize(fa['fact']))
+                            for fa in datum['txt_posFacts']: 
+                                gold_facts.append({
+                                    'fact': self.tokenizer.tokenize(fa['fact']),
+                                    'snippet_id': fa['snippet_id']
+                                })
                         for fa in datum['txt_negFacts']:
-                            distractor_facts.append(self.tokenizer.tokenize(fa['fact']))
+                            distractor_facts.append({
+                                'fact': self.tokenizer.tokenize(fa['fact']),
+                                'snippet_id': fa['snippet_id']
+                            })
+                        
                         shuffle(gold_facts)
                         shuffle(distractor_facts)
 
@@ -603,10 +617,13 @@ class Preprocess4webqa(Pipeline):
                         tokens_a = []
                         if self.use_txt_fact:
                             if o == 0: # pos snippet
-                                tokens_a = gold_facts.pop()
+                                f = gold_facts.pop()
+                                tokens_a = f['fact']
+                                ori_choices.append(f['snippet_id'])
                             else: # neg snippet
-                                tokens_a = distractor_facts.pop()
-                        ori_choices.append(' '.join(self.detokenize(tokens_a)))
+                                f = distractor_facts.pop()
+                                tokens_a = f['fact']
+                                ori_choices.append(f['snippet_id'])
                         
                         tokens_b = Q+A
                         truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_b, max_len_a=self.max_len_a, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
@@ -782,8 +799,10 @@ class Preprocess4webqa(Pipeline):
                 num_gold = len(gold_facts)
                 filter_num_choices = num_gold + len(distractor_facts)
                 perm = np.random.permutation(filter_num_choices)
-                all_choices_facts = gold_facts + distractor_facts
+                all_choices_facts = [f['fact'] for f in gold_facts + distractor_facts]
                 all_choices_facts = [all_choices_facts[p] for p in perm]
+                all_choices_ids = [f['snippet_id'] for f in gold_facts + distractor_facts]
+                all_choices_ids = [all_choices_ids[p] for p in perm]
                 #print(all_choices_facts)
                 label = torch.tensor([1. if p<num_gold else 0. for p in perm])
                 label = torch.stack([label, 1-label], dim=0).transpose(1,0)

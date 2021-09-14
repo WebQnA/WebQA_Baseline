@@ -190,8 +190,8 @@ def main():
                         help="max position embeddings")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0904_remove_duppostxt.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0903_neg_ranked16.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0904_clean_fields.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0904_clean_fields.json")
     #parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
     parser.add_argument('--answer_provided_by', type=str, default="img|txt")
@@ -927,6 +927,7 @@ def main():
             args.output_suffix =  args.txt_dataset_json_path.split('/')[-1].replace(".json", "") + args.output_suffix
             pkl_filename += "_{}_{}_{}_".format("txt", args.txt_filter_max_choices, args.use_txt_fact)
         pkl_filename += args.output_suffix
+        if args.use_x_distractors: pkl_filename += "_UNknown_modality"
         with open(os.path.join(args.output_dir, "{}.json".format(pkl_filename)), "w") as f:
             json.dump(output_pkl, f, indent=4)
         with open(os.path.join(args.output_dir, "{}.txt".format(pkl_filename)), "w") as f:

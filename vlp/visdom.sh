@@ -18,18 +18,18 @@ CUDA_VISIBLE_DEVICES=1 python run_webqa.py --new_segment_ids --val_loss --train_
 
 both filter val_loss
 CUDA_VISIBLE_DEVICES=2 python run_webqa.py --new_segment_ids --val_loss --train_batch_size 128 --split val --answer_provided_by 'img|txt' --task_to_learn 'filter' --num_workers 4 --learning_rate 3e-5 --gradient_accumulation_steps 4 --save_loss_curve --num_train_epochs 5 --output_dir light_output/filter_both_x_detectron --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_both_x_detectron --recover_step 7 --use_x_distractors &&
-CUDA_VISIBLE_DEVICES=2 python run_webqa_vinvl.py --new_segment_ids --val_loss --train_batch_size 128 --split val --answer_provided_by 'img|txt' --task_to_learn 'filter' --num_workers 4 --learning_rate 3e-5 --gradient_accumulation_steps 4 --save_loss_curve --num_train_epochs 5 --output_dir light_output/filter_both_x_vinvl_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_both_x_vinvl_upd --recover_step 8 --use_x_distractors &&
+CUDA_VISIBLE_DEVICES=3 python run_webqa_vinvl.py --new_segment_ids --val_loss --train_batch_size 128 --split val --answer_provided_by 'img|txt' --task_to_learn 'filter' --num_workers 2 --learning_rate 3e-5 --gradient_accumulation_steps 4 --save_loss_curve --num_train_epochs 5 --output_dir light_output/filter_both_x_vinvl_upd2 --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_both_x_vinvl_upd2 --recover_step 1 --use_x_distractors &&
 
 
 img qa decoding
 CUDA_VISIBLE_DEVICES=1 python decode_webqa_vinvl.py --new_segment_ids --batch_size 32 --answer_provided_by "img" --beam_size 5 --split "test" --num_workers 2 --output_dir light_output/vinvl_img_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/vinvl_img_qa_upd --no_eval --recover_step 8 &&
 CUDA_VISIBLE_DEVICES=2 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "img" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/detectron_img_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/detectron_img_qa_upd --no_eval --recover_step 11 &&
 CUDA_VISIBLE_DEVICES=0 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "img" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/detectron_both_qa_sentence --ckpts_dir /data/yingshac/MMMHQA/ckpts/detectron_both_qa_sentence --no_eval --recover_step 12 &&
-CUDA_VISIBLE_DEVICES=0 python decode_webqa_vinvl.py --new_segment_ids --batch_size 32 --answer_provided_by "img" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/vinvl_both_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/vinvl_both_qa_upd --no_eval --recover_step 13 &&
+CUDA_VISIBLE_DEVICES=2 python decode_webqa_vinvl.py --new_segment_ids --batch_size 32 --answer_provided_by "img" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/vinvl_both_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/vinvl_both_qa_upd --no_eval --recover_step 13 &&
 
 img qa decoding e2e
-CUDA_VISIBLE_DEVICES=1 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "img" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/detectron_both_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/detectron_both_qa_upd --no_eval --recover_step 11 --img_dataset_json_path /home/yingshan/CYS/WebQnA/VLP/vlp/light_output/filter_both_x_detectron_upd/pred_dataset_th2_test_-1_step3_img_16_True_True_img_dataset_0904_clean_fields_UNknown_modality.json
-CUDA_VISIBLE_DEVICES=1 python decode_webqa_vinvl.py --new_segment_ids --batch_size 32 --answer_provided_by "img" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/vinvl_both_qa_sentence --ckpts_dir /data/yingshac/MMMHQA/ckpts/vinvl_both_qa_sentence --no_eval --recover_step 10 --img_dataset_json_path /home/yingshac/CYS/WebQnA/VLP/vlp/light_output/filter_both_x_vinvl/pred_dataset_th25_test_-1_step3_img_16_True_True_img_dataset_0823_clean_te_UNknown_modality.json
+CUDA_VISIBLE_DEVICES=3 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "img" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/detectron_both_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/detectron_both_qa_upd --no_eval --recover_step 11 --img_dataset_json_path /home/yingshac/CYS/WebQnA/VLP/vlp/light_output/filter_both_x_detectron_upd/pred_dataset_th2_test_-1_step3_img_20_True_True_img_dataset_0904_clean_fields_UNknown_modality.json
+CUDA_VISIBLE_DEVICES=1 python decode_webqa_vinvl.py --new_segment_ids --batch_size 32 --answer_provided_by "img" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/filter_both_x_vinvl_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_both_x_vinvl_upd --no_eval --recover_step 10 --img_dataset_json_path /home/yingshac/CYS/WebQnA/VLP/vlp/light_output/filter_both_x_vinvl_upd/pred_dataset_th20_test_-1_step3_img_16_True_True_img_dataset_0823_clean_te_UNknown_modality.json
 
 img qa decoding partial input
 CUDA_VISIBLE_DEVICES=0 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "img" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/detectron_both_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/detectron_both_qa_upd --no_eval --recover_step 11 --no_img_meta &&
@@ -46,8 +46,8 @@ CUDA_VISIBLE_DEVICES=2 python decode_webqa.py --new_segment_ids --batch_size 32 
 CUDA_VISIBLE_DEVICES=2 python decode_webqa_vinvl.py --new_segment_ids --batch_size 32 --answer_provided_by "txt" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/vinvl_both_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/vinvl_both_qa_upd --no_eval --recover_step 13 &&
 
 txt qa decoding e2e
-CUDA_VISIBLE_DEVICES=2 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "txt" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/detectron_both_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/detectron_both_qa_upd --no_eval --recover_step 11 --txt_dataset_json_path /home/yingshan/CYS/WebQnA/VLP/vlp/light_output/filter_both_x_detectron_upd/pred_dataset_th2_test_-1_step3_txt_16_True_txt_dataset_0904_clean_fields_UNknown_modality.json
-CUDA_VISIBLE_DEVICES=0 python decode_webqa_vinvl.py --new_segment_ids --batch_size 32 --answer_provided_by "txt" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/vinvl_both_qa_sentence --ckpts_dir /data/yingshac/MMMHQA/ckpts/vinvl_both_qa_sentence --no_eval --recover_step 10 --txt_dataset_json_path /home/yingshac/CYS/WebQnA/VLP/vlp/light_output/filter_both_x_vinvl/pred_dataset_th25_test_-1_step3_txt_16_True_txt_dataset_0823_clean_te_UNknown_modality.json
+CUDA_VISIBLE_DEVICES=2 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "txt" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/detectron_both_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/detectron_both_qa_upd --no_eval --recover_step 11 --txt_dataset_json_path /home/yingshan/CYS/WebQnA/VLP/vlp/light_output/filter_both_x_detectron_upd/pred_dataset_th2_test_-1_step3_txt_20_True_txt_dataset_0904_clean_fields_UNknown_modality.json
+CUDA_VISIBLE_DEVICES=3 python decode_webqa_vinvl.py --new_segment_ids --batch_size 16 --answer_provided_by "txt" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/vinvl_both_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/vinvl_both_qa_upd --no_eval --recover_step 13 --txt_dataset_json_path /home/yingshac/CYS/WebQnA/VLP/vlp/light_output/filter_both_x_vinvl_upd/pred_dataset_th2_test_-1_step1_txt_16_True_txt_dataset_0904_clean_fields_UNknown_modality.json
 
 txt qa decoding partial input
 CUDA_VISIBLE_DEVICES=3 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "txt" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/detectron_both_qa_upd --ckpts_dir /data/yingshac/MMMHQA/ckpts/detectron_both_qa_upd --no_eval --recover_step 11 --no_txt_fact &&
@@ -59,13 +59,13 @@ CUDA_VISIBLE_DEVICES=1 python decode_webqa.py --new_segment_ids --batch_size 32 
 qa eval
 CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step12_img_dataset_0823_clean_te.tsv &&
 CUDA_VISIBLE_DEVICES=1 python eval.py --mod "txt" --file detectron_both_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_txt_True_step12_txt_dataset_0823_clean_te.tsv &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "txt" --file detectron_both_qa_qonly/qa_infr/test_qainfr_no_eval_-1_beam5_txt_False_step6_txt_dataset_0823_clean_te.tsv
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_qonly/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step6_img_dataset_0823_clean_te.tsv &&
+CUDA_VISIBLE_DEVICES=3 python eval.py --file detectron_both_qa_qonly_upd/qa_infr/test_qainfr_no_eval_-1_beam5_txt_False_step7_txt_dataset_0904_clean_fields.tsv
+CUDA_VISIBLE_DEVICES=3 python eval.py --file detectron_both_qa_qonly_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step7_img_dataset_0904_clean_fields.tsv &&
 CUDA_VISIBLE_DEVICES=1 python eval.py --mod "txt" --file txt_qa/qa_infr/test_qainfr_no_eval_-1_beam5_txt_True_step10_txt_dataset_0823_clean_te.tsv &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_img_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step10_img_dataset_0823_clean_te.tsv &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file vinvl_img_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step10_img_dataset_0823_clean_te.tsv &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "txt" --file vinvl_both_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_txt_True_step10_txt_dataset_0823_clean_te.tsv &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file vinvl_both_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step10_img_dataset_0823_clean_te.tsv &&
+CUDA_VISIBLE_DEVICES=2 python eval.py --file detectron_img_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step11_img_dataset_0904_clean_fields.tsv &&
+CUDA_VISIBLE_DEVICES=2 python eval.py --file vinvl_img_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step8_img_dataset_0904_clean_fields.tsv &&
+CUDA_VISIBLE_DEVICES=3 python eval.py --mod "txt" --file vinvl_both_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_txt_True_step13_txt_dataset_0904_clean_fields.tsv &&
+CUDA_VISIBLE_DEVICES=3 python eval.py --mod "img" --file vinvl_both_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step13_img_dataset_0904_clean_fields.tsv &&
 CUDA_VISIBLE_DEVICES=1 python eval.py --mod "txt" --file vinvl_both_qa_qonly/qa_infr/test_qainfr_no_eval_-1_beam5_txt_False_step6_txt_dataset_0823_clean_te.tsv
 CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file vinvl_both_qa_qonly/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step6_img_dataset_0823_clean_te.tsv &&
 
@@ -77,22 +77,23 @@ CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_sente
 CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step12_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["choose"]' &&
 CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step12_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["Others"]' &&
 
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_qonly/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step6_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["color"]' &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_qonly/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step6_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["shape"]' &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_qonly/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step6_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["number"]' &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_qonly/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step6_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["YesNo"]' &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_qonly/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step6_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["choose"]' &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_qonly/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step6_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["Others"]' &&
+CUDA_VISIBLE_DEVICES=3 python eval.py --file detectron_both_qa_qonly_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step7_img_dataset_0904_clean_fields.tsv --Qcate_breakdown '["color"]' &&
+CUDA_VISIBLE_DEVICES=3 python eval.py --file detectron_both_qa_qonly_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step7_img_dataset_0904_clean_fields.tsv --Qcate_breakdown '["shape"]' &&
+CUDA_VISIBLE_DEVICES=3 python eval.py --file detectron_both_qa_qonly_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step7_img_dataset_0904_clean_fields.tsv --Qcate_breakdown '["number"]' &&
+CUDA_VISIBLE_DEVICES=3 python eval.py --file detectron_both_qa_qonly_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step7_img_dataset_0904_clean_fields.tsv --Qcate_breakdown '["YesNo"]' &&
+CUDA_VISIBLE_DEVICES=3 python eval.py --file detectron_both_qa_qonly_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step7_img_dataset_0904_clean_fields.tsv --Qcate_breakdown '["choose"]' &&
+CUDA_VISIBLE_DEVICES=3 python eval.py --file detectron_both_qa_qonly_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step7_img_dataset_0904_clean_fields.tsv --Qcate_breakdown '["Others"]' &&
 
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_img_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step10_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["color"]' &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_img_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step10_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["shape"]' && 
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_img_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step10_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["number"]' && 
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_img_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step10_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["YesNo"]' && 
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_img_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step10_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["choose"]' && 
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_img_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step10_img_dataset_0823_clean_te.tsv --Qcate_breakdown '["Others"]' && 
+CUDA_VISIBLE_DEVICES=2 python eval.py --file detectron_img_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step11_img_dataset_0904_clean_fields.tsv --Qcate_breakdown '["color"]' &&
+CUDA_VISIBLE_DEVICES=2 python eval.py --file detectron_img_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step11_img_dataset_0904_clean_fields.tsv --Qcate_breakdown '["shape"]' &&
+CUDA_VISIBLE_DEVICES=2 python eval.py --file detectron_img_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step11_img_dataset_0904_clean_fields.tsv --Qcate_breakdown '["number"]' &&
+CUDA_VISIBLE_DEVICES=2 python eval.py --file detectron_img_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step11_img_dataset_0904_clean_fields.tsv --Qcate_breakdown '["choose"]' &&
+CUDA_VISIBLE_DEVICES=2 python eval.py --file detectron_img_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step11_img_dataset_0904_clean_fields.tsv --Qcate_breakdown '["YesNo"]' &&
+CUDA_VISIBLE_DEVICES=2 python eval.py --file detectron_img_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_True_step11_img_dataset_0904_clean_fields.tsv --Qcate_breakdown '["Others"]' &&
+
 
 qa eval partial input
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_False_step12_img_dataset_0823_clean_te.tsv &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_True_step12_img_dataset_0823_clean_te.tsv &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "img" --file detectron_both_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step12_img_dataset_0823_clean_te.tsv &&
-CUDA_VISIBLE_DEVICES=1 python eval.py --mod "txt" --file detectron_both_qa_sentence/qa_infr/test_qainfr_no_eval_-1_beam5_txt_False_step12_txt_dataset_0823_clean_te.tsv &&
+CUDA_VISIBLE_DEVICES=1 python eval.py --file detectron_both_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_True_False_step11_img_dataset_0904_clean_fields.tsv &&
+CUDA_VISIBLE_DEVICES=1 python eval.py --file detectron_both_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_True_step11_img_dataset_0904_clean_fields.tsv &&
+CUDA_VISIBLE_DEVICES=1 python eval.py --file detectron_both_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_img_False_False_step11_img_dataset_0904_clean_fields.tsv &&
+CUDA_VISIBLE_DEVICES=1 python eval.py --file detectron_both_qa_upd/qa_infr/test_qainfr_no_eval_-1_beam5_txt_False_step11_txt_dataset_0904_clean_fields.tsv &&
