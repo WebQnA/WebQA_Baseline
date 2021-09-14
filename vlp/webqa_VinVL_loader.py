@@ -536,6 +536,7 @@ class Preprocess4webqa_VinVL(Pipeline):
                         input_ids.extend([0] * n_pad)
                         segment_ids.extend([0] * n_pad)
 
+                        image_id = int(image_id)
                         vis_pe, scores, img, cls_label = self.img_data_tsv[image_id//10000000][image_id % 10000000]
                         
                         #img = features['fc1_features'].detach().cpu().float()
@@ -686,6 +687,7 @@ class Preprocess4webqa_VinVL(Pipeline):
                     input_ids.extend([0] * n_pad)
                     segment_ids.extend([0] * n_pad)
 
+                    image_id = int(image_id)
                     vis_pe, scores, img, cls_label = self.img_data_tsv[image_id//10000000][image_id % 10000000]
                     
                     #img = features['fc1_features'].detach().cpu().float()
@@ -800,7 +802,7 @@ class Preprocess4webqa_VinVL(Pipeline):
                 segment_ids = torch.stack(segment_ids_list, dim=0)
                 input_mask = torch.stack(input_mask_list, dim=0)
                 logit_mask = torch.tensor(logit_mask)
-                ori_choices = [' '.join(self.detokenize(c)) for c in all_choices_facts]
+                ori_choices = all_choices_ids #ori_choices = [' '.join(self.detokenize(c)) for c in all_choices_facts]
 
                 cxt_modality_label = []
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
@@ -886,6 +888,7 @@ class Preprocess4webqa_VinVL(Pipeline):
                 img_list = []
                 vis_pe_list = []
                 for image_id in gold_image_ids:
+                    image_id = int(image_id)
                     vis_pe, scores, img, cls_label = self.img_data_tsv[image_id//10000000][image_id % 10000000]
 
                     #img = features['fc1_features'].detach().cpu().float()
@@ -1088,14 +1091,11 @@ class Preprocess4webqaDecoder_VinVL(Pipeline):
                 img_list = []
                 vis_pe_list = []
                 for image_id in gold_image_ids:
+                    image_id = int(image_id)
                     try: vis_pe, scores, img, cls_label = self.img_data_tsv[image_id//10000000][image_id % 10000000]
                     except:
-                        print("\n have keys: {}\n".format(self.img_data_tsv.keys()))
                         print("\nimage_id = {}\n".format(image_id))
                         raise
-                    #img = features['fc1_features'].detach().cpu().float()
-                    #cls_label = features['cls_features'].detach().cpu().float()
-                    #vis_pe = features['pred_boxes'].detach().cpu()
 
                     # Lazy normalization of the coordinates
                     w_est = torch.max(vis_pe[:, [0, 2]])*1.+1e-5

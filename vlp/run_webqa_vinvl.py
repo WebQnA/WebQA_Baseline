@@ -32,7 +32,6 @@ from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 
 from vlp.loader_utils import batch_list_to_batch_tensors
 import vlp.webqa_VinVL_loader as webqa_VinVL_loader
-from vlp.scst_utils import *
 from misc.data_parallel import DataParallelImbalance
 import matplotlib.pyplot as plt
 from datetime import datetime

@@ -402,7 +402,6 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
                                 'fact': self.tokenizer.tokenize(fa['fact']),
                                 'snippet_id': fa['snippet_id']
                             })
-                        
                         shuffle(gold_facts)
                         shuffle(distractor_facts)
 
@@ -624,6 +623,7 @@ class Preprocess4webqa(Pipeline):
                                 f = distractor_facts.pop()
                                 tokens_a = f['fact']
                                 ori_choices.append(f['snippet_id'])
+                        #ori_choices.append(' '.join(self.detokenize(tokens_a)))
                         
                         tokens_b = Q+A
                         truncate_tokens_pair(tokens_a, tokens_b, max_len=self.max_len_a+self.max_len_b, max_len_a=self.max_len_a, max_len_b=self.max_len_b, trunc_seg=self.trunc_seg, always_truncate_tail=self.always_truncate_tail)
@@ -847,7 +847,7 @@ class Preprocess4webqa(Pipeline):
                 segment_ids = torch.stack(segment_ids_list, dim=0)
                 input_mask = torch.stack(input_mask_list, dim=0)
                 logit_mask = torch.tensor(logit_mask)
-                ori_choices = [' '.join(self.detokenize(c)) for c in all_choices_facts]
+                ori_choices = all_choices_ids #[' '.join(self.detokenize(c)) for c in all_choices_facts]
 
                 cxt_modality_label = []
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)

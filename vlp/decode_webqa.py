@@ -34,24 +34,24 @@ from misc.data_parallel import DataParallelImbalance
 import vlp.webqa_loader as webqa_loader
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 
-#from pycocoevalcap.spice.spice import Spice
-#from pycocoevalcap.bleu.bleu import Bleu
-#from pycocoevalcap.rouge.rouge import Rouge
-#from pycocoevalcap.meteor.meteor import Meteor
-#from pycocoevalcap.cider.cider import Cider
+from pycocoevalcap.spice.spice import Spice
+from pycocoevalcap.bleu.bleu import Bleu
+from pycocoevalcap.rouge.rouge import Rouge
+from pycocoevalcap.meteor.meteor import Meteor
+from pycocoevalcap.cider.cider import Cider
 
 from datetime import datetime
 from pytz import timezone
-#from word2number import w2n
+from word2number import w2n
 import string, re
 from collections import Counter
-#import spacy
-#nlp = spacy.load("en_core_web_sm", disable=["ner","textcat","parser"])
+import spacy
+nlp = spacy.load("en_core_web_sm", disable=["ner","textcat","parser"])
 # SPECIAL_TOKEN = ["[UNK]", "[PAD]", "[CLS]", "[MASK]"]
 
-#COLOR_SET = {'orangebrown', 'spot', 'yellow', 'blue', 'rainbow', 'ivory', 'brown', 'gray', 'teal', 'bluewhite', 'orangepurple', 'black', 'white', 'gold', 'redorange', 'pink', 'blonde', 'tan', 'turquoise', 'grey', 'beige', 'golden', 'orange', 'bronze', 'maroon', 'purple', 'bluere', 'red', 'rust', 'violet', 'transparent', 'yes', 'silver', 'chrome', 'green', 'aqua'}
-#SHAPE_SET = {'globular', 'octogon', 'ring', 'hoop', 'octagon', 'concave', 'flat', 'wavy', 'shamrock', 'cross', 'cylinder', 'cylindrical', 'pentagon', 'point', 'pyramidal', 'crescent', 'rectangular', 'hook', 'tube', 'cone', 'bell', 'spiral', 'ball', 'convex', 'square', 'arch', 'h', 'cuboid', 'step', 'rectangle', 'dot', 'oval', 'circle', 'star', 'crosse', 'crest', 'octagonal', 'cube', 'triangle', 'semicircle', 'domeshape', 'obelisk', 'corkscrew', 'curve', 'circular', 'xs', 'slope', 'pyramid', 'round', 'bow', 'straight', 'triangular', 'heart', 'fork', 'teardrop', 'fold', 'curl', 'spherical', 'diamond', 'keyhole', 'conical', 'dome', 'sphere', 'bellshaped', 'rounded', 'hexagon', 'flower', 'globe', 'torus'}
-#YESNO_SET = {'yes', 'no'}
+COLOR_SET = {'orangebrown', 'spot', 'yellow', 'blue', 'rainbow', 'ivory', 'brown', 'gray', 'teal', 'bluewhite', 'orangepurple', 'black', 'white', 'gold', 'redorange', 'pink', 'blonde', 'tan', 'turquoise', 'grey', 'beige', 'golden', 'orange', 'bronze', 'maroon', 'purple', 'bluere', 'red', 'rust', 'violet', 'transparent', 'yes', 'silver', 'chrome', 'green', 'aqua'}
+SHAPE_SET = {'globular', 'octogon', 'ring', 'hoop', 'octagon', 'concave', 'flat', 'wavy', 'shamrock', 'cross', 'cylinder', 'cylindrical', 'pentagon', 'point', 'pyramidal', 'crescent', 'rectangular', 'hook', 'tube', 'cone', 'bell', 'spiral', 'ball', 'convex', 'square', 'arch', 'h', 'cuboid', 'step', 'rectangle', 'dot', 'oval', 'circle', 'star', 'crosse', 'crest', 'octagonal', 'cube', 'triangle', 'semicircle', 'domeshape', 'obelisk', 'corkscrew', 'curve', 'circular', 'xs', 'slope', 'pyramid', 'round', 'bow', 'straight', 'triangular', 'heart', 'fork', 'teardrop', 'fold', 'curl', 'spherical', 'diamond', 'keyhole', 'conical', 'dome', 'sphere', 'bellshaped', 'rounded', 'hexagon', 'flower', 'globe', 'torus'}
+YESNO_SET = {'yes', 'no'}
 
 def detectNum(l):
     result = []
@@ -283,8 +283,8 @@ def main():
                         help="maximum length of target sequence")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0823_clean_te.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0823_clean_te.json")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0904_clean_fields.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0904_clean_fields.json")
     parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
     parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
     #parser.add_argument('--img_metadata_path', type=str, default="/home/yingshan/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
@@ -563,7 +563,6 @@ def main():
             header = ['Guid', 'Qcate', 'Q', 'A', 'Keywords_A', 'Output_conf', 'Output']
             v = '{0}\n'.format('\t'.join(map(str, header)))
             f.write(v)
-            #for guid, qcate, q, a, ka, oc, o, re, f1, b, m in zip(output_Guid, output_Qcate, output_Q, output_A, output_Keywords_A, output_confidence, output_lines, RE_scores, F1_avg_scores, bleu4_scores, mul_scores):
             for guid, qcate, q, a, ka, oc, o in zip(output_Guid, output_Qcate, output_Q, output_A, output_Keywords_A, output_confidence, output_lines):
                 row = [guid, qcate, q, json.dumps(a), ka, json.dumps(oc), json.dumps(o)]
                 v = '{0}\n'.format('\t'.join(map(str, row)))
