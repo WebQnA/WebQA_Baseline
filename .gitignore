@@ -113,6 +113,8 @@ vlp/Human/
 Human/
 light_output/
 notebooks/
+vlp/eval.py
+vlp/eval_0827.py
 *.sh
 .*
 !/.gitignore
