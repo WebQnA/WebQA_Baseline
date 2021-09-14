@@ -1,1 +1,0 @@
-python download_img.py --start 120000 --end 130000 & python download_img.py --start 130000 --end 140000 & python download_img.py --start 150000 --end 160000
