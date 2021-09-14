@@ -107,5 +107,8 @@ venv.bak/
 vis/
 vis_analysis/
 tmp/
+vlp/notebooks/
+vlp/light_output/
+*.sh
 .*
 !/.gitignore
