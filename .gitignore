@@ -109,6 +109,7 @@ vis_analysis/
 tmp/
 vlp/notebooks/
 vlp/light_output/
+vlp/Human/
 *.sh
 .*
 !/.gitignore
