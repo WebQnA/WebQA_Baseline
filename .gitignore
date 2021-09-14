@@ -110,6 +110,9 @@ tmp/
 vlp/notebooks/
 vlp/light_output/
 vlp/Human/
+Human/
+light_output/
+notebooks/
 *.sh
 .*
 !/.gitignore
