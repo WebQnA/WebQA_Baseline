@@ -2,7 +2,7 @@ This repo hosts the source code for the baseline models described in [WebQA: Mul
 
 All models were initialized from the released [VLP checkpoints](https://github.com/LuoweiZhou/VLP#-misc).
 
-We will release checkpoints fine-tuned on WebQA.
+We release checkpoints fine-tuned on WebQA [here](https://tiger.lti.cs.cmu.edu/yingshac/WebQA_data_first_release/WebQA_baseline_ckpts.7z).
 
 
 ## Environment
