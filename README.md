@@ -52,7 +52,7 @@ python run_webqa.py --new_segment_ids --train_batch_size 128 --split train --ans
 
 Retrieval inference
 ```
-python run_webqa.py --new_segment_ids --train_batch_size 16 --split val --answer_provided_by 'img|txt' --task_to_learn 'filter' --num_workers 4 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 8 --save_loss_curve --output_dir light_output/filter_debug --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_debug --recover_step 4 --use_x_distractors
+python run_webqa.py --new_segment_ids --train_batch_size 16 --split val --answer_provided_by 'img|txt' --task_to_learn 'filter' --num_workers 4 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 8 --save_loss_curve --output_dir light_output/filter_debug --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_debug --recover_step 3 --use_x_distractors
 ```
 
 QA training
