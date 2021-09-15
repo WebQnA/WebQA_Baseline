@@ -16,21 +16,20 @@ import argparse
 import math
 from tqdm import tqdm, trange
 from pathlib import Path
-
+import numpy as np
 import torch
 import torch.nn as nn
-import torch.utils
+import torch.utils.data
 import torch.multiprocessing as mp
 mp.set_start_method('spawn', force=True)
 import random
 import pickle
-import numpy as np
+
 from pytorch_pretrained_bert.tokenization import BertTokenizer, WhitespaceTokenizer
 from pytorch_pretrained_bert.modeling import BertForWebqaDecoder
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 
 from vlp.loader_utils import batch_list_to_batch_tensors
-import vlp.seq2seq_loader as seq2seq_loader
 from misc.data_parallel import DataParallelImbalance
 
 import vlp.webqa_VinVL_loader as webqa_VinVL_loader

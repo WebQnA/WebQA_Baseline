@@ -27,7 +27,7 @@ import random
 import copy
 
 from pytorch_pretrained_bert.tokenization import BertTokenizer, WhitespaceTokenizer
-from pytorch_pretrained_bert.modeling import BertForWebqa, BertForPreTrainingLossMask, BertForSeq2SeqDecoder
+from pytorch_pretrained_bert.modeling import BertForWebqa
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 
 from vlp.loader_utils import batch_list_to_batch_tensors
@@ -448,12 +448,7 @@ def main():
                 fp32_embedding=args.fp32_embedding, cache_dir=args.output_dir+'/.pretrained_model_{}'.format(args.global_rank),
                 drop_prob=args.drop_prob, max_len_img_cxt=args.max_len_img_cxt)
         else:
-            model = BertForSeq2SeqDecoder.from_pretrained(args.bert_model,
-                max_position_embeddings=args.max_position_embeddings, config_path=args.config_path,
-                state_dict=model_recover, num_labels=cls_num_labels, type_vocab_size=type_vocab_size,
-                task_idx=task_idx_proj, mask_word_id=mask_word_id, search_beam_size=1,
-                eos_id=eos_word_ids, enable_butd=args.enable_butd,
-                len_vis_input=args.len_vis_input)
+            raise NotImplementedError
 
         del model_recover
         torch.cuda.empty_cache()
