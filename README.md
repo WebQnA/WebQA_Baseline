@@ -39,6 +39,22 @@ Please refer to [pzzhang/VinVL](https://github.com/pzzhang/VinVL) and [microsoft
 [Download checkpoint](https://penzhanwu2.blob.core.windows.net/sgg/sgg_benchmark/vinvl_model_zoo/vinvl_vg_x152c4.pth)
 
 
+## Commands
+
+`cd vlp`
+
+Retrieval training
+`python run_webqa.py --new_segment_ids --train_batch_size 128 --split train --answer_provided_by 'img|txt' --task_to_learn 'filter' --num_workers 4 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 128 --save_loss_curve --output_dir light_output/filter_debug --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_debug --use_x_distractors --do_train --num_train_epochs 6`
+
+Retrieval inference
+`CUDA_VISIBLE_DEVICES=0 python run_webqa.py --new_segment_ids --train_batch_size 16 --split val --answer_provided_by 'img|txt' --task_to_learn 'filter' --num_workers 4 --max_pred 10 --mask_prob 1.0 --learning_rate 3e-5 --gradient_accumulation_steps 8 --save_loss_curve --output_dir light_output/filter_debug --ckpts_dir /data/yingshac/MMMHQA/ckpts/filter_debug --recover_step 4 --use_x_distractors`
+
+QA training
+`CUDA_VISIBLE_DEVICES=0 python run_webqa.py --new_segment_ids --do_train --train_batch_size 128 --split train --answer_provided_by 'img|txt' --task_to_learn 'qa' --num_workers 4 --max_pred 50 --mask_prob 0.5 --learning_rate 1e-4 --gradient_accumulation_steps 64 --save_loss_curve --num_train_epochs 16 --output_dir light_output/qa_debug --ckpts_dir /data/yingshac/MMMHQA/ckpts/qa_debug`
+
+QA decode
+`CUDA_VISIBLE_DEVICES=0 python decode_webqa.py --new_segment_ids --batch_size 32 --answer_provided_by "img|txt" --beam_size 5 --split "test" --num_workers 4 --output_dir light_output/qa_debug --ckpts_dir /data/yingshac/MMMHQA/ckpts/qa_debug --no_eval --recover_step 11`
+
 ## Reference
 Please acknowledge the following paper if you use the code:
 ```
