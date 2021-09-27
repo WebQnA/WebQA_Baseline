@@ -30,7 +30,7 @@ pip install opencv-python==3.4.2.17
 
 The detectron2-based feature extraction code is available under this [repo](https://github.com/zdxdsw/WebQA_x101fpn/blob/main/featureExtraction.py). Part of the code is based on [LuoweiZhou/detectron-vlp](https://github.com/LuoweiZhou/detectron-vlp) and [facebookresearch/detectron2](https://github.com/facebookresearch/detectron2)
 
-[Download checkpoint](https://onedrive.live.com/download?cid=E5364FD183A1F5BB&resid=E5364FD183A1F5BB%212014&authkey=AAHgqN3Y-LXcBvU)
+[Download checkpoint](https://tiger.lti.cs.cmu.edu/yingshac/WebQA_data_first_release/e2e_faster_rcnn_X-101-64x4d-FPN_2x-vlp-427.pkl)
 
 - VinVL
 
