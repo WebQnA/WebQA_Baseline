@@ -5,6 +5,12 @@ All models were initialized from the released [VLP checkpoints](https://github.c
 We release checkpoints fine-tuned on WebQA [here](https://tiger.lti.cs.cmu.edu/yingshac/WebQA_data_first_release/WebQA_baseline_ckpts.7z).
 
 
+## News
+
+**Update (29 Sep, 2021)**:
+
+We clarify here what are arguments `--gold_feature_folder`, `--distractor_feature_folder`, and `--x_distractor_feature_folder`. Basically, during implementation we divide the images into 3 buckets: positive images for image-based queries (`gold`), negative images for image-based queries (`distractors`) and negative images for text-based queries (`x_distractors`), where the 'x' stands for 'cross-modality'. Image- and text-based queries can be disinguished via the "Qcate" field in the dataset file. Text-based queries all have `Qcate == 'text'`, while the rest are image-based ones.
+
 ## Environment
 ```
 cd VLP
