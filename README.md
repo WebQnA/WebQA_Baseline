@@ -7,6 +7,10 @@ We release checkpoints fine-tuned on WebQA [here](https://tiger.lti.cs.cmu.edu/y
 
 ## News
 
+**Update (6 Oct, 2021)**:
+
+In our baseline code, we separate the data loading of image- and text-based queries for the sake of performance breakdown. Thus, the two arguments, `txt_dataset_json_path` and `img_dataset_json_path`, correspond to the two folds,  according to the `Qcate` field. 
+
 **Update (29 Sep, 2021)**:
 
 We clarify here what are arguments `--gold_feature_folder`, `--distractor_feature_folder`, and `--x_distractor_feature_folder`. Basically, during implementation we divide the images into 3 buckets: positive images for image-based queries (`gold`), negative images for image-based queries (`distractors`) and negative images for text-based queries (`x_distractors`), where the 'x' stands for 'cross-modality'. Image- and text-based queries can be disinguished via the "Qcate" field in the dataset file. Text-based queries all have `Qcate == 'text'`, while the rest are image-based ones.
