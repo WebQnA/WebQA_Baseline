@@ -23,6 +23,7 @@ parser.add_argument("--Qcate_breakdown", type=str, default='["all"]')
 parser.add_argument("--file", type=str)
 parser.add_argument('--no_norm', action='store_true')
 parser.add_argument('--dir', type=str)
+parser.add_argument('--output_idx', type=int, default=0)
 args = parser.parse_args()
 
 import sys
@@ -130,10 +131,9 @@ def compute_bartscore_ParaBank(c, a, switch=False):
     return score
         
 Qcate_breakdown = json.loads(args.Qcate_breakdown)
-
 print("Use categories: ", Qcate_breakdown)
 print("Use normalization = ", not args.no_norm)
-
+print("Output_idx = ", args.output_idx)
 # Please change the path to your output folder
 with open(os.path.join(args.dir, args.file), "r") as fp:
     lines = fp.readlines()
@@ -141,14 +141,15 @@ with open(os.path.join(args.dir, args.file), "r") as fp:
     rows = lines[1:]
 key = dict(zip(header, range(len(header))))
 pprint(key)
-F1_avg_scores = []
-F1_max_scores = []
-EM_scores = []
-RE_scores = []
-PR_scores= []
-fluency_scores = []
-acc_scores = []
-mul_scores = []
+F1_avg_scores = {'All':[], 'number':[], 'YesNo':[], 'choose':[], 'color':[], 'shape':[], 'Others':[], 'text':[]}
+F1_max_scores = {'All':[], 'number':[], 'YesNo':[], 'choose':[], 'color':[], 'shape':[], 'Others':[], 'text':[]}
+EM_scores = {'All':[], 'number':[], 'YesNo':[], 'choose':[], 'color':[], 'shape':[], 'Others':[], 'text':[]}
+RE_scores = {'All':[], 'number':[], 'YesNo':[], 'choose':[], 'color':[], 'shape':[], 'Others':[], 'text':[]}
+PR_scores= {'All':[], 'number':[], 'YesNo':[], 'choose':[], 'color':[], 'shape':[], 'Others':[], 'text':[]}
+fluency_scores = {'All':[], 'number':[], 'YesNo':[], 'choose':[], 'color':[], 'shape':[], 'Others':[], 'text':[]}
+acc_scores = {'All':[], 'number':[], 'YesNo':[], 'choose':[], 'color':[], 'shape':[], 'Others':[], 'text':[]}
+mul_scores = {'All':[], 'number':[], 'YesNo':[], 'choose':[], 'color':[], 'shape':[], 'Others':[], 'text':[]}
+
 
 output_Q = []
 output_A = []
@@ -164,7 +165,7 @@ for r in tqdm(rows):
     Qcate = datum[key['Qcate']]
     if (not 'all' in Qcate_breakdown) and (not Qcate in Qcate_breakdown): continue
     O = json.loads(datum[key['Output']])
-    C = [O[0]]
+    C = [O[args.output_idx]]
     Keywords_A = datum[key['Keywords_A']]
     A = json.loads(datum[key['A']])
     #normalizer = guid2norm[datum[key['Guid']]]
@@ -187,33 +188,44 @@ for r in tqdm(rows):
     elif Qcate == 'YesNo': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, Keywords_A, "", yesno_set)
     elif Qcate == 'number': F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, Keywords_A, "", {"NUMBER"})
     else: F1_avg, F1_max, EM, RE_avg, PR_avg = compute_vqa_metrics(C, Keywords_A)
-    fluency_scores.append(score)
+    fluency_scores['All'].append(score)
+    fluency_scores[Qcate].append(score)
     if Qcate in ['color', 'shape', 'number', 'YesNo']: 
-        acc_scores.append(F1_avg)
-        mul_scores.append(F1_avg * score)
+        acc_scores['All'].append(F1_avg)
+        acc_scores[Qcate].append(F1_avg)
+        mul_scores['All'].append(F1_avg * score)
+        mul_scores[Qcate].append(F1_avg * score)
     else: 
-        acc_scores.append(RE_avg)
-        mul_scores.append(RE_avg * score)
+        acc_scores['All'].append(RE_avg)
+        acc_scores[Qcate].append(RE_avg)
+        mul_scores['All'].append(RE_avg * score)
+        mul_scores[Qcate].append(RE_avg * score)
 
-    F1_avg_scores.append(F1_avg)
-    F1_max_scores.append(F1_max)
-    EM_scores.append(EM)
-    RE_scores.append(RE_avg)
-    PR_scores.append(PR_avg)
+    F1_avg_scores['All'].append(F1_avg)
+    F1_max_scores['All'].append(F1_max)
+    EM_scores['All'].append(EM)
+    RE_scores['All'].append(RE_avg)
+    PR_scores['All'].append(PR_avg)
+    
+    F1_avg_scores[Qcate].append(F1_avg)
+    F1_max_scores[Qcate].append(F1_max)
+    EM_scores[Qcate].append(EM)
+    RE_scores[Qcate].append(RE_avg)
+    PR_scores[Qcate].append(PR_avg)
 
 assert len(F1_avg_scores) == len(F1_max_scores) == len(EM_scores) == len(RE_scores) == len(PR_scores) == len(fluency_scores) == len(acc_scores) == len(mul_scores)
-assert len(output_Q) == len(output_A) == len(output_N) == len(output_O) == len(output_KA) ==len(output_G) == len(output_QC) == len(mul_scores)
+assert len(output_Q) == len(output_A) == len(output_N) == len(output_O) == len(output_KA) ==len(output_G) == len(output_QC) == len(mul_scores['All'])
                     
-print("#eval samples = ", len(mul_scores))
-F1_avg = np.mean(F1_avg_scores)
-F1_max = np.mean(F1_max_scores)
-EM = np.mean(EM_scores)
-RE_avg = np.mean(RE_scores)
-PR_avg = np.mean(PR_scores)
+print("#eval samples = ", len(mul_scores['All']))
+F1_avg = np.mean(F1_avg_scores['All'])
+F1_max = np.mean(F1_max_scores['All'])
+EM = np.mean(EM_scores['All'])
+RE_avg = np.mean(RE_scores['All'])
+PR_avg = np.mean(PR_scores['All'])
 
-fluency_avg = np.mean(fluency_scores)
-acc_avg = np.mean(acc_scores)
-mul_avg = np.mean(mul_scores)
+fluency_avg = np.mean(fluency_scores['All'])
+acc_avg = np.mean(acc_scores['All'])
+mul_avg = np.mean(mul_scores['All'])
 
 print("F1_avg = {}".format(F1_avg))
 #print("F1_max = {}".format(F1_max))
@@ -226,19 +238,24 @@ print("mul_avg = {}".format(mul_avg))
 print(" ------------------------------------------------------------------------------------ \n")
 if not 'all' in Qcate_breakdown: args.file = args.file.split(".")[0] + "_{}".format("|".join(Qcate_breakdown)) + ".tsv"
 
+if args.output_idx > 0: args.file = args.file.replace(".tsv", "_{}.tsv".format(args.output_idx))
+
 with open(os.path.join(args.dir, args.file.replace(".tsv", ".txt")), "w") as f:
     f.write(datetime.now(tz=timezone('US/Eastern')).strftime("%y-%m-%d %H:%M:%S") + '\n')
-    f.write('\nUse Q categories: {}\nUse normalization = {}\n#Eval_samples = {}\n'.format(Qcate_breakdown, not args.no_norm, len(mul_scores)))
+    f.write('\nUse Q categories: {}\nUse normalization = {}\n#Eval_samples = {}\n'.format(Qcate_breakdown, not args.no_norm, len(mul_scores['All'])))
+    
     f.write('\n --------------------- metrics -----------------------\n')
-    f.write('\n'.join(["F1_avg = {}".format(F1_avg), "EM = {}".format(EM)]))
-    f.write('\n\n')
-    f.write('\n'.join(["RE_avg = {}".format(RE_avg), "PR_avg = {}".format(PR_avg)]))
-    f.write('\n\n')
-    f.write('\n'.join(["fluency_avg = {}".format(fluency_avg), "acc_avg = {}".format(acc_avg), "mul_avg = {}".format(mul_avg)]))
-    f.write('\n\n')
+    for k in ['All', 'YesNo', 'choose', 'color', 'shape', 'number', 'Others', 'text']:
+        f.write("\n--- Category = {}: ---\n".format(k))
+        f.write('\n'.join(["F1_avg = {}".format(np.mean(F1_avg_scores[k])), "EM = {}".format(np.mean(EM_scores[k]))]))
+        f.write('\n\n')
+        f.write('\n'.join(["RE_avg = {}".format(np.mean(RE_scores[k])), "PR_avg = {}".format(np.mean(PR_scores[k]))]))
+        f.write('\n\n')
+        f.write('\n'.join(["fluency_avg = {}".format(np.mean(fluency_scores[k])), "acc_avg = {}".format(np.mean(acc_scores[k])), "mul_avg = {}".format(np.mean(mul_scores[k]))]))
+        f.write('\n\n')
     f.write('-----Starting writing results:-----')
 
-    for guid, qcate, q, ka, a, n, o, re, f1, b, acc, m in zip(output_G, output_QC, output_Q, output_KA, output_A, output_N, output_O, RE_scores, F1_avg_scores, fluency_scores, acc_scores, mul_scores):
+    for guid, qcate, q, ka, a, n, o, re, f1, b, acc, m in zip(output_G, output_QC, output_Q, output_KA, output_A, output_N, output_O, RE_scores['All'], F1_avg_scores['All'], fluency_scores['All'], acc_scores['All'], mul_scores['All']):
         f.write("\n\n")
         f.write("\n".join(['Guid === {}\n Qcate === {}'.format(guid, qcate), 
             'Q === {}'.format(q), 'Keywords_A === {}\n'.format(ka), '\n'.join(a), 
@@ -246,4 +263,4 @@ with open(os.path.join(args.dir, args.file.replace(".tsv", ".txt")), "w") as f:
             'RE === {}'.format(re), 'F1 === {}'.format(f1),
             'Fluency === {}'.format(b),
             'Accuracy === {}'.format(acc),
-            "mul === {}".format(m),]))
+            "mul === {}".format(m)]))

@@ -191,9 +191,9 @@ def main():
     # webqa dataset
     parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0904_clean_fields.json")
     parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0904_clean_fields.json")
-    parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
-    parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
-    parser.add_argument('--x_distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_x_distractors/x_distractors")
+    parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/gold")
+    parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/distractors")
+    parser.add_argument('--x_distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_x_distractors/x_distractors")
 
     #parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
@@ -257,7 +257,7 @@ def main():
     args.use_img_content = not args.no_img_content
     args.use_txt_fact= not args.no_txt_fact
     assert args.len_vis_input == 100, "run main: only support 100 region features per image"
-    assert args.output_dir.split('/')[-1] == args.ckpts_dir.split('/')[-1], "Warning: folder names for output & ckpts are not the same"
+    # assert args.output_dir.split('/')[-1] == args.ckpts_dir.split('/')[-1], "Warning: folder names for output & ckpts are not the same"
     # output config
     os.makedirs(args.output_dir, exist_ok=True)
     os.makedirs(args.ckpts_dir, exist_ok=True)
@@ -777,11 +777,15 @@ def main():
             log_txt_content.append("use_img_meta = {}".format(args.use_img_meta))
             log_txt_content.append("\nimg Filter_max_choices: {}".format(args.img_filter_max_choices)) ## when txt is included, modify here!
             print("\nimg Filter_max_choices: {}".format(args.img_filter_max_choices))
+            if args.use_x_distractors: print("\ntxt Filter_max_choices: {}".format(args.txt_filter_max_choices))
+
         if "txt" in args.answer_provided_by:
             print(args.use_txt_fact)
             log_txt_content.append("use_txt_fact = {}".format(args.use_txt_fact))
             log_txt_content.append("\ntxt Filter_max_choices: {}".format(args.txt_filter_max_choices)) ## when txt is included, modify here!
             print("\ntxt Filter_max_choices: {}".format(args.txt_filter_max_choices))
+            if args.use_x_distractors: print("\nimg Filter_max_choices: {}".format(args.img_filter_max_choices))
+
         print("-------------------- Filter Inference mode ------------------------")
         log_txt_content.append("-------------------- Filter Inference mode ------------------------")
         

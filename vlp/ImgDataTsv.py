@@ -46,7 +46,7 @@ class TSVFile(object):
         self._ensure_lineidx_loaded()
         pos = self._lineidx[idx]
         self._fp.seek(pos)
-        row = fp.readline().strip().split('\t')
+        row = self._fp.readline().strip().split('\t')
         return int(row[0])
 
     def get_imgid(self, idx):
