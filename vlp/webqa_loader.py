@@ -223,6 +223,8 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                         distractor_img_and_caps = []
 
                         for im in datum['img_posFacts']:
+                            ### Note: Use the following code if you're using x101fpn image features released by the author. 
+                            ### If you're using your own image features, rewrite this section to load features from your file structure.
                             image_id = int(im['image_id'])
                             if self.imgid_map is not None: image_id = self.imgid_map[image_id]
                             if os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('dev', (image_id%10000000)//1000, image_id))):
@@ -325,6 +327,8 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
                         gold_feature_paths = []
                         gold_cxt_list = []
                         for im in datum['img_posFacts']:
+                            ### Note: Use the following code if you're using x101fpn image features released by the author. 
+                            ### If you're using your own image features, rewrite this section to load features from your file structure.
                             image_id = int(im['image_id'])
                             if self.imgid_map is not None: image_id = self.imgid_map[image_id]
                             if os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('dev', (image_id%10000000)//1000, image_id))):
@@ -430,6 +434,9 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
                         distractor_img_and_caps = []
 
                         if 'img_posFacts' in datum:
+
+                            ### Note: Use the following code if you're using x101fpn image features released by the author. 
+                            ### If you're using your own image features, rewrite this section to load features from your file structure.
                             for im in datum['img_posFacts']:
                                 image_id = int(im['image_id'])
                                 if self.imgid_map is not None: image_id = self.imgid_map[image_id]
