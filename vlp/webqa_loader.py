@@ -188,7 +188,7 @@ class webqaDataset_qa(torch.utils.data.Dataset):
 
 class webqaDataset_filter_with_img(torch.utils.data.Dataset):
     """ Load image feature path, q, a """
-    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, filter_max_choices=10, device=None):
+    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, x_distractor_feature_folder, use_num_samples, processor, filter_max_choices=10, device=None):
         super().__init__()
         self.processor = processor
         self.tokenizer = tokenizer
@@ -221,8 +221,10 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                             if int(image_id) < 10000000:
                                 image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
                                 assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(image_id)
-                            else:
+                            elif int(image_id) < 20000000:
                                 image_feature_path = os.path.join(distractor_feature_folder, str(image_id)+'.pkl')
+                            else:
+                                image_feature_path = os.path.join(x_distractor_feature_folder, str(image_id)+'.pkl')
                             cxt = self.tokenizer.tokenize(im['caption'].strip())
                             gold_img_and_caps.append((image_feature_path, cxt))
 
@@ -234,6 +236,10 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                                 distractor_img_and_caps.append((image_feature_path, cxt))
                             elif os.path.exists(os.path.join(gold_feature_folder, str(image_id)+'.pkl')):
                                 image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
+                                cxt = self.tokenizer.tokenize(im['caption'].strip())
+                                distractor_img_and_caps.append((image_feature_path, cxt))
+                            else:
+                                image_feature_path = os.path.join(x_distractor_feature_folder, str(image_id)+'.pkl')
                                 cxt = self.tokenizer.tokenize(im['caption'].strip())
                                 distractor_img_and_caps.append((image_feature_path, cxt))
                         shuffle(gold_img_and_caps)
@@ -277,7 +283,7 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
 
 class webqaDataset_qa_with_img(torch.utils.data.Dataset):
     """ Load image feature path, q, a """
-    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, use_num_samples, processor, device=None):
+    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, x_distractor_feature_folder, use_num_samples, processor, device=None):
         super().__init__()
         self.processor = processor
         self.tokenizer = tokenizer
@@ -288,6 +294,8 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
         assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist!"
         assert os.path.exists(gold_feature_folder), "loader.Dataset: gold feature folder doesn't exist!"
         assert os.path.exists(distractor_feature_folder), "loader.Dataset: distractor feature folder doesn't exist!"
+        assert os.path.exists(x_distractor_feature_folder), "loader.Dataset: x_distractor feature folder doesn't exist!"
+
         with open(dataset_json_path, "r") as f:
             dataset_J = json.load(f)
         count = 0
@@ -311,8 +319,10 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
                             if int(image_id) < 10000000:
                                 image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
                                 assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(image_id)
-                            else:
+                            elif int(image_id) < 20000000:
                                 image_feature_path = os.path.join(distractor_feature_folder, str(image_id)+'.pkl')
+                            else:
+                                image_feature_path = os.path.join(x_distractor_feature_folder, str(image_id)+'.pkl')
                             gold_feature_paths.append(image_feature_path)
                             cxt = self.tokenizer.tokenize(im['caption'].strip())
                             gold_cxt_list.append(cxt)
@@ -1034,8 +1044,8 @@ class Preprocess4webqaDecoder(Pipeline):
         self.use_txt_fact = use_txt_fact
         random.seed(seed)
         np.random.seed(seed)
-        print("loader.use_img_meta = ", use_img_meta)
-        print("loader.use_img_content = ", use_img_content)
+        #print("loader.use_img_meta = ", use_img_meta)
+        #print("loader.use_img_content = ", use_img_content)
 
     def __call__(self, instance, filter_max_choices=None, device=None):
         _, __, ___, ____, _____, ______, do_filter_task, context, example_id = instance

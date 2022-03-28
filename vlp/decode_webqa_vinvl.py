@@ -218,7 +218,7 @@ def main():
     parser.add_argument("--bert_model", default="bert-base-cased", type=str,
                         help="Bert pre-trained model selected in the list: bert-base-cased, bert-large-cased")
     parser.add_argument("--ckpts_dir",
-                        default='/data/yingshac/MMMHQA/ckpts/no_model_name_specified/',
+                        default='/data/yingshac/WebQA/ckpts/no_model_name_specified/',
                         type=str,
                         help="The output directory where checkpoints will be written.")
     parser.add_argument("--output_dir",
@@ -268,8 +268,10 @@ def main():
     # webqa dataset
     parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0904_clean_fields.json")
     parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0904_clean_fields.json")
-    parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
-    parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
+    parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/gold")
+    parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/distractors")
+    parser.add_argument('--x_distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_x_distractors/x_distractors")
+
     #parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
     parser.add_argument('--answer_provided_by', type=str, default="img|txt")
@@ -312,9 +314,9 @@ def main():
     parser.add_argument('--no_eval', action='store_true')
 
     # Add VinVL feature support
-    parser.add_argument('--gold_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/gold_0_22265/gold_vinvl.tsv", type=str)
-    parser.add_argument('--neg_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/neg_imgs_0_338842/distractors_vinvl.tsv", type=str)
-    parser.add_argument('--x_neg_img_tsv', default="/data/yingshac/MMMHQA/VinVL_output/x_neg_imgs_0_240661/x_distractors_vinvl.tsv", type=str)
+    parser.add_argument('--gold_img_tsv', default="/data/yingshac/WebQA/VinVL_output/gold_0_22265/gold_vinvl.tsv", type=str)
+    parser.add_argument('--neg_img_tsv', default="/data/yingshac/WebQA/VinVL_output/neg_imgs_0_338842/distractors_vinvl.tsv", type=str)
+    parser.add_argument('--x_neg_img_tsv', default="/data/yingshac/WebQA/VinVL_output/x_neg_imgs_0_240661/x_distractors_vinvl.tsv", type=str)
 
 
     parser.add_argument('--drop_prob', default=0.1, type=float)

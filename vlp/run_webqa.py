@@ -189,11 +189,14 @@ def main():
                         help="max position embeddings")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0904_clean_fields.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0904_clean_fields.json")
-    parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/gold")
-    parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/distractors")
-    parser.add_argument('--x_distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_x_distractors/x_distractors")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/WebQA_0904_concat_newimgid_newguid.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/WebQA_0904_concat_newimgid_newguid.json")
+    # Image ids were sorted by gold/distractor/x_distractor in the zero version
+    #parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/gold")
+    #parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/distractors")
+    #parser.add_argument('--x_distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_x_distractors/x_distractors")
+
+    parser.add_argument('--feature_folder', type=str, default="/data/yingshac/WebQA/x101fpn_feature_release")
 
     #parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
@@ -328,8 +331,7 @@ def main():
             if args.use_x_distractors:
                 train_dataset = webqa_loader.webqaDataset_filter_with_both(dataset_json_path=args.txt_dataset_json_path, \
                     split=args.split, Qcate=args.Qcate, \
-                    batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
-                    distractor_feature_folder=args.distractor_feature_folder, x_distractor_feature_folder=args.x_distractor_feature_folder, \
+                    batch_size=args.train_batch_size, tokenizer=tokenizer, feature_folder=args.feature_folder, \
                     use_num_samples=args.use_num_samples, processor=processor, answer_provided_by='txt', \
                     max_snippets=args.txt_filter_max_choices, max_imgs=args.img_filter_max_choices, device=device)
             else:
@@ -345,15 +347,13 @@ def main():
             if args.use_x_distractors:
                 train_dataset = webqa_loader.webqaDataset_filter_with_both(dataset_json_path=args.img_dataset_json_path, \
                     split=args.split, Qcate=args.Qcate, \
-                    batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
-                    distractor_feature_folder=args.distractor_feature_folder, x_distractor_feature_folder=args.x_distractor_feature_folder, \
+                    batch_size=args.train_batch_size, tokenizer=tokenizer, feature_folder=args.feature_folder \
                     use_num_samples=args.use_num_samples, processor=processor, answer_provided_by='img', \
                     max_snippets=args.txt_filter_max_choices, max_imgs=args.img_filter_max_choices, device=device)
             else:
                 train_dataset = webqa_loader.webqaDataset_filter_with_img(dataset_json_path=args.img_dataset_json_path, split=args.split, Qcate=args.Qcate, \
-                    batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
-                    distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
-                    processor=processor, filter_max_choices=args.img_filter_max_choices, device=device)
+                    batch_size=args.train_batch_size, tokenizer=tokenizer, feature_folder=args.feature_folder, \
+                    use_num_samples=args.use_num_samples, processor=processor, filter_max_choices=args.img_filter_max_choices, device=device)
             train_dataloader, train_sampler = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
             train_dataloaders.append(train_dataloader)
             train_samplers.append(train_sampler)
@@ -370,8 +370,7 @@ def main():
         
         if "img" in args.answer_provided_by:
             train_dataset = webqa_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, split=args.split, Qcate=args.Qcate, \
-                    batch_size=args.train_batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
-                    distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
+                    batch_size=args.train_batch_size, tokenizer=tokenizer, feature_folder=args.feature_folder, use_num_samples=args.use_num_samples, \
                     processor=processor, device=device)
             train_dataloader, train_sampler = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
             train_dataloaders.append(train_dataloader)
@@ -510,7 +509,7 @@ def main():
                              #t_total=t_total,
                              #weight_decay = args.weight_decay)
 
-    if recover_step:
+    if recover_step and args.do_train:
         logger.info("***** Recover optimizer: %d *****", recover_step)
         optim_recover = torch.load(os.path.join(
             args.ckpts_dir, "optim.{0}.bin".format(recover_step)))

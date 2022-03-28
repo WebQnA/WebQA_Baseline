@@ -220,7 +220,7 @@ def main():
     parser.add_argument("--bert_model", default="bert-base-cased", type=str,
                         help="Bert pre-trained model selected in the list: bert-base-cased, bert-large-cased")
     parser.add_argument("--ckpts_dir",
-                        default='/data/yingshac/MMMHQA/ckpts/no_model_name_specified/',
+                        default='/data/yingshac/WebQA/ckpts/no_model_name_specified/',
                         type=str,
                         help="The output directory where checkpoints will be written.")
     parser.add_argument("--output_dir",
@@ -270,8 +270,10 @@ def main():
     # webqa dataset
     parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0904_clean_fields.json")
     parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0904_clean_fields.json")
-    parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/gold")
-    parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/MMMHQA/imgFeatures_upd/distractors")
+    parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/gold")
+    parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/distractors")
+    parser.add_argument('--x_distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_x_distractors/x_distractors")
+
     #parser.add_argument('--img_metadata_path', type=str, default="/home/yingshan/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
     parser.add_argument('--answer_provided_by', type=str, default="img|txt")
@@ -371,8 +373,8 @@ def main():
         args.output_suffix = args.img_dataset_json_path.split('/')[-1].replace(".json", "") + args.output_suffix
         train_dataset = webqa_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, split=args.split, Qcate=args.Qcate, \
                 batch_size=args.batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
-                distractor_feature_folder=args.distractor_feature_folder, use_num_samples=args.use_num_samples, \
-                processor=processor, device=device)
+                distractor_feature_folder=args.distractor_feature_folder, x_distractor_feature_folder=args.x_distractor_feature_folder, \
+                use_num_samples=args.use_num_samples, processor=processor, device=device)
         infr_dataloader = _get_loader_from_dataset(train_dataset, args.batch_size, args.num_workers, batch_list_to_batch_tensors)
         infr_dataloaders.append(infr_dataloader)
 
