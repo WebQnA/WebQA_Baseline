@@ -197,6 +197,7 @@ def main():
     #parser.add_argument('--x_distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_x_distractors/x_distractors")
 
     parser.add_argument('--feature_folder', type=str, default="/data/yingshac/WebQA/x101fpn_feature_release")
+    parser.add_argument('--image_id_map_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/image_id_map_0328.pkl")
 
     #parser.add_argument('--img_metadata_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
@@ -333,7 +334,7 @@ def main():
                     split=args.split, Qcate=args.Qcate, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, feature_folder=args.feature_folder, \
                     use_num_samples=args.use_num_samples, processor=processor, answer_provided_by='txt', \
-                    max_snippets=args.txt_filter_max_choices, max_imgs=args.img_filter_max_choices, device=device)
+                    max_snippets=args.txt_filter_max_choices, max_imgs=args.img_filter_max_choices, imgid_map=args.image_id_map_path, device=device)
             else:
                 train_dataset = webqa_loader.webqaDataset_filter(dataset_json_path=args.txt_dataset_json_path, split=args.split, Qcate=args.Qcate, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, use_num_samples=args.use_num_samples, \
@@ -346,14 +347,13 @@ def main():
         if "img" in args.answer_provided_by:
             if args.use_x_distractors:
                 train_dataset = webqa_loader.webqaDataset_filter_with_both(dataset_json_path=args.img_dataset_json_path, \
-                    split=args.split, Qcate=args.Qcate, \
-                    batch_size=args.train_batch_size, tokenizer=tokenizer, feature_folder=args.feature_folder \
+                    split=args.split, Qcate=args.Qcate, batch_size=args.train_batch_size, tokenizer=tokenizer, feature_folder=args.feature_folder, \
                     use_num_samples=args.use_num_samples, processor=processor, answer_provided_by='img', \
-                    max_snippets=args.txt_filter_max_choices, max_imgs=args.img_filter_max_choices, device=device)
+                    max_snippets=args.txt_filter_max_choices, max_imgs=args.img_filter_max_choices, imgid_map=args.image_id_map_path, device=device)
             else:
                 train_dataset = webqa_loader.webqaDataset_filter_with_img(dataset_json_path=args.img_dataset_json_path, split=args.split, Qcate=args.Qcate, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, feature_folder=args.feature_folder, \
-                    use_num_samples=args.use_num_samples, processor=processor, filter_max_choices=args.img_filter_max_choices, device=device)
+                    use_num_samples=args.use_num_samples, processor=processor, filter_max_choices=args.img_filter_max_choices, imgid_map=args.image_id_map_path, device=device)
             train_dataloader, train_sampler = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
             train_dataloaders.append(train_dataloader)
             train_samplers.append(train_sampler)

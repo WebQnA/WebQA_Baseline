@@ -113,7 +113,6 @@ vlp/Human/
 Human/
 light_output/
 notebooks/
-BM25_retrieval/
 vlp/eval_0827.py
 *.sh
 .*

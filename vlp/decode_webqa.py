@@ -268,11 +268,15 @@ def main():
                         help="maximum length of target sequence")
 
     # webqa dataset
-    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/txt_dataset_0904_clean_fields.json")
-    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/img_dataset_0904_clean_fields.json")
-    parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/gold")
-    parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/distractors")
-    parser.add_argument('--x_distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_x_distractors/x_distractors")
+    parser.add_argument('--txt_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/WebQA_0904_concat_newimgid_newguid.json")
+    parser.add_argument('--img_dataset_json_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/WebQA_0904_concat_newimgid_newguid.json")
+    # Image ids were sorted by gold/distractor/x_distractor in the zero version
+    #parser.add_argument('--gold_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/gold")
+    #parser.add_argument('--distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_upd/distractors")
+    #parser.add_argument('--x_distractor_feature_folder', type=str, default="/data/yingshac/WebQA/imgFeatures_x_distractors/x_distractors")
+
+    parser.add_argument('--feature_folder', type=str, default="/data/yingshac/WebQA/x101fpn_feature_release")
+    parser.add_argument('--image_id_map_path', type=str, default="/home/yingshac/CYS/WebQnA/WebQnA_data_new/image_id_map_0328.pkl")
 
     #parser.add_argument('--img_metadata_path', type=str, default="/home/yingshan/CYS/WebQnA/WebQnA_data/img_metadata-Copy1.json", help="how many samples should be loaded into memory")
     parser.add_argument('--use_num_samples', type=int, default=-1, help="how many samples should be loaded into memory")
@@ -372,9 +376,8 @@ def main():
     if "img" in args.answer_provided_by:
         args.output_suffix = args.img_dataset_json_path.split('/')[-1].replace(".json", "") + args.output_suffix
         train_dataset = webqa_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, split=args.split, Qcate=args.Qcate, \
-                batch_size=args.batch_size, tokenizer=tokenizer, gold_feature_folder=args.gold_feature_folder, \
-                distractor_feature_folder=args.distractor_feature_folder, x_distractor_feature_folder=args.x_distractor_feature_folder, \
-                use_num_samples=args.use_num_samples, processor=processor, device=device)
+                batch_size=args.batch_size, tokenizer=tokenizer, feature_folder=args.feature_folder, \
+                use_num_samples=args.use_num_samples, processor=processor, imgid_map=args.image_id_map_path, device=device)
         infr_dataloader = _get_loader_from_dataset(train_dataset, args.batch_size, args.num_workers, batch_list_to_batch_tensors)
         infr_dataloaders.append(infr_dataloader)
 

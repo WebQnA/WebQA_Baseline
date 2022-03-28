@@ -72,6 +72,7 @@ class webqaDataset_filter(torch.utils.data.Dataset):
         for i in dataset_J:
             datum = dataset_J[i]
             if datum['split'] in split: # modify here after we create split!
+                if not datum['Qcate'] == 'text': continue
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
                         Guid = datum['Guid']
@@ -139,6 +140,7 @@ class webqaDataset_qa(torch.utils.data.Dataset):
         for i in dataset_J:
             datum = dataset_J[i]
             if datum['split'] in split: # modify here after we have split!!!!
+                if not datum['Qcate'] == 'text': continue
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
                         guid = datum['Guid']
@@ -188,18 +190,21 @@ class webqaDataset_qa(torch.utils.data.Dataset):
 
 class webqaDataset_filter_with_img(torch.utils.data.Dataset):
     """ Load image feature path, q, a """
-    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, x_distractor_feature_folder, use_num_samples, processor, filter_max_choices=10, device=None):
+    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, feature_folder, use_num_samples, processor, filter_max_choices=10, imgid_map=None, device=None):
         super().__init__()
         self.processor = processor
         self.tokenizer = tokenizer
         self.batch_size = batch_size
         self.filter_max_choices = filter_max_choices
         self.instance_list = []
+        if imgid_map is not None:
+            self.imgid_map = pickle.load(open(imgid_map, "rb"))
+            print("\nLoad imgid_map, length={}\n".format(len(self.imgid_map)))
+        else: self.imgid_map=None
         if device is not None:
             self.device=device
         assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist!"
-        assert os.path.exists(gold_feature_folder), "loader.Dataset: gold feature folder doesn't exist!"
-        assert os.path.exists(distractor_feature_folder), "loader.Dataset: distractor feature folder doesn't exist!"
+        assert os.path.exists(feature_folder), "loader.Dataset: feature folder doesn't exist!"
         with open(dataset_json_path, "r") as f:
             dataset_J = json.load(f)
 
@@ -207,6 +212,7 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
         for i in dataset_J:
             datum = dataset_J[i]
             if datum['split'] in split:
+                if datum['Qcate'] == 'text': continue
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
                         Guid = datum['Guid']
@@ -217,31 +223,32 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
                         distractor_img_and_caps = []
 
                         for im in datum['img_posFacts']:
-                            image_id = im['image_id']
-                            if int(image_id) < 10000000:
-                                image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
-                                assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(image_id)
-                            elif int(image_id) < 20000000:
-                                image_feature_path = os.path.join(distractor_feature_folder, str(image_id)+'.pkl')
+                            image_id = int(im['image_id'])
+                            if self.imgid_map is not None: image_id = self.imgid_map[image_id]
+                            if os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('dev', (image_id%10000000)//1000, image_id))):
+                                image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('dev', (image_id%10000000)//1000, image_id))
+                            elif os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('test', (image_id%10000000)//1000, image_id))):
+                                image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('test', (image_id%10000000)//1000, image_id))
+                            elif os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('train', (image_id%10000000)//1000, image_id))):
+                                image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('train', (image_id%10000000)//1000, image_id))
                             else:
-                                image_feature_path = os.path.join(x_distractor_feature_folder, str(image_id)+'.pkl')
+                                raise AssertionError("Can't find feature file for imageid = {}".format(image_id))
                             cxt = self.tokenizer.tokenize(im['caption'].strip())
                             gold_img_and_caps.append((image_feature_path, cxt))
 
                         for im in datum['img_negFacts']:
-                            image_id = im['image_id']
-                            if os.path.exists(os.path.join(distractor_feature_folder, str(image_id)+'.pkl')):
-                                image_feature_path = os.path.join(distractor_feature_folder, str(image_id)+'.pkl')
-                                cxt = self.tokenizer.tokenize(im['caption'].strip())
-                                distractor_img_and_caps.append((image_feature_path, cxt))
-                            elif os.path.exists(os.path.join(gold_feature_folder, str(image_id)+'.pkl')):
-                                image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
-                                cxt = self.tokenizer.tokenize(im['caption'].strip())
-                                distractor_img_and_caps.append((image_feature_path, cxt))
+                            image_id = int(im['image_id'])
+                            if self.imgid_map is not None: image_id = self.imgid_map[image_id]
+                            if os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('dev', (image_id%10000000)//1000, image_id))):
+                                image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('dev', (image_id%10000000)//1000, image_id))
+                            elif os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('test', (image_id%10000000)//1000, image_id))):
+                                image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('test', (image_id%10000000)//1000, image_id))
+                            elif os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('train', (image_id%10000000)//1000, image_id))):
+                                image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('train', (image_id%10000000)//1000, image_id))
                             else:
-                                image_feature_path = os.path.join(x_distractor_feature_folder, str(image_id)+'.pkl')
-                                cxt = self.tokenizer.tokenize(im['caption'].strip())
-                                distractor_img_and_caps.append((image_feature_path, cxt))
+                                raise AssertionError("Can't find feature file for imageid = {}".format(image_id))
+                            cxt = self.tokenizer.tokenize(im['caption'].strip())
+                            distractor_img_and_caps.append((image_feature_path, cxt))
                         shuffle(gold_img_and_caps)
                         shuffle(distractor_img_and_caps)
 
@@ -283,18 +290,20 @@ class webqaDataset_filter_with_img(torch.utils.data.Dataset):
 
 class webqaDataset_qa_with_img(torch.utils.data.Dataset):
     """ Load image feature path, q, a """
-    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, x_distractor_feature_folder, use_num_samples, processor, device=None):
+    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, feature_folder, use_num_samples, processor, imgid_map=None, device=None):
         super().__init__()
         self.processor = processor
         self.tokenizer = tokenizer
         self.batch_size = batch_size
         self.instance_list = []
+        if imgid_map is not None:
+            self.imgid_map = pickle.load(open(imgid_map, "rb"))
+            print("\nLoad imgid_map, length={}\n".format(len(self.imgid_map)))
+        else: self.imgid_map=None
         if device is not None:
             self.device=device
         assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist!"
-        assert os.path.exists(gold_feature_folder), "loader.Dataset: gold feature folder doesn't exist!"
-        assert os.path.exists(distractor_feature_folder), "loader.Dataset: distractor feature folder doesn't exist!"
-        assert os.path.exists(x_distractor_feature_folder), "loader.Dataset: x_distractor feature folder doesn't exist!"
+        assert os.path.exists(feature_folder), "loader.Dataset: feature folder doesn't exist!"
 
         with open(dataset_json_path, "r") as f:
             dataset_J = json.load(f)
@@ -302,6 +311,7 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
         for i in dataset_J:
             datum = dataset_J[i]
             if datum['split'] in split:
+                if datum['Qcate'] == 'text': continue
                 if ('all' in Qcate) or datum['Qcate'] in Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
                         guid = datum['Guid']
@@ -315,14 +325,16 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
                         gold_feature_paths = []
                         gold_cxt_list = []
                         for im in datum['img_posFacts']:
-                            image_id = im['image_id']
-                            if int(image_id) < 10000000:
-                                image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
-                                assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(image_id)
-                            elif int(image_id) < 20000000:
-                                image_feature_path = os.path.join(distractor_feature_folder, str(image_id)+'.pkl')
+                            image_id = int(im['image_id'])
+                            if self.imgid_map is not None: image_id = self.imgid_map[image_id]
+                            if os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('dev', (image_id%10000000)//1000, image_id))):
+                                image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('dev', (image_id%10000000)//1000, image_id))
+                            elif os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('test', (image_id%10000000)//1000, image_id))):
+                                image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('test', (image_id%10000000)//1000, image_id))
+                            elif os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('train', (image_id%10000000)//1000, image_id))):
+                                image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('train', (image_id%10000000)//1000, image_id))
                             else:
-                                image_feature_path = os.path.join(x_distractor_feature_folder, str(image_id)+'.pkl')
+                                raise AssertionError("Can't find feature file for imageid = {}".format(image_id))
                             gold_feature_paths.append(image_feature_path)
                             cxt = self.tokenizer.tokenize(im['caption'].strip())
                             gold_cxt_list.append(cxt)
@@ -362,7 +374,7 @@ class webqaDataset_qa_with_img(torch.utils.data.Dataset):
 class webqaDataset_filter_with_both(torch.utils.data.Dataset):
     ## TODO: define a new Dataset, return img+cap in a tuple instead of two separate lists
     """ Load image feature path, q, a """
-    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, gold_feature_folder, distractor_feature_folder, x_distractor_feature_folder, use_num_samples, processor, answer_provided_by, max_snippets=10, max_imgs=10, device=None):
+    def __init__(self, dataset_json_path, split, Qcate, batch_size, tokenizer, feature_folder, use_num_samples, processor, answer_provided_by, max_snippets=10, max_imgs=10, imgid_map=None, device=None):
         super().__init__()
         self.processor = processor
         self.tokenizer = tokenizer
@@ -371,18 +383,26 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
         self.max_snippets = max_snippets
         self.max_imgs = max_imgs
         self.instance_list = []
+        if answer_provided_by=='txt': self.Qcate = ['text']
+        else: 
+            self.Qcate = ['YesNo', 'Others', 'choose', 'number', 'color', 'shape']
+            if not 'all' in Qcate:
+                self.Qcate = list(set(Qcate).intersection(set(self.Qcate)) )
+        if imgid_map is not None:
+            self.imgid_map = pickle.load(open(imgid_map, "rb"))
+            print("\nLoad imgid_map, length={}\n".format(len(self.imgid_map)))
+        else: self.imgid_map=None
         if device is not None:
             self.device=device
         assert os.path.exists(dataset_json_path), "loader.Dataset: dataset json file doesn't exist!"
-        assert os.path.exists(gold_feature_folder), "loader.Dataset: gold feature folder doesn't exist!"
-        assert os.path.exists(distractor_feature_folder), "loader.Dataset: distractor feature folder doesn't exist!"
+        assert os.path.exists(feature_folder), "loader.Dataset: feature folder doesn't exist!"
         with open(dataset_json_path, "r") as f:
             dataset_J = json.load(f)
         count = 0
         for i in dataset_J:
             datum = dataset_J[i]
             if datum['split'] in split:
-                if ('all' in Qcate) or datum['Qcate'] in Qcate:
+                if datum['Qcate'] in self.Qcate:
                     if use_num_samples == -1 or count < use_num_samples:
                         Guid = datum['Guid']
                         Q = self.tokenizer.tokenize(datum['Q'].replace('"', ""))
@@ -411,29 +431,33 @@ class webqaDataset_filter_with_both(torch.utils.data.Dataset):
 
                         if 'img_posFacts' in datum:
                             for im in datum['img_posFacts']:
-                                image_id = im['image_id']
-                                if int(image_id) < 10000000:
-                                    image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
-                                    assert os.path.exists(image_feature_path), "loader.Dataset: gold image feature for {} doesn't exist!".format(image_id)
+                                image_id = int(im['image_id'])
+                                if self.imgid_map is not None: image_id = self.imgid_map[image_id]
+
+                                if os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('dev', (image_id%10000000)//1000, image_id))):
+                                    image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('dev', (image_id%10000000)//1000, image_id))
+                                elif os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('test', (image_id%10000000)//1000, image_id))):
+                                    image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('test', (image_id%10000000)//1000, image_id))
+                                elif os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('train', (image_id%10000000)//1000, image_id))):
+                                    image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('train', (image_id%10000000)//1000, image_id))
                                 else:
-                                    image_feature_path = os.path.join(distractor_feature_folder, str(image_id)+'.pkl')
+                                    raise AssertionError("Can't find feature file for imageid = {}".format(image_id))
                                 cxt = self.tokenizer.tokenize(im['caption'].strip())
                                 gold_img_and_caps.append((image_feature_path, cxt))
 
                         for im in datum['img_negFacts']:
-                            image_id = im['image_id']
-                            if int(image_id) < 10000000:
-                                image_feature_path = os.path.join(gold_feature_folder, str(image_id)+'.pkl')
-                                cxt = self.tokenizer.tokenize(im['caption'].strip())
-                                distractor_img_and_caps.append((image_feature_path, cxt))
-                            elif int(image_id) < 20000000:
-                                image_feature_path = os.path.join(distractor_feature_folder, str(image_id)+'.pkl')
-                                cxt = self.tokenizer.tokenize(im['caption'].strip())
-                                distractor_img_and_caps.append((image_feature_path, cxt))
+                            image_id = int(im['image_id'])
+                            if self.imgid_map is not None: image_id = self.imgid_map[image_id]
+                            if os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('dev', (image_id%10000000)//1000, image_id))):
+                                image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('dev', (image_id%10000000)//1000, image_id))
+                            elif os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('test', (image_id%10000000)//1000, image_id))):
+                                image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('test', (image_id%10000000)//1000, image_id))
+                            elif os.path.exists(os.path.join(feature_folder, "{}/{}/{}.pkl".format('train', (image_id%10000000)//1000, image_id))):
+                                image_feature_path = os.path.join(feature_folder, "{}/{}/{}.pkl".format('train', (image_id%10000000)//1000, image_id))
                             else:
-                                image_feature_path = os.path.join(x_distractor_feature_folder, str(image_id)+'.pkl')
-                                cxt = self.tokenizer.tokenize(im['caption'].strip())
-                                distractor_img_and_caps.append((image_feature_path, cxt))
+                                raise AssertionError("Can't find feature file for imageid = {}".format(image_id))
+                            cxt = self.tokenizer.tokenize(im['caption'].strip())
+                            distractor_img_and_caps.append((image_feature_path, cxt))
                         shuffle(gold_img_and_caps)
                         shuffle(distractor_img_and_caps)
 
