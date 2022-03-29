@@ -9,7 +9,7 @@ We release checkpoints fine-tuned on WebQA [here](https://tiger.lti.cs.cmu.edu/y
 
 **Update (28 Mar, 2022)**:
 
-We are releasing all image features (stored in pickle files) pre-extracted by x101fpn! Follow [this gdrive link](https://drive.google.com/drive/folders/1LrmN8uBzD88ydpanOG04lAoUSxylqIGK?usp=sharing) to download them. (They take days to upload since the total size is 500G. We will finish uploading soon!)
+We are releasing all image features (stored in pickle files) pre-extracted by x101fpn! Follow [this gdrive link] to download them. (They take days to upload since the total size is 500G. We will finish uploading soon!)
 
 **`/dev`** contains all pickles for reproducing results *only* on the **dev** set. (This small set of pickles can also be downloaded from [here](https://tiger.lti.cs.cmu.edu/yingshac/dev_7z.tar))
 **`/test`** contains extra pickles for the **test** set which are NOT included in **/dev**.
@@ -46,10 +46,12 @@ The pickle files are stored by chunks of size 1000. The file structure should be
     └── 389 ...
 ```
 
+Codes (`run_webqa.py` and `webqa_loader.py`) have been updated to correctly load features from this file structure.
+
 `<feature_folder>` is the directory path you should provide to the `--feature_folder` argument.
 
 
-Also note that the pickle files are named by a new set of image ids (starting with 40,000,000). This is only for the ease of sorting pickle files by the order of dev/test/train. Image ids in the released `dataset.json` start with 30,000,000. Please use this [map](https://drive.google.com/file/d/1J4gfDULF4nvJwz-ziFIudCO1JCB25b_G/view?usp=sharing) for image id conversion.
+Also note that the pickle files are named by a new set of image ids (starting with 40,000,000). This is only for the ease of sorting pickle files by the order of dev/test/train. Image ids in the released `dataset.json` start with 30,000,000. Please use this [map](https://github.com/WebQnA/WebQA_Baseline/blob/main/misc/image_id_map_0328.pkl) for image id conversion.
 
 **Update (6 Oct, 2021)**:
 
@@ -57,7 +59,7 @@ In our baseline code, we separate the data loading of image- and text-based quer
 
 **Update (29 Sep, 2021)**:
 
-We clarify here what are arguments `--gold_feature_folder`, `--distractor_feature_folder`, and `--x_distractor_feature_folder`. Basically, during implementation we divide the images into 3 buckets: positive images for image-based queries (`gold`), negative images for image-based queries (`distractors`) and negative images for text-based queries (`x_distractors`), where the 'x' stands for 'cross-modality'. Image- and text-based queries can be disinguished via the "Qcate" field in the dataset file. Text-based queries all have `Qcate == 'text'`, while the rest are image-based ones.
+*(Forget about this if you are following the feature file structures in the Mar28 release)* We clarify here what are arguments `--gold_feature_folder`, `--distractor_feature_folder`, and `--x_distractor_feature_folder`. Basically, during implementation we divide the images into 3 buckets: positive images for image-based queries (`gold`), negative images for image-based queries (`distractors`) and negative images for text-based queries (`x_distractors`), where the 'x' stands for 'cross-modality'. Image- and text-based queries can be disinguished via the "Qcate" field in the dataset file. Text-based queries all have `Qcate == 'text'`, while the rest are image-based ones.
 
 ## Environment
 ```
