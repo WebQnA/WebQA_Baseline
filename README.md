@@ -7,6 +7,50 @@ We release checkpoints fine-tuned on WebQA [here](https://tiger.lti.cs.cmu.edu/y
 
 ## News
 
+**Update (28 Mar, 2022)**:
+
+We are releasing all image features (stored in pickle files) pre-extracted by x101fpn! Follow [this gdrive link](https://drive.google.com/drive/folders/1LrmN8uBzD88ydpanOG04lAoUSxylqIGK?usp=sharing) to download them. (They take days to upload since the total size is 500G. We will finish uploading soon!)
+
+**`/dev`** contains all pickles for reproducing results *only* on the **dev** set. (This small set of pickles can also be downloaded from [here](https://tiger.lti.cs.cmu.edu/yingshac/dev_7z.tar))
+**`/test`** contains extra pickles for the **test** set which are NOT included in **/dev**.
+**`/train`** contains extra pickles for the **train** set which are NOT included in the two folders above.
+
+This file structure is to facilitate the most common demands for replicating results on the dev set and less common demands for replicating training. However, if you want to redo training with the released image features, you need to download all three directories (/dev, /test, /train).
+
+The pickle files are stored by chunks of size 1000. The file structure should be the following:
+
+```
+<feature_folder>
+│── dev
+│   ├── 0
+│   │   ├── 40000000.pkl
+│   │   ├── ...
+│   │   └── 40000999.pkl
+│   │── 1
+│   │   ├── 40001000.pkl
+│   │   ├── ...
+│   │   └── 40001999.pkl
+│   ├── ...
+│   └──64 ...
+│
+├── test
+│   ├── 64 ...
+│   ├── 65 ...
+│   ├── ...
+│   └── 140 ...
+│
+└── train
+    ├── 140 ...
+    ├── 141 ...
+    ├── ...
+    └── 389 ...
+```
+
+`<feature_folder>` is the directory path you should provide to the `--feature_folder` argument.
+
+
+Also note that the pickle files are named by a new set of image ids (starting with 40,000,000). This is only for the ease of sorting pickle files by the order of dev/test/train. Image ids in the released `dataset.json` start with 30,000,000. Please use this [map](https://drive.google.com/file/d/1J4gfDULF4nvJwz-ziFIudCO1JCB25b_G/view?usp=sharing) for image id conversion.
+
 **Update (6 Oct, 2021)**:
 
 In our baseline code, we separate the data loading of image- and text-based queries for the sake of performance breakdown. Thus, the two arguments, `txt_dataset_json_path` and `img_dataset_json_path`, correspond to the two folds,  according to the `Qcate` field. 
@@ -100,4 +144,12 @@ Please acknowledge the following paper if you use the code:
 
 ## Acknowledgement
 Our code is mainly based on [Zhou](https://arxiv.org/pdf/1909.11059.pdf) et al.'s [VLP](https://github.com/LuoweiZhou/VLP) repo. We thank the authors for their valuable work.
+
+## TODO List
+
+- Release x101fpn image features for the replicating results on **dev** set :white_check_mark:
+- Release additional x101fpn image features for replicating results on **test** and **train** set 
+- Provide detailed documentations for VLP
+- Release code for BM25 full-scale retrieval (over 544k text sources and 390k image sources across the entire dataset) :white_check_mark:
+- Release code for CLIP (zero-shot) full-scale retrieval
 
