@@ -7,9 +7,9 @@ We release checkpoints fine-tuned on WebQA [here](https://tiger.lti.cs.cmu.edu/y
 
 ## News
 
-**Update (28 Mar, 2022)**:
+**Update (8 Apr, 2022)**:
 
-We are releasing all image features (stored in pickle files) pre-extracted by x101fpn! Follow [this gdrive link] to download them. (They take days to upload since the total size is 500G. We will finish uploading soon!)
+We are releasing all image features (stored in pickle files) pre-extracted by x101fpn! Given the sheer size (500GB) and the bandwidth limits of google drive, we have setup [this request form](https://forms.gle/5oR7PxXYJH1qF7ZT8) to grant access to individual users instead of making the files publicly accessible. Upon approval, you will get a link that expires in **90 days**. To request for extension, please submit the form again or contact the authors. Thanks!
 
 **`/dev`** contains all pickles for reproducing results *only* on the **dev** set. (This small set of pickles can also be downloaded from [here](https://tiger.lti.cs.cmu.edu/yingshac/dev_7z.tar))
 **`/test`** contains extra pickles for the **test** set which are NOT included in **/dev**.
