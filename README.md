@@ -150,7 +150,7 @@ Our code is mainly based on [Zhou](https://arxiv.org/pdf/1909.11059.pdf) et al.'
 ## TODO List
 
 - Release x101fpn image features for the replicating results on **dev** set :white_check_mark:
-- Release additional x101fpn image features for replicating results on **test** and **train** set 
+- Release additional x101fpn image features for replicating results on **test** and **train** set :white_check_mark:
 - Provide detailed documentations for VLP
 - Release code for BM25 full-scale retrieval (over 544k text sources and 390k image sources across the entire dataset) :white_check_mark:
 - Release code for CLIP (zero-shot) full-scale retrieval
