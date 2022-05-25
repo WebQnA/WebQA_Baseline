@@ -371,7 +371,7 @@ def main():
         if "img" in args.answer_provided_by:
             train_dataset = webqa_loader.webqaDataset_qa_with_img(dataset_json_path=args.img_dataset_json_path, split=args.split, Qcate=args.Qcate, \
                     batch_size=args.train_batch_size, tokenizer=tokenizer, feature_folder=args.feature_folder, use_num_samples=args.use_num_samples, \
-                    processor=processor, device=device)
+                    processor=processor,  imgid_map=args.image_id_map_path, device=device)
             train_dataloader, train_sampler = _get_loader_from_dataset(train_dataset, args.world_size, args.train_batch_size, args.num_workers, batch_list_to_batch_tensors)
             train_dataloaders.append(train_dataloader)
             train_samplers.append(train_sampler)
@@ -432,9 +432,8 @@ def main():
             global_step = math.floor(
                 recover_step * t_total * 1. / args.num_train_epochs)
         elif args.model_recover_path:
-            print("------------------ recover from path ----------------------")
             log_txt_content.append("------------------ recover from path ----------------------")
-            logger.info("***** Recover model: %s *****",
+            print("***** Recover model: %s *****",
                         args.model_recover_path)
             model_recover = torch.load(args.model_recover_path)
             global_step = 0

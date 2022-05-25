@@ -695,8 +695,21 @@ class Preprocess4webqa(Pipeline):
                 cxt_modality_label = [i for i in range(len(order)) if order[i]%2 == 1]
 
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
-                return (input_ids, segment_ids, input_mask,       None,        None,        None,         -1,         do_filter_task,        label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id) 
-                
+                return {"input_ids": input_ids, 
+                        "segment_ids": segment_ids,
+                        "input_mask": input_mask,
+                        "masked_ids": None, "masked_pos": None, "masked_weights": None,
+                        "is_next_label": -1,
+                        "do_filter_task": do_filter_task,
+                        "filter_label": label,
+                        "logit_mask": logit_mask,
+                        "ori_choices": ori_choices,
+                        "task_idx": self.task_idx,
+                        "img": img,
+                        "vis_pe": vis_pe,
+                        "context": context,
+                        "cxt_modality_label": cxt_modality_label,
+                        "example_id": example_id}                
 
             elif context == 'img':
                 gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
@@ -806,7 +819,21 @@ class Preprocess4webqa(Pipeline):
 
                 cxt_modality_label = range(filter_num_choices)
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
-                return (input_ids, segment_ids, input_mask,       None,       None,       None,       -1,       do_filter_task,        label,       logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return {"input_ids": input_ids, 
+                        "segment_ids": segment_ids,
+                        "input_mask": input_mask,
+                        "masked_ids": None, "masked_pos": None, "masked_weights": None,
+                        "is_next_label": -1,
+                        "do_filter_task": do_filter_task,
+                        "filter_label": label,
+                        "logit_mask": logit_mask,
+                        "ori_choices": ori_choices,
+                        "task_idx": self.task_idx,
+                        "img": img,
+                        "vis_pe": vis_pe,
+                        "context": context,
+                        "cxt_modality_label": cxt_modality_label,
+                        "example_id": example_id}
 
             elif context == 'txt': # do_filter_task && context_is_text
                 gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
@@ -863,10 +890,23 @@ class Preprocess4webqa(Pipeline):
                 ori_choices = all_choices_ids 
 
                 cxt_modality_label = []
-                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
-                return (input_ids, segment_ids, input_mask,       None,        None,        None,         -1,         do_filter_task,        label, logit_mask, ori_choices, self.task_idx, None, None, context, cxt_modality_label, example_id)
-                raise NotImplementedError
-        
+                # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return {"input_ids": input_ids, 
+                        "segment_ids": segment_ids,
+                        "input_mask": input_mask,
+                        "masked_ids": None, "masked_pos": None, "masked_weights": None,
+                        "is_next_label": -1,
+                        "do_filter_task": do_filter_task,
+                        "filter_label": label,
+                        "logit_mask": logit_mask,
+                        "ori_choices": ori_choices,
+                        "task_idx": self.task_idx,
+                        "img": None,
+                        "vis_pe": None,
+                        "context": context,
+                        "cxt_modality_label": cxt_modality_label,
+                        "example_id": example_id}
+
         else: # qa task
             if context == 'img':
                 gold_feature_paths, distractor_feature_paths, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
@@ -990,7 +1030,21 @@ class Preprocess4webqa(Pipeline):
                     print(tokens)
                 cxt_modality_label = [1]
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
-                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,      -1,      do_filter_task,        None,        None,        None,     self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return {"input_ids": input_ids, 
+                        "segment_ids": segment_ids,
+                        "input_mask": input_mask,
+                        "masked_ids": masked_ids, "masked_pos": masked_pos, "masked_weights": masked_weights,
+                        "is_next_label": -1,
+                        "do_filter_task": do_filter_task,
+                        "filter_label": None,
+                        "logit_mask": None,
+                        "ori_choices": None,
+                        "task_idx": self.task_idx,
+                        "img": img,
+                        "vis_pe": vis_pe,
+                        "context": context,
+                        "cxt_modality_label": cxt_modality_label,
+                        "example_id": example_id}
             
             else: # qa task, context is txt
                 gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
@@ -1049,8 +1103,21 @@ class Preprocess4webqa(Pipeline):
                 masked_weights = torch.LongTensor(masked_weights)
                 
                 # schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
-                return (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights,       -1,      do_filter_task,      None,      None,       None,         self.task_idx, None, None,  context, None,               example_id)
-                raise NotImplementedError
+                return {"input_ids": input_ids, 
+                        "segment_ids": segment_ids,
+                        "input_mask": input_mask,
+                        "masked_ids": masked_ids, "masked_pos": masked_pos, "masked_weights": masked_weights,
+                        "is_next_label": -1,
+                        "do_filter_task": do_filter_task,
+                        "filter_label": None,
+                        "logit_mask": None,
+                        "ori_choices": None,
+                        "task_idx": self.task_idx,
+                        "img": None,
+                        "vis_pe": None,
+                        "context": context,
+                        "cxt_modality_label": None,
+                        "example_id": example_id}
 
 
 class Preprocess4webqaDecoder(Pipeline):
@@ -1075,8 +1142,6 @@ class Preprocess4webqaDecoder(Pipeline):
         self.use_txt_fact = use_txt_fact
         random.seed(seed)
         np.random.seed(seed)
-        #print("loader.use_img_meta = ", use_img_meta)
-        #print("loader.use_img_content = ", use_img_content)
 
     def __call__(self, instance, filter_max_choices=None, device=None):
         _, __, ___, ____, _____, ______, do_filter_task, context, example_id = instance
@@ -1184,12 +1249,22 @@ class Preprocess4webqaDecoder(Pipeline):
                 assert img.size(0) == self.max_len_img_cxt
 
                 cxt_modality_label = [1]
-                # schema: (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
-                return    (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                # previous schema: (input_ids, segment_ids, input_mask, masked_ids, masked_pos, masked_weights, is_next_label, do_filter_task, filter_label, logit_mask, ori_choices, task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                #          schema: (input_ids, segment_ids, position_ids, input_mask, ----------------------------------------------------------------------------------------------- task_idx, img, vis_pe, context, cxt_modality_label, example_id)
+                return {"input_ids": input_ids, 
+                        "segment_ids": segment_ids,
+                        "position_ids": position_ids,
+                        "input_mask": input_mask,
+                        "task_idx": self.task_idx,
+                        "img": img,
+                        "vis_pe": vis_pe,
+                        "context": context,
+                        "cxt_modality_label": cxt_modality_label,
+                        "example_id": example_id
+                        }
                 
             
             else: # qa task, context is txt
-                #raise NotImplementedError
                 gold_facts, distractor_facts, gold_cxt_list, distractor_cxt_list, Q, A, do_filter_task, context, example_id = instance
                 tokens_a = []
                 if self.use_txt_fact: tokens_a = sum(gold_facts, [])
@@ -1227,8 +1302,17 @@ class Preprocess4webqaDecoder(Pipeline):
                 position_ids = torch.LongTensor(position_ids)
 
                 # schema: (input_ids, segment_ids, position_ids, input_mask, self.task_idx, img, vis_pe, context, cxt_modality_label, example_id)
-                return    (input_ids, segment_ids, position_ids, input_mask, self.task_idx, None, None, context, None, example_id)
-
+                return {"input_ids": input_ids, 
+                        "segment_ids": segment_ids,
+                        "position_ids": position_ids,
+                        "input_mask": input_mask,
+                        "task_idx": self.task_idx,
+                        "img": None,
+                        "vis_pe": None,
+                        "context": context,
+                        "cxt_modality_label": None,
+                        "example_id": example_id
+                        }
 
 
 

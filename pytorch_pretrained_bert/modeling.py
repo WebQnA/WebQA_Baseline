@@ -230,8 +230,12 @@ class BertEmbeddings(nn.Module):
 
         if context in ["img", "both"] and prev_is_None and vis_feats.size()[-1] > 1: 
             ## TODO: fit the img feature chunk into words_embeddings with specified indices.
+            #if len(cxt_modality_label) == 1: cxt_modality_label = [0]
+            print("cxt_modality_label = ", cxt_modality_label)
             words_embeddings[cxt_modality_label, 1:1+max_len_img_cxt] = vis_feats
             position_embeddings[cxt_modality_label, 1:1+max_len_img_cxt] = vis_pe
+            #print(position_embeddings)
+
             #words_embeddings = torch.cat((words_embeddings[:, :1], vis_feats, words_embeddings[:, max_len_img_cxt+1:]), dim=1)
             assert max_len_img_cxt == 200, 'only support region attn!'
             #position_embeddings = torch.cat((position_embeddings[:, :1], vis_pe, position_embeddings[:, max_len_img_cxt+1:]), dim=1) # hacky...
@@ -615,7 +619,7 @@ class PreTrainedBertModel(nn.Module):
         else:
             # Extract archive to temp dir
             tempdir = tempfile.mkdtemp()
-            logger.info("extracting archive file {} to temp dir {}".format(
+            print("extracting archive file {} to temp dir {}".format(
                 resolved_archive_file, tempdir))
             with tarfile.open(resolved_archive_file, 'r:gz') as archive:
                 archive.extractall(tempdir)
@@ -1122,8 +1126,8 @@ class BertForWebqa(PreTrainedBertModel):
             #print("vis_feats.size() = ", vis_feats.size())
             #print("input_ids.size() = ", input_ids.size())
             #print("cxt_modality_label.size() = ", np.array(cxt_modality_label).size) 
-            if context in ['img', 'both']: assert cxt_modality_label.size() == vis_feats.size() == vis_pe.size()
-            #time.sleep(2)
+            #print("cxt_modality_label = ", cxt_modality_label)
+            if context[0] in ['img', 'both']: assert np.array(cxt_modality_label).size == vis_feats.size(0) == vis_pe.size(0)
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
                                             attention_mask, context[0], cxt_modality_label, output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
             # calculate classification loss for filter function
@@ -1145,7 +1149,9 @@ class BertForWebqa(PreTrainedBertModel):
             assert masked_lm_labels is not None
             #print("in bert forward, type(input_ids) = ", type(input_ids))
             #print("\ncxt_modality_label.size() = ", len(cxt_modality_label.size()))
-            if isinstance(cxt_modality_label, list): cxt_modality_label = torch.squeeze(torch.LongTensor(cxt_modality_label), 1)
+            if isinstance(cxt_modality_label, list): cxt_modality_label = torch.squeeze(torch.LongTensor(cxt_modality_label), 1) # before flatten, it's like [[1], [1], [1], ...]
+            cxt_modality_label = [i for i in range(len(cxt_modality_label)) if cxt_modality_label[i]]
+            if context[0] in ['img', 'both']: assert np.array(cxt_modality_label).size  == vis_feats.size(0) == vis_pe.size(0)
             sequence_output, pooled_output = self.bert(vis_feats, vis_pe, input_ids, token_type_ids,\
                                             attention_mask, context[0], cxt_modality_label, output_all_encoded_layers=False, max_len_img_cxt=self.max_len_img_cxt)
 
@@ -1255,8 +1261,10 @@ class BertForWebqaDecoder(PreTrainedBertModel):
             vis_feats = self.vis_embed(vis_feats) # image region features (NC1+NC2+ ... +NC_B, 100, hidden_size), NC = num_choices
             vis_pe = self.vis_pe_embed(vis_pe) # image region positional encodings (NC1+NC2+ ... +NC_B, 100, hidden_size), NC = num_choices
             # They are flattened in collate function
-        
-        if isinstance(cxt_modality_label, list): cxt_modality_label = torch.squeeze(torch.LongTensor(cxt_modality_label), 1)
+        if isinstance(cxt_modality_label, list): cxt_modality_label = torch.squeeze(torch.LongTensor(cxt_modality_label), 1) # before flatten, it's like [[1], [1], [1], ...]
+        cxt_modality_label = [i for i in range(len(cxt_modality_label)) if cxt_modality_label[i]]
+        if context[0] in ['img', 'both']: assert np.array(cxt_modality_label).size  == vis_feats.size(0) == vis_pe.size(0)
+        #print("cxt_modality_label = ", cxt_modality_label)
 
         if self.search_beam_size > 1:
             return self.beam_search(vis_feats, vis_pe, input_ids, token_type_ids, position_ids, attention_mask, context, cxt_modality_label, task_idx)
